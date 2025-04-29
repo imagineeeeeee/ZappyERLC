@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zappy</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="container">
+        <div id="api-section" class="card">
+            <h2>Enter Server API Key</h2>
+            <p class="security-warning">
+                <strong>WARNING:</strong> Entering your Server-Key here makes it visible in your browser's developer tools. This is INSECURE. Use a backend server for secure handling. This is for demonstration only.
+            </p>
+            <input type="password" id="api-key-input" placeholder="Your Server-Key">
+            <button id="submit-api-key">Submit</button>
+            <p id="api-error" class="error-message"></p>
+        </div>
+
+        <div id="main-content" class="hidden">
+            <header>
+                <h1>Zappy ER:LC Server Management</h1>
+                <div id="header-right">
+                    <div id="user-info">
+                        <img id="roblox-avatar" src="placeholder-avatar.png" alt="Roblox Avatar" width="50" height="50">
+                        <span id="roblox-username">Server Admin</span>
+                    </div>
+                    <button id="manual-refresh-button" class="refresh-button">Refresh All Data</button>
+                </div>
+            </header>
+
+            <div class="tab-container">
+                <button class="tab-button active" data-tab="logs">Logs</button>
+                <button class="tab-button" data-tab="stats">Server Stats</button>
+                <button class="tab-button" data-tab="players">Players & Queue</button>
+                <button class="tab-button" data-tab="vehicles">Vehicles</button>
+                <button class="tab-button" data-tab="killlogs">Kill Logs</button>
+                <button class="tab-button" data-tab="commandlogs">Command Logs</button>
+                <button class="tab-button" data-tab="commands">Execute Command</button>
+            </div>
+
+            <div id="tab-content-area">
+                <div id="logs" class="tab-content active card">
+                    <h2>Real-time Logs</h2>
+                    <div id="log-output" class="log-box">Connecting to log stream...</div>
+                </div>
+
+                <div id="stats" class="tab-content card">
+                    <h2>Server Statistics</h2>
+                    <div id="server-stats-output">Loading stats...</div>
+                </div>
+
+                <div id="players" class="tab-content card">
+                    <h2>Players</h2>
+                    <p class="status-counts">Online: <span id="player-count">0</span> | Queue: <span id="queue-count">0</span></p>
+                    <div class="list-container">
+                        <div class="player-list-section">
+                            <h3>Online Players</h3>
+                            <ul id="player-list" class="data-list">
+                                </ul>
+                        </div>
+                        <div class="queue-list-section">
+                            <h3>Queue</h3>
+                            <ul id="queue-list" class="data-list">
+                                </ul>
+                        </div>
+                    </div>
+                </div>
+
+                 <div id="vehicles" class="tab-content card">
+                    <h2>Spawned Vehicles</h2>
+                     <button class="refresh-button" data-log-type="vehicles">Refresh Vehicles</button>
+                     <div class="list-container">
+                         <ul id="vehicle-list" class="data-list">
+                             </ul>
+                     </div>
+                 </div>
+
+                 <div id="killlogs" class="tab-content card">
+                     <h2>Kill Logs</h2>
+                      <button class="refresh-button" data-log-type="killlogs">Refresh Kill Logs</button>
+                     <div id="kill-log-output" class="log-box">Loading kill logs...</div>
+                 </div>
+
+                 <div id="commandlogs" class="tab-content card">
+                     <h2>Command Logs</h2>
+                     <button class="refresh-button" data-log-type="commandlogs">Refresh Command Logs</button>
+                     <div id="command-log-output" class="log-box">Loading command logs...</div>
+                 </div>
+
+                <div id="commands" class="tab-content card">
+                    <h2>Execute Command</h2>
+                    <div class="command-input-area">
+                        <input type="text" id="command-input" placeholder="Enter command (e.g., :kick PlayerName)">
+                        <button id="execute-command-button">Execute</button>
+                    </div>
+                    <div id="command-response" class="command-response-box"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,341 @@
+/* style.css */
+
+/* Basic Reset and Typography */
+body {
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    padding: 0; /* Container handles padding */
+    background-color: #eef2f7; /* Light background */
+    color: #333;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 20px auto; /* Center container */
+    padding: 0 20px; /* Padding on sides */
+}
+
+h1, h2, h3 {
+    color: #2c3e50; /* Darker headers */
+    margin-top: 0;
+}
+
+/* Card Style */
+.card {
+    background-color: #fff;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+    margin-bottom: 20px;
+}
+
+/* Header */
+header {
+    background-color: #34495e; /* Dark blue-grey */
+    color: #ecf0f1; /* Light grey text */
+    padding: 15px 25px; /* Match card padding */
+    border-radius: 8px 8px 0 0; /* Rounded top corners */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0; /* Remove margin, card handles spacing */
+    flex-wrap: wrap; /* Allow header content to wrap on smaller screens */
+    gap: 15px; /* Space between h1 and header-right */
+}
+
+header h1 {
+    color: #ecf0f1; /* Header color in dark background */
+    margin: 0;
+    font-size: 1.8em;
+}
+
+#header-right { /* New container for user-info and manual refresh button */
+    display: flex;
+    align-items: center;
+    gap: 20px; /* Space between user-info and the manual refresh button */
+    flex-wrap: wrap; /* Allow user-info and button to wrap */
+    justify-content: flex-end; /* Align items to the right */
+}
+
+
+#user-info {
+    display: flex;
+    align-items: center;
+    font-weight: bold;
+}
+
+#user-info img {
+    border-radius: 50%;
+    margin-right: 10px;
+    background-color: #555;
+    border: 2px solid #ecf0f1;
+}
+
+/* API Section (Login) */
+#api-section {
+    text-align: center;
+    max-width: 500px; /* Slightly wider */
+    margin: 50px auto;
+    padding-top: 30px; /* More space above h2 */
+    padding-bottom: 30px;
+}
+
+#api-section h2 {
+     color: #3498db; /* Blue */
+     margin-bottom: 20px;
+}
+
+.security-warning {
+    color: #e74c3c; /* Red */
+    background-color: #fdeded; /* Light red background */
+    border: 1px solid #e74c3c;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    font-size: 0.9em;
+    text-align: left;
+}
+
+
+#api-key-input {
+    width: calc(100% - 24px); /* Account for padding and border */
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid #bdc3c7; /* Light grey border */
+    border-radius: 4px;
+    font-size: 1em;
+}
+
+#submit-api-key,
+#execute-command-button {
+    padding: 10px 25px;
+    background-color: #2ecc71; /* Green */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-size: 1em;
+}
+
+#submit-api-key:hover,
+#execute-command-button:hover {
+    background-color: #27ae60; /* Darker green */
+}
+
+#submit-api-key:active,
+#execute-command-button:active {
+    background-color: #229954;
+}
+
+
+.error-message {
+    color: #e74c3c; /* Red */
+    margin-top: 10px;
+    min-height: 1.2em;
+    font-weight: bold;
+}
+
+/* Tabs */
+.tab-container {
+    margin-bottom: 0;
+    border-bottom: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 0 15px;
+}
+
+.tab-button {
+    /* Increase top/bottom padding */
+    padding: 15px 20px; /* Increased from 12px 20px */
+    cursor: pointer;
+    border: none;
+    background-color: #bdc3c7;
+    color: #34495e;
+    border-radius: 6px 6px 0 0;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    font-size: 1em;
+    flex-shrink: 0;
+}
+
+.tab-button:hover {
+    background-color: #95a5a6;
+    color: #fff;
+}
+
+.tab-button.active {
+    background-color: #fff;
+    color: #3498db;
+    font-weight: bold;
+}
+
+/* Tab Content Area */
+#tab-content-area {
+    /* This container doesn't need changes */
+}
+
+.tab-content {
+    display: none;
+    min-height: 350px;
+    position: relative;
+    /* Adjust this margin to create space below tabs */
+    margin-top: -10px; /* Changed from -20px to -10px */
+    border-top: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Log Output */
+.log-box {
+    background-color: #2c3e50; /* Dark background */
+    color: #2ecc71; /* Green text */
+    padding: 15px;
+    height: 400px;
+    overflow-y: auto;
+    font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace; /* Monospaced font */
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+/* Server Stats */
+#server-stats-output p {
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed #ecf0f1; /* Light dashed separator */
+}
+#server-stats-output p:last-child {
+     border-bottom: none;
+     margin-bottom: 0;
+     padding-bottom: 0;
+}
+
+
+/* Player and Queue Lists */
+.status-counts {
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: #3498db; /* Blue */
+}
+
+.list-container {
+    display: flex;
+    gap: 30px; /* Space between player and queue lists */
+     flex-wrap: wrap; /* Allow wrapping on small screens */
+}
+
+.player-list-section,
+.queue-list-section {
+    flex: 1; /* Take equal space */
+    min-width: 250px; /* Ensure minimum width before wrapping */
+}
+
+.data-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 300px; /* Fixed height with scroll */
+    overflow-y: auto;
+    border: 1px solid #ecf0f1; /* Light border */
+    border-radius: 4px;
+}
+
+.data-list li {
+    padding: 10px 12px;
+    border-bottom: 1px solid #ecf0f1; /* Light separator */
+    font-size: 0.95em;
+}
+
+.data-list li:last-child {
+    border-bottom: none;
+}
+
+/* Vehicle List Styling (Similar to data-list) */
+#vehicles .list-container {
+    display: block; /* Vehicles list doesn't need columns */
+}
+#vehicle-list {
+     list-style: none;
+     padding: 0;
+     margin: 0;
+     max-height: 400px; /* Adjust height */
+     overflow-y: auto;
+     border: 1px solid #ecf0f1;
+     border-radius: 4px;
+}
+#vehicle-list li {
+    padding: 10px 12px;
+    border-bottom: 1px solid #ecf0f1;
+    font-size: 0.95em;
+}
+#vehicle-list li:last-child {
+    border-bottom: none;
+}
+
+
+/* Command Execution */
+.command-input-area {
+    display: flex;
+    gap: 10px; /* Space between input and button */
+    margin-bottom: 15px;
+}
+
+#command-input {
+    flex-grow: 1; /* Input takes remaining space */
+    padding: 10px;
+    border: 1px solid #bdc3c7;
+    border-radius: 4px;
+    font-size: 1em;
+}
+
+.command-response-box {
+    margin-top: 15px;
+    padding: 12px;
+    background-color: #f4f4f4; /* Light grey */
+    border: 1px solid #bdc3c7;
+    min-height: 30px; /* Ensure it has some height */
+    border-radius: 4px;
+    white-space: pre-wrap; /* Handle potential line breaks */
+    word-wrap: break-word;
+    font-size: 0.9em;
+}
+
+/* Refresh Button Styling */
+/* This style is now shared by manual-refresh-button and log tab refresh buttons */
+.refresh-button {
+    padding: 8px 15px; /* Adjusted padding */
+    font-size: 0.9em; /* Adjusted font size */
+    background-color: #3498db; /* Blue */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    /* Remove absolute positioning for header button */
+    position: static;
+    top: auto;
+    right: auto;
+}
+
+.refresh-button:hover {
+    background-color: #2980b9;
+}
+
+/* Specific positioning for refresh buttons INSIDE tab content */
+.tab-content > .refresh-button {
+    position: absolute;
+    top: 25px;
+    right: 25px;
+    z-index: 10; /* Ensure it's above log box */
+}
+
+
+/* Utility Class */
+.hidden {
+    display: none !important;
+}
