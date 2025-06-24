@@ -274,7 +274,7 @@
                 <div id="tab-commands" class="tab-content hidden">
                     <div class="card">
                         <h3 class="text-xl font-semibold mb-4 text-white">Execute Command (ER:LC API)</h3>
-                        <p class="text-slate-400 mb-4 text-sm">Enter a command to execute on the ER:LC server. (Note: This is a simulated backend integration. Real integration requires a backend to use the API Key securely.)</p>
+                        <p class="text-slate-400 mb-4 text-sm">Enter a command to execute on the ER:LC server. (Note: This is simulated API integration. In a real app, a backend would handle the API Key securely.)</p>
                         <div class="flex gap-2">
                             <input type="text" id="command-input" placeholder="e.g., :kick PlayerName" class="form-input">
                             <button id="execute-command-button" class="btn btn-primary">Execute</button>
@@ -539,6 +539,7 @@
 
                 /**
                  * Simulates a backend API call to Gemini for structured JSON data.
+                 * This acts as a stand-in for a real backend that would connect to the ER:LC API.
                  * @param {string} prompt - The prompt to send to Gemini.
                  * @param {object} schema - The JSON schema for the desired response.
                  * @returns {Promise<object|null>} The parsed JSON response or null on error.
@@ -1057,11 +1058,9 @@
                             }
                         } else {
                             // Handled by API calls now, this only covers Firebase document existence
-                            // ZappyApp.ui.displayMessage('server-stats-output', '<p class="text-red-400">Server data not found.</p>', true);
                         }
                     }, (error) => {
                         console.error("Error listening to server stats (Firebase portion):", error);
-                        // ZappyApp.ui.displayMessage('server-stats-output', '<p class="text-red-400">Failed to load Firebase server data (permission error).</p>', true);
                     });
                     ZappyApp.state.unsubscribeListeners.push(unsubscribeServerStats);
 
@@ -1483,8 +1482,11 @@
                     if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
 
                     try {
-                        // Simulate backend API call to ER:LC using Gemini
-                        const prompt = `Simulate an ER:LC API response for executing the command "${command}" on a server with API key "${apiKey}". Provide a JSON response with 'status' (success/failure) and a 'message'. If successful, give a positive message. If failed, give a plausible error message.`;
+                        // In a real application, this would be a fetch call to your backend,
+                        // which then makes the actual ER:LC API call using the stored API Key.
+                        // Example: const response = await fetch('/api/erlc/execute-command', { method: 'POST', body: JSON.stringify({ serverId, command, apiKey }) });
+                        // For this Canvas, we simulate the ER:LC API response using Gemini.
+                        const prompt = `Simulate an ER:LC API response for executing the command "${command}" on a server. Provide a JSON response with 'status' (success/failure) and a 'message'. If successful, give a positive message related to the command. If failed, give a plausible error message related to the command.`;
                         const schema = {
                             type: "OBJECT",
                             properties: {
@@ -1652,9 +1654,17 @@
 
                 async refreshStats() {
                     const outputEl = ZappyApp.elements.serverStatsOutput;
-                    if (outputEl) outputEl.innerHTML = '<p class="text-slate-400">Generating data...</p>';
+                    if (outputEl) outputEl.innerHTML = '<p class="text-slate-400">Fetching server statistics...</p>';
 
-                    const prompt = `Generate realistic ER:LC server statistics (totalPlayers, maxPlayers, currentVehicles, totalGameTimeHours, serverStatus: "online" or "offline", serverRegion). Provide a JSON object.`;
+                    const prompt = `Generate realistic ER:LC server statistics including:
+                    - totalPlayers: current players online (integer)
+                    - maxPlayers: maximum player capacity (integer)
+                    - currentVehicles: number of active vehicles (integer)
+                    - totalGameTimeHours: server uptime in hours (integer)
+                    - serverStatus: "online" or "offline" (string)
+                    - serverRegion: geographic region of the server (string, e.g., "US-East", "Europe-West")
+                    
+                    Provide the response as a JSON object.`;
                     const schema = {
                         type: "OBJECT",
                         properties: {
@@ -1689,16 +1699,21 @@
 
                 async refreshPlayers() {
                     const playersListEl = ZappyApp.elements.playerList;
-                    const joinRequestsDisplayEl = ZappyApp.elements.joinRequestsDisplay;
+                    const joinRequestsDisplayEl = ZappyApp.elements.joinRequestsDisplay; // This is Firebase driven
                     const playerCountEl = ZappyApp.elements.playerCount;
                     const queueCountEl = ZappyApp.elements.queueCount;
 
-                    if (playersListEl) playersListEl.innerHTML = '<p class="text-slate-400">Generating data...</p>';
-                    if (joinRequestsDisplayEl) joinRequestsDisplayEl.innerHTML = '<p class="text-slate-400">Loading requests from Firebase...</p>';
+                    if (playersListEl) playersListEl.innerHTML = '<p class="text-slate-400">Fetching player data...</p>';
+                    // joinRequestsDisplayEl is updated via Firestore listener, no change here
                     if (playerCountEl) playerCountEl.textContent = '...';
                     if (queueCountEl) queueCountEl.textContent = '...';
 
-                    const prompt = `Generate a realistic list of 5-15 ER:LC online players. Each player should have a 'name' (e.g., 'PlayerXYZ'), 'ping' (number), and 'job' (e.g., 'Civilian', 'Police', 'Firefighter', 'EMT'). Also generate a 'queue' size (0-5). Provide a JSON object with 'onlinePlayers' (array of objects) and 'queueSize' (integer).`;
+                    const prompt = `Generate a realistic list of 5-15 ER:LC online players. Each player should have:
+                    - name: Player username (string, e.g., 'AgentSmith', 'XyloKnight')
+                    - ping: Player latency in ms (integer, e.g., 50, 120)
+                    - job: Player's current role (string, e.g., 'Civilian', 'Police Officer', 'Firefighter', 'EMT', 'Criminal')
+                    Also generate a 'queueSize' (integer, 0-5) for players waiting to join.
+                    Provide the response as a JSON object with 'onlinePlayers' (array of objects) and 'queueSize' (integer).`;
                     const schema = {
                         type: "OBJECT",
                         properties: {
@@ -1746,14 +1761,18 @@
                         if (playerCountEl) playerCountEl.textContent = 'Error';
                         if (queueCountEl) queueCountEl.textContent = 'Error';
                     }
-                    // Join requests are handled by Firebase onSnapshot listener
+                    // Join requests are handled by Firebase onSnapshot listener (displayOwnerJoinRequests is called via serverDocRef listener)
                 },
 
                 async refreshVehicles() {
                     const vehiclesListEl = ZappyApp.elements.vehicleList;
-                    if (vehiclesListEl) vehiclesListEl.innerHTML = '<p class="text-slate-400">Generating data...</p>';
+                    if (vehiclesListEl) vehiclesListEl.innerHTML = '<p class="text-slate-400">Fetching vehicle data...</p>';
 
-                    const prompt = `Generate a realistic list of 5-10 ER:LC active vehicles. Each vehicle should have a 'type' (e.g., 'Police Cruiser', 'Fire Truck', 'Ambulance', 'Civilian Car'), 'owner' (player name), and 'location' (e.g., 'Main Street', 'Fire Station 1', 'Hospital'). Provide a JSON object with 'activeVehicles' (array of objects).`;
+                    const prompt = `Generate a realistic list of 5-10 ER:LC active vehicles. Each vehicle should have:
+                    - type: Vehicle type (string, e.g., 'Police Cruiser', 'Fire Truck', 'Ambulance', 'Civilian Car', 'Helicopter')
+                    - owner: Player name who owns/is driving the vehicle (string)
+                    - location: Current location of the vehicle (string, e.g., 'Main Street', 'Fire Station 1', 'Hospital ER', 'Highway 101')
+                    Provide the response as a JSON object with 'activeVehicles' (array of objects).`;
                     const schema = {
                         type: "OBJECT",
                         properties: {
@@ -1797,9 +1816,14 @@
 
                 async refreshKillLogs() {
                     const killLogListEl = ZappyApp.elements.killLogList;
-                    if (killLogListEl) killLogListEl.innerHTML = '<p class="text-slate-400">Generating data...</p>';
+                    if (killLogListEl) killLogListEl.innerHTML = '<p class="text-slate-400">Fetching kill logs...</p>';
 
-                    const prompt = `Generate a realistic list of 5-10 ER:LC kill log entries. Each entry should have 'killer' (player name), 'victim' (player name), 'weapon' (e.g., 'Pistol', 'Rifle', 'Vehicle Impact'), and 'timestamp' (string in 'HH:MM:SS' format). Provide a JSON object with 'killLogs' (array of objects).`;
+                    const prompt = `Generate a realistic list of 5-10 ER:LC kill log entries. Each entry should have:
+                    - killer: Player name who made the kill (string)
+                    - victim: Player name who was eliminated (string)
+                    - weapon: Weapon used (string, e.g., 'Pistol', 'Assault Rifle', 'Shotgun', 'Vehicle Impact', 'Knife')
+                    - timestamp: Time of the kill (string in 'HH:MM:SS' format)
+                    Provide the response as a JSON object with 'killLogs' (array of objects).`;
                     const schema = {
                         type: "OBJECT",
                         properties: {
@@ -1843,7 +1867,7 @@
                 },
 
                 async refreshCommandLogs() {
-                    // This data is still fetched from Firebase as it represents actions within Zappy, not ER:LC game events.
+                    // This data is still fetched directly from Firebase as it represents actions within Zappy, not ER:LC game events.
                     const serverId = ZappyApp.state.currentServer.id;
                     const commandLogsCollectionRef = collection(db, `/artifacts/${appId}/public/data/servers/${serverId}/commandLogs`);
                     const q = query(commandLogsCollectionRef);
@@ -1896,11 +1920,6 @@
                                 console.log('All shifts for this server cleared successfully.');
                                 ZappyApp.ui.displayMessage('shift-controls-message', 'Shift wave ended and all shifts cleared!', false);
                             }
-
-                            // Optional: Reset active shifts for users who were on this server's shift wave
-                            // This would be a more advanced feature, likely requiring backend logic for robustness.
-                            // For client-side only, their individual `checkActiveShift` listeners
-                            // will handle local state updates due to `shiftWaveStatus.active` changing.
                         }
                     } catch (error) {
                         console.error(`Error ${action}ing shift wave or wiping shifts:`, error);
