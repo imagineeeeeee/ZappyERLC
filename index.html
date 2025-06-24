@@ -112,7 +112,7 @@
             <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-indigo-500"></div>
         </div>
 
-        <!-- Auth Section -->
+        <!-- Auth Section (Firebase Login/Register) -->
         <div id="auth-section" class="hidden max-w-md mx-auto">
             <div class="card">
                 <h2 id="auth-title" class="text-2xl font-bold text-center text-white mb-6">Login to Zappy</h2>
@@ -135,7 +135,26 @@
             </div>
         </div>
 
-        <!-- Main Dashboard Section (Post-Login) -->
+        <!-- Server Key Input Section (New) -->
+        <div id="server-key-input-section" class="hidden max-w-md mx-auto">
+            <div class="card">
+                <h2 class="text-2xl font-bold text-center text-white mb-6">Enter ER:LC Server API Key</h2>
+                <p class="text-slate-400 text-sm mb-4">
+                    This key grants direct access to the ER:LC API for your server.
+                    <strong class="text-red-400">WARNING: This key will be visible in your browser's developer tools. Use with caution.</strong>
+                </p>
+                <form id="server-key-form">
+                    <div class="mb-4">
+                        <label for="api-key-input" class="block mb-2 text-sm font-medium text-slate-400">ER:LC Server API Key</label>
+                        <input type="password" id="api-key-input" class="form-input" required placeholder="Paste your Server API Key here">
+                    </div>
+                    <p id="server-key-error" class="text-red-400 text-sm mb-4 text-center"></p>
+                    <button type="submit" id="submit-api-key" class="btn btn-primary w-full">Continue to Dashboard</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Main Dashboard Section (Post-Login & API Key) -->
         <div id="dashboard-section" class="hidden">
             <!-- Header -->
             <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
@@ -152,12 +171,12 @@
             <!-- Server Interaction -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div class="card">
-                    <h3 class="text-xl font-semibold text-white mb-4">Create a New Server</h3>
-                    <p class="text-slate-400 mb-4 text-sm">Use your ER:LC Server API Key to create and manage a server group.</p>
-                    <button id="show-create-server-modal-btn" class="btn btn-primary">Create Server</button>
+                    <h3 class="text-xl font-semibold text-white mb-4">Create a New Server Group</h3>
+                    <p class="text-slate-400 mb-4 text-sm">Create a Zappy server group (no API key stored here).</p>
+                    <button id="show-create-server-modal-btn" class="btn btn-primary">Create Group</button>
                 </div>
                 <div class="card">
-                    <h3 class="text-xl font-semibold text-white mb-4">Join a Server</h3>
+                    <h3 class="text-xl font-semibold text-white mb-4">Join a Server Group</h3>
                     <p class="text-slate-400 mb-4 text-sm">Enter a server code provided by a server owner to request access.</p>
                     <div class="flex gap-2">
                         <input type="text" id="join-code-input" placeholder="Enter Server Code" class="form-input">
@@ -320,15 +339,19 @@
                              <p id="owner-settings-error" class="text-red-400 text-sm mt-2 text-center"></p>
 
                             <hr class="border-slate-700 my-6">
-                            <label for="edit-api-key" class="block mb-2">ER:LC Server API Key</label>
+                            <label for="edit-api-key" class="block mb-2">ER:LC Server API Key (Stored in Zappy for reference)</label>
                             <input type="password" id="edit-api-key" class="form-input mb-4">
-                            <button id="save-api-key-btn" class="btn btn-primary">Save API Key</button>
+                            <p class="text-xs text-yellow-400 mt-1">
+                                This key is stored in Zappy's database for your reference.
+                                <strong class="text-red-400">The active key for direct API calls is entered on app load and is NOT this key.</strong>
+                            </p>
+                            <button id="save-api-key-btn" class="btn btn-primary">Save API Key (to Zappy DB)</button>
                             <p id="owner-api-key-success" class="text-green-400 text-sm mt-2 text-center"></p>
                             <p id="owner-api-key-error" class="text-red-400 text-sm mt-2 text-center"></p>
 
                             <hr class="border-slate-700 my-6">
                             <h4 class="font-semibold text-red-400 mb-2">Danger Zone</h4>
-                            <button id="delete-server-btn" class="btn btn-danger">Delete Server</button>
+                            <button id="delete-server-btn" class="btn btn-danger">Delete Server Group</button>
                         </div>
                     </div>
                 </div>
@@ -339,21 +362,21 @@
     <!-- Modals -->
     <div id="create-server-modal" class="modal-overlay hidden">
         <div class="card max-w-lg w-full">
-            <h2 class="text-2xl font-bold text-white mb-4">Create Server</h2>
+            <h2 class="text-2xl font-bold text-white mb-4">Create Zappy Server Group</h2>
             <form id="create-server-form">
                 <div class="mb-4">
-                    <label for="server-name" class="block mb-2 text-sm font-medium">Server Name</label>
+                    <label for="server-name" class="block mb-2 text-sm font-medium">Server Group Name</label>
                     <input type="text" id="server-name" class="form-input" required placeholder="My Awesome Community">
                 </div>
                 <div class="mb-4">
-                    <label for="server-code" class="block mb-2 text-sm font-medium">Server Code</label>
+                    <label for="server-code" class="block mb-2 text-sm font-medium">Server Group Code</label>
                     <input type="text" id="server-code" class="form-input" required placeholder="A unique code for users to join">
                     <p class="text-xs text-slate-400 mt-1">This must be unique across all of Zappy.</p>
                 </div>
                 <div class="mb-6">
-                    <label for="api-key" class="block mb-2 text-sm font-medium">ER:LC Server API Key</label>
+                    <label for="api-key" class="block mb-2 text-sm font-medium">ER:LC Server API Key (for record only)</label>
                     <input type="password" id="api-key" class="form-input" required>
-                    <p class="text-xs text-yellow-400 mt-1">Your key is stored securely and is not shared with server members.</p>
+                    <p class="text-xs text-yellow-400 mt-1">This key is stored in Zappy's database for *your* record. It is not used for client-side API calls.</p>
                 </div>
                 <p id="create-server-error" class="text-red-400 text-sm mb-4"></p>
                 <div class="flex justify-end gap-4">
@@ -438,19 +461,21 @@
             // --- STATE & CONFIG ---
             state: {
                 currentUser: null,
-                currentServer: null,
+                currentServer: null, // The Zappy server group (from Firebase)
+                activeServerKey: null, // The ER:LC API Key currently being used for direct calls (session-only)
                 shiftInterval: null,
                 shiftStartTime: null,
                 shiftTimerRunning: false,
                 unsubscribeListeners: [], // To store unsubscribe functions for cleanup
-                // Base URL for the actual ER:LC API
-                erlcApiBaseUrl: 'https://api.policeroleplay.community/v1' // Updated to the specified API
+                // Base URL for the actual ER:LC API (from provided script.js)
+                erlcApiBaseUrl: 'https://api.policeroleplay.community/v1'
             },
 
             // --- UI ELEMENT CACHING ---
             elements: {
                 loadingOverlay: document.getElementById('loading-overlay'),
                 authSection: document.getElementById('auth-section'),
+                serverKeyInputSection: document.getElementById('server-key-input-section'), // New
                 dashboardSection: document.getElementById('dashboard-section'),
                 serverPanelSection: document.getElementById('server-panel-section'),
                 createServerModal: document.getElementById('create-server-modal'),
@@ -458,9 +483,13 @@
                 // Dashboard Elements
                 serverList: document.getElementById('server-list'),
                 userEmailSpan: document.getElementById('user-email'),
-                joinServerError: document.getElementById('join-server-error'), // Added
-                joinServerSuccess: document.getElementById('join-server-success'), // Added
-                serverListError: document.getElementById('server-list-error'), // Added
+                joinServerError: document.getElementById('join-server-error'),
+                joinServerSuccess: document.getElementById('join-server-success'),
+                serverListError: document.getElementById('server-list-error'),
+                // Server Key Input Section
+                apiKeyInput: document.getElementById('api-key-input'), // New
+                submitApiKeyButton: document.getElementById('submit-api-key'), // New
+                serverKeyError: document.getElementById('server-key-error'), // New
                 // Panel Elements
                 panelServerName: document.getElementById('panel-server-name'),
                 panelServerCode: document.getElementById('panel-server-code'),
@@ -468,29 +497,33 @@
                 shiftToggleButton: document.getElementById('shift-toggle-btn'),
                 panelTabButtons: document.getElementById('panel-tab-buttons'),
                 panelTabContent: document.getElementById('panel-tab-content'),
-                logOutput: document.getElementById('log-output'),
-                serverStatsOutput: document.getElementById('server-stats-output'),
+                logOutput: document.getElementById('log-output'), // For Zappy internal logs
+                serverStatsOutput: document.getElementById('server-stats-output'), // For ER:LC API stats
                 playerCount: document.getElementById('player-count'),
                 queueCount: document.getElementById('queue-count'),
-                playerList: document.getElementById('player-list'),
-                joinRequestsDisplay: document.getElementById('join-requests-display'),
+                playerList: document.getElementById('player-list'), // For ER:LC API players
+                joinRequestsDisplay: document.getElementById('join-requests-display'), // For Zappy join requests
                 commandInput: document.getElementById('command-input'),
+                executeCommandButton: document.getElementById('execute-command-button'),
                 commandResponse: document.getElementById('command-response'),
                 shiftLeaderboard: document.getElementById('shift-leaderboard'),
                 ownerJoinRequestsList: document.getElementById('owner-join-requests-list'),
                 editServerNameInput: document.getElementById('edit-server-name'),
                 startShiftWaveBtn: document.getElementById('start-shift-wave-btn'),
                 endShiftWaveBtn: document.getElementById('end-shift-wave-btn'),
-                ownerJoinRequestsListError: document.getElementById('owner-join-requests-list-error'), // Added
-                ownerSettingsSuccess: document.getElementById('owner-settings-success'), // Added
-                ownerSettingsError: document.getElementById('owner-settings-error'), // Added
-                serverMembersList: document.getElementById('server-members-list'), // Added
-                serverMembersMessage: document.getElementById('server-members-message'), // Added
-                shiftControlsMessage: document.getElementById('shift-controls-message'), // Added
-                editApiKeyInput: document.getElementById('edit-api-key'), // Added
-                saveApiKeyBtn: document.getElementById('save-api-key-btn'), // Added
-                ownerApiKeySuccess: document.getElementById('owner-api-key-success'), // Added
-                ownerApiKeyError: document.getElementById('owner-api-key-error'), // Added
+                ownerJoinRequestsListError: document.getElementById('owner-join-requests-list-error'),
+                ownerSettingsSuccess: document.getElementById('owner-settings-success'),
+                ownerSettingsError: document.getElementById('owner-settings-error'),
+                serverMembersList: document.getElementById('server-members-list'),
+                serverMembersMessage: document.getElementById('server-members-message'),
+                shiftControlsMessage: document.getElementById('shift-controls-message'),
+                editApiKeyInput: document.getElementById('edit-api-key'), // This is for storing in Firebase
+                saveApiKeyBtn: document.getElementById('save-api-key-btn'), // This is for storing in Firebase
+                ownerApiKeySuccess: document.getElementById('owner-api-key-success'),
+                ownerApiKeyError: document.getElementById('owner-api-key-error'),
+                vehicleList: document.getElementById('vehicle-list'), // For ER:LC API vehicles
+                killLogList: document.getElementById('kill-log-list'), // For ER:LC API kill logs
+                commandLogList: document.getElementById('command-log-list'), // For Zappy command logs (audit)
             },
 
             // --- UTILITIES ---
@@ -542,21 +575,21 @@
                 /**
                  * Makes a direct fetch call to the ER:LC API.
                  *
-                 * @param {string} endpoint - The specific API endpoint (e.g., '/stats', '/players').
-                 * @param {string} apiKey - The ER:LC API Key for authorization.
+                 * @param {string} endpoint - The specific API endpoint (e.g., '/server', '/server/players').
                  * @param {object} [options={}] - Additional fetch options (method, body, etc.).
                  * @returns {Promise<object>} The JSON response from the API.
                  * @throws {Error} If the API call fails or returns a non-OK status.
                  */
-                async callErlcApi(endpoint, apiKey, options = {}) {
-                    if (!apiKey) {
-                        throw new Error("ER:LC API Key is missing. Please set it in the Admin tab.");
+                async callErlcApi(endpoint, options = {}) {
+                    const activeKey = ZappyApp.state.activeServerKey;
+                    if (!activeKey) {
+                        throw new Error("ER:LC Server API Key is not set. Please enter it on the initial screen.");
                     }
 
                     const url = `${ZappyApp.state.erlcApiBaseUrl}${endpoint}`;
                     const headers = {
-                        'Authorization': `Bearer ${apiKey}`,
-                        'Content-Type': 'application/json', // Assuming JSON content for POST requests
+                        'Accept': 'application/json',
+                        'Server-Key': activeKey, // Use the activeServerKey from state
                         ...options.headers // Allow overriding or adding more headers
                     };
 
@@ -574,23 +607,30 @@
                             } catch (e) {
                                 // Not a JSON error, use plain text
                             }
+                            // If API key is invalid or unauthorized, go back to key entry
+                            if (response.status === 401 || response.status === 403) {
+                                ZappyApp.ui.displayMessage('server-key-error', `API access denied: ${errorText}. Please re-enter a valid Server API Key.`, true);
+                                ZappyApp.ui.showView('server-key-input'); // Go back to key input screen
+                                throw new Error(`API Forbidden/Unauthorized: ${errorText}`); // Stop further processing
+                            }
                             throw new Error(`API call failed with status ${response.status}: ${errorText}`);
                         }
 
-                        // For endpoints that might not return JSON (e.g., a simple success string),
-                        // or for 204 No Content, check content-type.
                         const contentType = response.headers.get('content-type');
                         if (contentType && contentType.includes('application/json')) {
                             return await response.json();
                         } else {
-                            // If not JSON, return raw text or an empty object if no content.
                             const text = await response.text();
-                            return text ? { message: text } : {}; // Wrap in an object for consistent handling
+                            return text ? { message: text } : {};
                         }
 
                     } catch (error) {
                         console.error(`Error during ER:LC API call to ${endpoint}:`, error);
-                        throw error; // Re-throw to be caught by the calling function
+                        // Do not re-show server key input if it's just a network error or other generic error
+                        if (!error.message.includes('API Forbidden/Unauthorized')) {
+                            ZappyApp.panel.appendLog(`[ERROR] API Call Error to ${endpoint}: ${error.message}`);
+                        }
+                        throw error;
                     }
                 }
             },
@@ -599,22 +639,24 @@
             init() {
                 // Centralized event listener setup
                 this.auth.bindEvents();
+                this.serverKeyInput.bindEvents(); // Bind new server key input events
                 this.dashboard.bindEvents();
                 this.panel.bindEvents();
 
                 // The primary auth state listener that drives the app
                 onAuthStateChanged(auth, async (user) => {
+                    if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
                     if (user) {
                         ZappyApp.state.currentUser = user;
                         ZappyApp.ui.updateUserInfo(user);
-                        ZappyApp.ui.showView('dashboard');
-                        await ZappyApp.dashboard.fetchUserServers();
+                        // If user is logged in, show the API key input screen first
+                        ZappyApp.ui.showView('server-key-input');
                     } else {
                         ZappyApp.state.currentUser = null;
                         ZappyApp.state.currentServer = null;
-                        ZappyApp.ui.showView('auth');
-                        // Clear any ongoing listeners when logging out
-                        ZappyApp.panel.cleanup();
+                        ZappyApp.state.activeServerKey = null; // Clear active key on logout
+                        ZappyApp.ui.showView('auth'); // Go to Firebase login/register
+                        ZappyApp.panel.cleanup(); // Clean up any active listeners
                     }
                     if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                 });
@@ -626,13 +668,17 @@
             // --- UI MANAGEMENT ---
             ui: {
                 showView(viewName) {
-                    // Defensive checks before adding 'hidden' class
+                    // Hide all major sections first
                     if (ZappyApp.elements.authSection) ZappyApp.elements.authSection.classList.add('hidden');
+                    if (ZappyApp.elements.serverKeyInputSection) ZappyApp.elements.serverKeyInputSection.classList.add('hidden');
                     if (ZappyApp.elements.dashboardSection) ZappyApp.elements.dashboardSection.classList.add('hidden');
                     if (ZappyApp.elements.serverPanelSection) ZappyApp.elements.serverPanelSection.classList.add('hidden');
 
+                    // Show the requested section
                     if (viewName === 'auth') {
                         if (ZappyApp.elements.authSection) ZappyApp.elements.authSection.classList.remove('hidden');
+                    } else if (viewName === 'server-key-input') {
+                        if (ZappyApp.elements.serverKeyInputSection) ZappyApp.elements.serverKeyInputSection.classList.remove('hidden');
                     } else if (viewName === 'dashboard') {
                         if (ZappyApp.elements.dashboardSection) ZappyApp.elements.dashboardSection.classList.remove('hidden');
                         ZappyApp.panel.cleanup(); // Clean up panel state when going back
@@ -688,6 +734,8 @@
                         console.error("Initial sign-in failed:", error);
                         ZappyApp.ui.showView('auth'); // Show manual login if token fails
                     } finally {
+                        // The `onAuthStateChanged` listener will handle showing the correct view
+                        // based on user login status, including the new API key input screen.
                         if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                     }
                 },
@@ -707,7 +755,7 @@
                         } else {
                             await signInWithEmailAndPassword(auth, email, pass);
                         }
-                        // Auth state listener handles view change on success
+                        // onAuthStateChanged listener will handle view change to 'server-key-input'
                     } catch (error) {
                         ZappyApp.ui.displayMessage('auth-error', error.message, true);
                         console.error("Authentication Error:", error);
@@ -758,7 +806,7 @@
                         if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
                         try {
                             await signOut(auth);
-                            // Auth state listener handles view change
+                            // `onAuthStateChanged` listener handles view change to 'auth-section' and cleanup.
                         } catch (error) {
                             console.error("Logout failed:", error);
                             // Optionally display a message
@@ -766,6 +814,35 @@
                             if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                         }
                     });
+                }
+            },
+
+            // --- SERVER KEY INPUT MODULE (New) ---
+            serverKeyInput: {
+                handleServerKeySubmit(e) {
+                    e.preventDefault();
+                    const key = ZappyApp.elements.apiKeyInput ? ZappyApp.elements.apiKeyInput.value.trim() : '';
+                    if (ZappyApp.elements.serverKeyError) ZappyApp.elements.serverKeyError.textContent = ''; // Clear previous errors
+
+                    if (!key) {
+                        ZappyApp.ui.displayMessage('server-key-error', 'ER:LC Server API Key cannot be empty.', true);
+                        return;
+                    }
+
+                    // Store the key in local state for direct API calls
+                    ZappyApp.state.activeServerKey = key;
+                    ZappyApp.ui.displayMessage('server-key-error', 'API Key saved locally. Loading dashboard...', false);
+
+                    // Proceed to the dashboard
+                    ZappyApp.dashboard.fetchUserServers();
+                    ZappyApp.ui.showView('dashboard');
+                },
+
+                bindEvents() {
+                    const serverKeyForm = document.getElementById('server-key-form');
+                    if (serverKeyForm) {
+                        serverKeyForm.addEventListener('submit', this.handleServerKeySubmit.bind(this));
+                    }
                 }
             },
 
@@ -778,19 +855,20 @@
                     }
 
                     const serverListEl = ZappyApp.elements.serverList;
-                    if (serverListEl) serverListEl.innerHTML = '<p class="text-slate-400">Loading your servers...</p>';
+                    if (serverListEl) serverListEl.innerHTML = '<p class="text-slate-400">Loading your server groups...</p>';
                     if (ZappyApp.elements.serverListError) ZappyApp.elements.serverListError.textContent = ''; // Clear previous errors
 
                     // Clear previous listeners for this section
                     ZappyApp.state.unsubscribeListeners.forEach(unsub => unsub());
                     ZappyApp.state.unsubscribeListeners = [];
 
+                    // Fetch server groups the current user is a member of
                     const q = query(collection(db, `/artifacts/${appId}/public/data/servers`),
                                     where('members', 'array-contains', ZappyApp.state.currentUser.uid));
 
                     const unsubscribe = onSnapshot(q, (snapshot) => {
                         if (snapshot.empty) {
-                            if (serverListEl) serverListEl.innerHTML = '<p class="text-slate-400">You have no servers. Create or join one!</p>';
+                            if (serverListEl) serverListEl.innerHTML = '<p class="text-slate-400">You have no Zappy server groups. Create or join one!</p>';
                             return;
                         }
                         if (serverListEl) serverListEl.innerHTML = ''; // Clear existing content
@@ -808,8 +886,8 @@
                         });
                     }, (error) => {
                         console.error("Error fetching servers:", error);
-                        ZappyApp.ui.displayMessage('server-list-error', 'Could not load servers due to a permission error or network issue.', true);
-                        if (serverListEl) serverListEl.innerHTML = '<p class="text-red-400">Failed to load servers.</p>';
+                        ZappyApp.ui.displayMessage('server-list-error', 'Could not load server groups due to a permission error or network issue.', true);
+                        if (serverListEl) serverListEl.innerHTML = '<p class="text-red-400">Failed to load server groups.</p>';
                     });
                     ZappyApp.state.unsubscribeListeners.push(unsubscribe); // Store for cleanup
                 },
@@ -824,11 +902,11 @@
                                 ZappyApp.state.currentServer = { id: serverDoc.id, ...serverDoc.data() };
                                 ZappyApp.panel.init();
                             } else {
-                                ZappyApp.ui.displayMessage('server-list-error', 'Server not found.', true);
+                                ZappyApp.ui.displayMessage('server-list-error', 'Server group not found.', true);
                             }
                         } catch (error) {
                             console.error("Error selecting server:", error);
-                            ZappyApp.ui.displayMessage('server-list-error', 'Failed to open server due to a permission error or network issue.', true);
+                            ZappyApp.ui.displayMessage('server-list-error', 'Failed to open server group due to a permission error or network issue.', true);
                         } finally {
                             if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                         }
@@ -840,13 +918,13 @@
                     if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
                     const serverName = document.getElementById('server-name')?.value;
                     const serverCode = document.getElementById('server-code')?.value.toUpperCase(); // Ensure uppercase for codes
-                    const apiKey = document.getElementById('api-key')?.value;
+                    const apiKeyForRecord = document.getElementById('api-key')?.value; // This is the key for Firebase record
                     const createServerErrorEl = document.getElementById('create-server-error');
 
                     if (createServerErrorEl) createServerErrorEl.textContent = ''; // Clear previous errors
 
-                    if (!serverName || !serverCode || !apiKey) {
-                        ZappyApp.ui.displayMessage('create-server-error', 'All fields are required.', true);
+                    if (!serverName || !serverCode) { // API Key is optional for Zappy group creation
+                        ZappyApp.ui.displayMessage('create-server-error', 'Server group name and code are required.', true);
                         if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                         return;
                     }
@@ -875,7 +953,7 @@
                         await setDoc(doc(db, `/artifacts/${appId}/public/data/servers`, serverCode), {
                             name: serverName,
                             code: serverCode,
-                            apiKey: apiKey, // In a real app, this should be encrypted or stored securely on a backend.
+                            apiKey: apiKeyForRecord || null, // Store for owner's record, if provided
                             ownerId: ZappyApp.state.currentUser.uid,
                             members: [ZappyApp.state.currentUser.uid], // Owner is automatically a member
                             joinRequests: [],
@@ -883,14 +961,14 @@
                             lastActivity: serverTimestamp()
                         });
 
-                        ZappyApp.ui.displayMessage('create-server-error', 'Server created successfully!', false);
+                        ZappyApp.ui.displayMessage('create-server-error', 'Server group created successfully!', false);
                         if (ZappyApp.elements.createServerModal) ZappyApp.elements.createServerModal.classList.add('hidden');
                         const createServerForm = document.getElementById('create-server-form');
                         if (createServerForm) createServerForm.reset(); // Clear form
                         // No need to fetch servers again, onSnapshot listener will update
                     } catch (error) {
-                        console.error("Error creating server:", error);
-                        ZappyApp.ui.displayMessage('create-server-error', `Error creating server: ${error.message}. Please check permissions.`, true);
+                        console.error("Error creating server group:", error);
+                        ZappyApp.ui.displayMessage('create-server-error', `Error creating server group: ${error.message}. Please check permissions.`, true);
                     } finally {
                         if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                     }
@@ -914,7 +992,7 @@
                         const serverDoc = await getDoc(serverDocRef);
 
                         if (!serverDoc.exists()) {
-                            ZappyApp.ui.displayMessage('join-server-error', 'Server not found with that code.', true);
+                            ZappyApp.ui.displayMessage('join-server-error', 'Server group not found with that code.', true);
                             return;
                         }
 
@@ -922,12 +1000,12 @@
                         const userId = ZappyApp.state.currentUser.uid;
 
                         if (serverData.members.includes(userId)) {
-                            ZappyApp.ui.displayMessage('join-server-success', 'You are already a member of this server.', false);
+                            ZappyApp.ui.displayMessage('join-server-success', 'You are already a member of this server group.', false);
                             return;
                         }
 
                         if (serverData.joinRequests && serverData.joinRequests.includes(userId)) {
-                            ZappyApp.ui.displayMessage('join-server-success', 'You have already sent a join request to this server.', false);
+                            ZappyApp.ui.displayMessage('join-server-success', 'You have already sent a join request to this server group.', false);
                             return;
                         }
 
@@ -939,7 +1017,7 @@
                         ZappyApp.ui.displayMessage('join-server-success', 'Join request sent! Awaiting owner approval.', false);
                         if (joinCodeInput) joinCodeInput.value = '';
                     } catch (error) {
-                        console.error("Error joining server:", error);
+                        console.error("Error joining server group:", error);
                         ZappyApp.ui.displayMessage('join-server-error', `Error sending join request: ${error.message}. Please check permissions.`, true);
                     } finally {
                         if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
@@ -981,9 +1059,11 @@
                     if (ZappyApp.elements.panelServerName) ZappyApp.elements.panelServerName.textContent = server.name;
                     if (ZappyApp.elements.panelServerCode) ZappyApp.elements.panelServerCode.textContent = `Code: ${server.code}`;
                     if (ZappyApp.elements.editServerNameInput) ZappyApp.elements.editServerNameInput.value = server.name;
-                    // When panel initializes, populate the API key field for the owner
+                    // For the Admin tab, populate the Firebase-stored API key for the owner
                     if (ZappyApp.elements.editApiKeyInput && server.ownerId === ZappyApp.state.currentUser.uid) {
                         ZappyApp.elements.editApiKeyInput.value = server.apiKey || '';
+                        ZappyApp.elements.editApiKeyInput.removeAttribute('disabled');
+                        ZappyApp.elements.saveApiKeyBtn.removeAttribute('disabled');
                     } else if (ZappyApp.elements.editApiKeyInput) {
                         ZappyApp.elements.editApiKeyInput.value = '********'; // Mask for non-owners
                         ZappyApp.elements.editApiKeyInput.setAttribute('disabled', 'true');
@@ -993,9 +1073,9 @@
 
                     this.setupOwnerControls(server);
                     this.setupTabListeners();
-                    this.startRealtimeListeners(); // Start listeners for logs, players, shifts, and active shift
+                    this.startRealtimeListeners(); // Start listeners for Zappy logs, players, shifts, and active shift
 
-                    // Initial refresh of API data when panel opens
+                    // Initial refresh of ER:LC API data when panel opens
                     this.refreshStats();
                     this.refreshPlayers();
                     this.refreshVehicles();
@@ -1043,7 +1123,7 @@
                         if (ZappyApp.elements.startShiftWaveBtn) ZappyApp.elements.startShiftWaveBtn.classList.remove('hidden');
                         if (ZappyApp.elements.endShiftWaveBtn) ZappyApp.elements.endShiftWaveBtn.classList.remove('hidden');
 
-                        // Ensure API key input is enabled for owner
+                        // Ensure API key input is enabled for owner (for storing in Firebase)
                         if (ZappyApp.elements.editApiKeyInput) ZappyApp.elements.editApiKeyInput.removeAttribute('disabled');
                         if (ZappyApp.elements.saveApiKeyBtn) ZappyApp.elements.saveApiKeyBtn.removeAttribute('disabled');
                     } else {
@@ -1070,6 +1150,18 @@
                 handleTabClick(e) {
                     const tabName = e.target.dataset.tab;
                     ZappyApp.ui.showTab(tabName);
+                    // Fetch data specific to the tab when activated
+                    if (tabName === 'killlogs') {
+                        ZappyApp.panel.refreshKillLogs();
+                    } else if (tabName === 'commandlogs') {
+                        ZappyApp.panel.refreshCommandLogs(); // This is for Zappy's internal command logs
+                    } else if (tabName === 'vehicles') {
+                        ZappyApp.panel.refreshVehicles();
+                    } else if (tabName === 'players') {
+                        ZappyApp.panel.refreshPlayers();
+                    } else if (tabName === 'main') {
+                        ZappyApp.panel.refreshStats();
+                    }
                 },
 
                 // Real-time listeners for panel data
@@ -1082,21 +1174,18 @@
                     const unsubscribeServerDoc = onSnapshot(serverDocRef, (docSnap) => {
                         if (docSnap.exists()) {
                             const data = docSnap.data();
-                            // Update currentServer state to reflect changes in Firebase, including API Key
+                            // Update currentServer state to reflect changes in Firebase
                             ZappyApp.state.currentServer = { id: docSnap.id, ...data };
                             
-                            // Only update API key input field if current user is owner and the Admin tab is active
-                            if (ZappyApp.state.currentServer.ownerId === userId) {
-                                // Update API key field in real-time only if the tab is active
-                                const ownerTab = document.getElementById('tab-owner');
-                                if (ownerTab && !ownerTab.classList.contains('hidden')) {
-                                    if (ZappyApp.elements.editApiKeyInput) {
-                                        ZappyApp.elements.editApiKeyInput.value = data.apiKey || '';
-                                    }
+                            // Only update API key input field in Admin tab if current user is owner
+                            const ownerTab = document.getElementById('tab-owner');
+                            if (ownerTab && !ownerTab.classList.contains('hidden') && ZappyApp.state.currentServer.ownerId === userId) {
+                                if (ZappyApp.elements.editApiKeyInput) {
+                                    ZappyApp.elements.editApiKeyInput.value = data.apiKey || '';
                                 }
-                                this.displayServerMembers(data.members || []);
-                                this.displayOwnerJoinRequests(data.joinRequests || []);
                             }
+                            this.displayServerMembers(data.members || []);
+                            this.displayOwnerJoinRequests(data.joinRequests || []);
                         }
                     }, (error) => {
                         console.error("Error listening to server document:", error);
@@ -1104,12 +1193,12 @@
                     ZappyApp.state.unsubscribeListeners.push(unsubscribeServerDoc);
 
 
-                    // Log Output Listener (Firebase)
+                    // Log Output Listener (Firebase - Zappy's internal logs)
                     const unsubscribeLog = onSnapshot(collection(db, `/artifacts/${appId}/public/data/servers/${serverId}/logs`),
                         (snapshot) => {
                             if (ZappyApp.elements.logOutput) ZappyApp.elements.logOutput.innerHTML = '';
                             if (snapshot.empty) {
-                                if (ZappyApp.elements.logOutput) ZappyApp.elements.logOutput.innerHTML = '<p class="text-slate-500">No recent events.</p>';
+                                if (ZappyApp.elements.logOutput) ZappyApp.elements.logOutput.innerHTML = '<p class="text-slate-500">No recent Zappy events.</p>';
                                 return;
                             }
                             snapshot.docs.sort((a, b) => b.data().timestamp.toDate() - a.data().timestamp.toDate()) // Sort newest first
@@ -1122,7 +1211,7 @@
                             if (ZappyApp.elements.logOutput) ZappyApp.elements.logOutput.scrollTop = ZappyApp.elements.logOutput.scrollHeight; // Scroll to bottom
                         }, (error) => {
                             console.error("Error listening to logs:", error);
-                            if (ZappyApp.elements.logOutput) ZappyApp.elements.logOutput.innerHTML = '<p class="text-red-400">Failed to load logs (permission error).</p>';
+                            if (ZappyApp.elements.logOutput) ZappyApp.elements.logOutput.innerHTML = '<p class="text-red-400">Failed to load Zappy events (permission error).</p>';
                         }
                     );
                     ZappyApp.state.unsubscribeListeners.push(unsubscribeLog);
@@ -1199,8 +1288,8 @@
                     });
                     ZappyApp.state.unsubscribeListeners.push(unsubscribeShiftWaveStatus);
 
-                    // Command Logs Listener (Firebase) - This was already listening directly to Firebase.
-                    this.refreshCommandLogs(); // Initial load for command logs
+                    // Command Logs Listener (Firebase) - This handles Zappy's internal command audit logs.
+                    this.refreshCommandLogs();
                 },
 
                 async handleJoinRequestAction(action, e) {
@@ -1269,7 +1358,7 @@
                     if (ZappyApp.elements.serverMembersMessage) ZappyApp.elements.serverMembersMessage.textContent = ''; // Clear previous messages
 
                     if (members.length === 0) {
-                        if (listEl) listEl.innerHTML = '<p class="text-slate-500">No members in this server.</p>';
+                        if (listEl) listEl.innerHTML = '<p class="text-slate-500">No members in this server group.</p>';
                         return;
                     }
 
@@ -1322,7 +1411,7 @@
 
                     ZappyApp.utils.showConfirmModal(
                         'Kick Member',
-                        `Are you sure you want to kick ${memberIdToKick} from the server?`,
+                        `Are you sure you want to kick ${memberIdToKick} from the server group?`,
                         async () => {
                             if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
                             try {
@@ -1490,8 +1579,8 @@
                     const commandInput = ZappyApp.elements.commandInput;
                     const commandResponseEl = ZappyApp.elements.commandResponse;
                     const command = commandInput ? commandInput.value.trim() : '';
-                    const serverId = ZappyApp.state.currentServer.id;
-                    const apiKey = ZappyApp.state.currentServer.apiKey;
+                    const serverId = ZappyApp.state.currentServer.id; // Zappy's server ID for logging
+                    const activeKey = ZappyApp.state.activeServerKey; // Use the active session key
 
                     if (commandResponseEl) commandResponseEl.textContent = '';
 
@@ -1504,9 +1593,9 @@
                         return;
                     }
 
-                    if (!apiKey) {
+                    if (!activeKey) {
                         if (commandResponseEl) {
-                            commandResponseEl.textContent = 'Cannot execute command: Server API Key is missing. Please set it in Admin tab.';
+                            commandResponseEl.textContent = 'Cannot execute command: ER:LC Server API Key is not set.';
                             commandResponseEl.classList.remove('text-green-400', 'text-red-400');
                             commandResponseEl.classList.add('text-yellow-400');
                         }
@@ -1521,28 +1610,28 @@
                     if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
 
                     try {
-                        const apiResponse = await ZappyApp.utils.callErlcApi('/commands/execute', apiKey, {
+                        const apiResponse = await ZappyApp.utils.callErlcApi('/server/command', { // Endpoint from script.js
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${apiKey}` // Sending API Key directly
+                                'Server-Key': activeKey // Use Server-Key header as per script.js
                             },
-                            body: JSON.stringify({ command }) // ER:LC API expects 'command' in the body
+                            body: JSON.stringify({ command: command }) // Body structure from script.js
                         });
 
                         let responseMessage = '';
                         let status = '';
 
-                        // Assuming ER:LC API returns a 'success' or 'error' message/status
-                        if (apiResponse && apiResponse.success) { // Adjust based on actual API response structure
-                            responseMessage = `Command executed successfully: ${apiResponse.message || 'No specific message.'}`;
-                            status = 'success';
+                        // Based on script.js example, a 200 status is success, otherwise it's a failure
+                        if (apiResponse && apiResponse.message) { // Assuming message field exists for success/error
+                            responseMessage = `Command response: ${apiResponse.message}`;
+                            status = 'success'; // Assume success if a message is returned after a non-error HTTP status
                             if (commandResponseEl) {
                                 commandResponseEl.classList.remove('text-red-400', 'text-slate-400');
                                 commandResponseEl.classList.add('text-green-400');
                             }
                         } else {
-                            responseMessage = `Command failed: ${apiResponse ? (apiResponse.message || 'Unknown error from ER:LC API.') : 'Unknown error.'}`;
+                            responseMessage = `Command failed: Unknown response from ER:LC API.`;
                             status = 'failed';
                             if (commandResponseEl) {
                                 commandResponseEl.classList.remove('text-green-400', 'text-slate-400');
@@ -1553,12 +1642,12 @@
                         if (commandInput) commandInput.value = ''; // Clear input
 
                         // Log command to Firestore for audit
-                        await addDoc(collection(db, `/artifacts/${appId}/public/data/servers/${ZappyApp.state.currentServer.id}/commandLogs`), {
+                        await addDoc(collection(db, `/artifacts/${appId}/public/data/servers/${serverId}/commandLogs`), {
                             command: command,
                             executedBy: ZappyApp.state.currentUser.uid,
                             timestamp: serverTimestamp(),
                             status: status,
-                            errorMessage: (status === 'failed') ? (apiResponse ? (apiResponse.message || 'N/A') : 'API call failed') : null
+                            erlcApiResponse: apiResponse ? JSON.stringify(apiResponse) : 'No response body'
                         });
 
                     } catch (error) {
@@ -1568,7 +1657,7 @@
                             commandResponseEl.classList.add('text-red-400');
                          }
                          // Log error to Firestore
-                         await addDoc(collection(db, `/artifacts/${appId}/public/data/servers/${ZappyApp.state.currentServer.id}/commandLogs`), {
+                         await addDoc(collection(db, `/artifacts/${appId}/public/data/servers/${serverId}/commandLogs`), {
                             command: command,
                             executedBy: ZappyApp.state.currentUser.uid,
                             timestamp: serverTimestamp(),
@@ -1589,12 +1678,12 @@
                     if (ZappyApp.elements.ownerSettingsError) ZappyApp.elements.ownerSettingsError.textContent = '';
 
                     if (!newName) {
-                        ZappyApp.ui.displayMessage('owner-settings-error', 'Server name cannot be empty.', true);
+                        ZappyApp.ui.displayMessage('owner-settings-error', 'Server group name cannot be empty.', true);
                         return;
                     }
 
                     if (newName === ZappyApp.state.currentServer.name) {
-                        ZappyApp.ui.displayMessage('owner-settings-success', 'Server name is already up to date.', false);
+                        ZappyApp.ui.displayMessage('owner-settings-success', 'Server group name is already up to date.', false);
                         return;
                     }
 
@@ -1603,16 +1692,16 @@
                         await updateDoc(serverDocRef, { name: newName });
                         ZappyApp.state.currentServer.name = newName; // Update local state
                         if (ZappyApp.elements.panelServerName) ZappyApp.elements.panelServerName.textContent = newName; // Update panel header
-                        ZappyApp.ui.displayMessage('owner-settings-success', 'Server name updated successfully!', false);
+                        ZappyApp.ui.displayMessage('owner-settings-success', 'Server group name updated successfully!', false);
                     } catch (error) {
                         console.error("Error updating server name:", error);
-                        ZappyApp.ui.displayMessage('owner-settings-error', `Failed to update server name: ${error.message}`, true);
+                        ZappyApp.ui.displayMessage('owner-settings-error', `Failed to update server group name: ${error.message}`, true);
                     } finally {
                         if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                     }
                 },
 
-                async handleSaveApiKey() {
+                async handleSaveApiKeyForFirebaseRecord() { // Renamed for clarity
                     const newApiKey = ZappyApp.elements.editApiKeyInput?.value.trim();
                     const serverId = ZappyApp.state.currentServer.id;
                     const serverDocRef = doc(db, `/artifacts/${appId}/public/data/servers`, serverId);
@@ -1620,24 +1709,20 @@
                     if (ZappyApp.elements.ownerApiKeySuccess) ZappyApp.elements.ownerApiKeySuccess.textContent = '';
                     if (ZappyApp.elements.ownerApiKeyError) ZappyApp.elements.ownerApiKeyError.textContent = '';
 
-                    if (!newApiKey) {
-                        ZappyApp.ui.displayMessage('owner-api-key-error', 'API Key cannot be empty.', true);
-                        return;
-                    }
-
+                    // Allow empty string if user wants to clear it from Firebase record
                     if (newApiKey === ZappyApp.state.currentServer.apiKey) {
-                        ZappyApp.ui.displayMessage('owner-api-key-success', 'API Key is already up to date.', false);
+                        ZappyApp.ui.displayMessage('owner-api-key-success', 'API Key (in Zappy DB) is already up to date.', false);
                         return;
                     }
 
                     if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
                     try {
-                        await updateDoc(serverDocRef, { apiKey: newApiKey });
-                        ZappyApp.state.currentServer.apiKey = newApiKey; // Update local state
-                        ZappyApp.ui.displayMessage('owner-api-key-success', 'API Key updated successfully!', false);
+                        await updateDoc(serverDocRef, { apiKey: newApiKey || null }); // Save null if empty
+                        ZappyApp.state.currentServer.apiKey = newApiKey || null; // Update local state for record
+                        ZappyApp.ui.displayMessage('owner-api-key-success', 'API Key (in Zappy DB) updated successfully!', false);
                     } catch (error) {
-                        console.error("Error updating API Key:", error);
-                        ZappyApp.ui.displayMessage('owner-api-key-error', `Failed to update API Key: ${error.message}`, true);
+                        console.error("Error updating API Key (in Firebase):", error);
+                        ZappyApp.ui.displayMessage('owner-api-key-error', `Failed to update API Key (in Zappy DB): ${error.message}`, true);
                     } finally {
                         if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                     }
@@ -1646,8 +1731,8 @@
 
                 handleDeleteServer() {
                     ZappyApp.utils.showConfirmModal(
-                        'Delete Server',
-                        'This action is irreversible and will delete all server data, including member lists, join requests, and logs. Are you absolutely sure?',
+                        'Delete Server Group',
+                        'This action is irreversible and will delete all Zappy server group data, including member lists, join requests, and logs. Are you absolutely sure?',
                         async () => {
                             if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
                             const serverId = ZappyApp.state.currentServer.id;
@@ -1669,19 +1754,17 @@
                                 await deleteCollection(`/artifacts/${appId}/public/data/servers/${serverId}/logs`); // Ensure logs are also deleted
                                 await deleteCollection(`/artifacts/${appId}/public/data/servers/${serverId}/settings`); // Delete settings subcollection
 
-                                // Add more subcollections here as they are added (vehicles, killlogs etc.)
-
                                 await batch.commit(); // Commit deletions of subcollection documents
 
                                 // Now delete the server document itself
                                 await deleteDoc(serverDocRef);
 
                                 ZappyApp.state.currentServer = null; // Clear current server state
-                                ZappyApp.ui.displayMessage('server-list-error', 'Server deleted successfully.', false); // Display message on dashboard
+                                ZappyApp.ui.displayMessage('server-list-error', 'Server group deleted successfully.', false); // Display message on dashboard
                                 ZappyApp.ui.showView('dashboard');
                             } catch (error) {
-                                console.error("Error deleting server:", error);
-                                ZappyApp.ui.displayMessage('owner-settings-error', `Failed to delete server: ${error.message}`, true);
+                                console.error("Error deleting server group:", error);
+                                ZappyApp.ui.displayMessage('owner-settings-error', `Failed to delete server group: ${error.message}`, true);
                             } finally {
                                 if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                             }
@@ -1691,27 +1774,25 @@
 
                 async refreshStats() {
                     const outputEl = ZappyApp.elements.serverStatsOutput;
-                    const serverId = ZappyApp.state.currentServer.id;
-                    const apiKey = ZappyApp.state.currentServer.apiKey;
-
                     if (outputEl) outputEl.innerHTML = '<p class="text-slate-400">Fetching server statistics from ER:LC API...</p>';
 
                     try {
-                        const data = await ZappyApp.utils.callErlcApi('/server-info', apiKey, { // Adjusted endpoint
-                            method: 'GET'
-                        });
+                        const data = await ZappyApp.utils.callErlcApi('/server', { method: 'GET' }); // Endpoint from script.js
 
-                        // Assuming ER:LC API '/server-info' returns: { playersOnline: 25, maxPlayers: 50, vehicles: 15, uptime: "72h", status: "online", region: "US-East" }
-                        if (data && outputEl) {
-                            outputEl.innerHTML = `
-                                <p><strong>Status:</strong> <span class="${data.status === 'online' ? 'text-green-400' : 'text-red-400'}">${(data.status || 'unknown').toUpperCase()}</span></p>
-                                <p><strong>Players:</strong> ${data.playersOnline || 0}/${data.maxPlayers || 0}</p>
-                                <p><strong>Active Vehicles:</strong> ${data.vehicles || 0}</p>
-                                <p><strong>Region:</strong> ${data.region || 'N/A'}</p>
-                                <p><strong>Total Uptime:</strong> ${data.uptime || 'N/A'}</p>
-                            `;
+                        // Based on script.js: { Name, CurrentPlayers, MaxPlayers, JoinKey, AccVerifiedReq, TeamBalance }
+                        if (data && typeof data === 'object' && Object.keys(data).length > 0) {
+                            if (outputEl) {
+                                outputEl.innerHTML = `
+                                    <p><strong>Server Name:</strong> ${data.Name || 'N/A'}</p>
+                                    <p><strong>Current Players:</strong> ${data.CurrentPlayers || 0}</p>
+                                    <p><strong>Max Players:</strong> ${data.MaxPlayers || 0}</p>
+                                    <p><strong>Join Key:</strong> ${data.JoinKey || 'N/A'}</p>
+                                    <p><strong>Account Verified Required:</strong> ${data.AccVerifiedReq !== undefined ? (data.AccVerifiedReq ? 'Yes' : 'No') : 'N/A'}</p>
+                                    <p><strong>Team Balance Enabled:</strong> ${data.TeamBalance !== undefined ? (data.TeamBalance ? 'Yes' : 'No') : 'N/A'}</p>
+                                `;
+                            }
                         } else if (outputEl) {
-                            outputEl.innerHTML = '<p class="text-red-400">Failed to load server statistics from ER:LC API.</p>';
+                            outputEl.innerHTML = '<p class="text-red-400">Failed to load server statistics or no data returned from ER:LC API.</p>';
                         }
                     } catch (error) {
                         console.error("Error refreshing stats from ER:LC API:", error);
@@ -1723,39 +1804,62 @@
                     const playersListEl = ZappyApp.elements.playerList;
                     const playerCountEl = ZappyApp.elements.playerCount;
                     const queueCountEl = ZappyApp.elements.queueCount;
-                    const serverId = ZappyApp.state.currentServer.id;
-                    const apiKey = ZappyApp.state.currentServer.apiKey;
 
                     if (playersListEl) playersListEl.innerHTML = '<p class="text-slate-400">Fetching player data from ER:LC API...</p>';
                     if (playerCountEl) playerCountEl.textContent = '...';
                     if (queueCountEl) queueCountEl.textContent = '...';
 
                     try {
-                        const data = await ZappyApp.utils.callErlcApi('/players', apiKey, {
-                            method: 'GET'
-                        });
+                        const onlinePlayers = await ZappyApp.utils.callErlcApi('/server/players', { method: 'GET' }); // Endpoint from script.js
+                        const queuePlayers = await ZappyApp.utils.callErlcApi('/server/queue', { method: 'GET' }); // Endpoint from script.js
 
-                        // Assuming ER:LC API '/players' returns: { onlinePlayers: [{name: "...", ping: ..., job: "..."}, ...], queueSize: ... }
-                        if (data) {
+                        if (onlinePlayers && Array.isArray(onlinePlayers)) {
                             if (playersListEl) {
                                 playersListEl.innerHTML = '';
-                                if (data.onlinePlayers && data.onlinePlayers.length > 0) {
-                                    data.onlinePlayers.forEach(player => {
-                                        playersListEl.insertAdjacentHTML('beforeend', `<li>${player.name || 'Unknown'} - ${player.job || 'N/A'} (Ping: ${player.ping || 'N/A'}ms)</li>`);
+                                if (onlinePlayers.length > 0) {
+                                    onlinePlayers.forEach(player => {
+                                        if (player && player.Player) {
+                                            const parts = player.Player.split(':');
+                                            const name = parts[0] || 'Unknown Player';
+                                            const id = parts[1] ? ` (ID: ${parts[1]})` : '';
+                                            let playerInfo = `<strong>${name}</strong>${id}`;
+                                            if (player.Permission && player.Permission !== 'Normal') playerInfo += ` [${player.Permission}]`;
+                                            if (player.Team) playerInfo += ` (${player.Team})`;
+                                            if (player.Callsign) playerInfo += ` - Callsign: ${player.Callsign}`;
+                                            playersListEl.insertAdjacentHTML('beforeend', `<li>${playerInfo}</li>`);
+                                        }
                                     });
                                 } else {
-                                    playersListEl.innerHTML = '<p class="text-slate-500">No players online.</p>';
+                                    playersListEl.innerHTML = '<p class="text-slate-500">No players currently online.</p>';
                                 }
                             }
-                            if (playerCountEl) playerCountEl.textContent = data.onlinePlayers ? data.onlinePlayers.length : 0;
-                            if (queueCountEl) queueCountEl.textContent = data.queueSize || 0;
+                            if (playerCountEl) playerCountEl.textContent = onlinePlayers.length;
                         } else {
-                            if (playersListEl) playersListEl.innerHTML = '<p class="text-red-400">Failed to load player data from ER:LC API.</p>';
-                            if (playerCountEl) playerCountEl.textContent = 'Error';
+                             if (playersListEl) playersListEl.innerHTML = '<p class="text-red-400">Failed to load online player data from ER:LC API.</p>';
+                             if (playerCountEl) playerCountEl.textContent = 'Error';
+                        }
+
+                        // Update queue separately
+                        if (queuePlayers && Array.isArray(queuePlayers)) {
+                            const queueListUl = document.getElementById('queue-list'); // Need to select this if it's not cached
+                            if (queueListUl) {
+                                queueListUl.innerHTML = '';
+                                if (queuePlayers.length > 0) {
+                                    queuePlayers.forEach(id => {
+                                        queueListUl.insertAdjacentHTML('beforeend', `<li>Player ID: ${id}</li>`);
+                                    });
+                                } else {
+                                    queueListUl.innerHTML = '<p class="text-slate-500">Queue is currently empty.</p>';
+                                }
+                            }
+                            if (queueCountEl) queueCountEl.textContent = queuePlayers.length;
+                        } else {
                             if (queueCountEl) queueCountEl.textContent = 'Error';
                         }
+
+
                     } catch (error) {
-                        console.error("Error refreshing players from ER:LC API:", error);
+                        console.error("Error refreshing players/queue from ER:LC API:", error);
                         if (playersListEl) playersListEl.innerHTML = `<p class="text-red-400">Error fetching players: ${error.message}</p>`;
                         if (playerCountEl) playerCountEl.textContent = 'Error';
                         if (queueCountEl) queueCountEl.textContent = 'Error';
@@ -1765,30 +1869,30 @@
 
                 async refreshVehicles() {
                     const vehiclesListEl = ZappyApp.elements.vehicleList;
-                    const serverId = ZappyApp.state.currentServer.id;
-                    const apiKey = ZappyApp.state.currentServer.apiKey;
-
                     if (vehiclesListEl) vehiclesListEl.innerHTML = '<p class="text-slate-400">Fetching vehicle data from ER:LC API...</p>';
 
                     try {
-                        const data = await ZappyApp.utils.callErlcApi('/vehicles', apiKey, {
-                            method: 'GET'
-                        });
+                        const data = await ZappyApp.utils.callErlcApi('/server/vehicles', { method: 'GET' }); // Endpoint from script.js
 
-                        // Assuming ER:LC API '/vehicles' returns: { activeVehicles: [{type: "...", owner: "...", location: "..."}, ...] }
-                        if (data) {
+                        // Based on script.js: { Name, Texture, Owner }
+                        if (data && Array.isArray(data)) {
                             if (vehiclesListEl) {
                                 vehiclesListEl.innerHTML = '';
-                                if (data.activeVehicles && data.activeVehicles.length > 0) {
-                                    data.activeVehicles.forEach(vehicle => {
-                                        vehiclesListEl.insertAdjacentHTML('beforeend', `<li>${vehicle.type || 'Unknown'} owned by ${vehicle.owner || 'N/A'} at ${vehicle.location || 'N/A'}</li>`);
+                                if (data.length > 0) {
+                                    data.forEach(vehicle => {
+                                        if (vehicle && vehicle.Name) {
+                                            let vehicleInfo = `<strong>${vehicle.Name}</strong>`;
+                                            if (vehicle.Texture) vehicleInfo += ` (Texture: ${vehicle.Texture})`;
+                                            if (vehicle.Owner) vehicleInfo += ` - Owner: ${vehicle.Owner}`;
+                                            vehiclesListEl.insertAdjacentHTML('beforeend', `<li>${vehicleInfo}</li>`);
+                                        }
                                     });
                                 } else {
                                     vehiclesListEl.innerHTML = '<p class="text-slate-500">No active vehicles.</p>';
                                 }
                             }
                         } else {
-                            if (vehiclesListEl) vehiclesListEl.innerHTML = '<p class="text-red-400">Failed to load vehicle data from ER:LC API.</p>';
+                            if (vehiclesListEl) vehiclesListEl.innerHTML = '<p class="text-red-400">Failed to load vehicle data or no data returned from ER:LC API.</p>';
                         }
                     } catch (error) {
                         console.error("Error refreshing vehicles from ER:LC API:", error);
@@ -1798,30 +1902,36 @@
 
                 async refreshKillLogs() {
                     const killLogListEl = ZappyApp.elements.killLogList;
-                    const serverId = ZappyApp.state.currentServer.id;
-                    const apiKey = ZappyApp.state.currentServer.apiKey;
-
                     if (killLogListEl) killLogListEl.innerHTML = '<p class="text-slate-400">Fetching kill logs from ER:LC API...</p>';
 
                     try {
-                        const data = await ZappyApp.utils.callErlcApi('/kill-logs', apiKey, { // Adjusted endpoint
-                            method: 'GET'
-                        });
+                        const data = await ZappyApp.utils.callErlcApi('/server/killlogs', { method: 'GET' }); // Endpoint from script.js
 
-                        // Assuming ER:LC API '/kill-logs' returns: { killLogs: [{killer: "...", victim: "...", weapon: "...", timestamp: "..."}, ...] }
-                        if (data) {
+                        // Based on script.js: { Killed, Killer, Timestamp }
+                        if (data && Array.isArray(data)) {
                             if (killLogListEl) {
                                 killLogListEl.innerHTML = '';
-                                if (data.killLogs && data.killLogs.length > 0) {
-                                    data.killLogs.forEach(log => {
-                                        killLogListEl.insertAdjacentHTML('beforeend', `<li>[${log.timestamp || 'N/A'}] ${log.killer || 'Unknown'} eliminated ${log.victim || 'Unknown'} with ${log.weapon || 'N/A'}.</li>`);
+                                if (data.length > 0) {
+                                    // Sort by Timestamp (assumed to be Unix timestamp in seconds from script.js)
+                                    data.sort((a, b) => b.Timestamp - a.Timestamp);
+                                    data.forEach(log => {
+                                        if (log.Killed && log.Timestamp) {
+                                            const timestamp = new Date(log.Timestamp * 1000).toLocaleString(); // Convert to milliseconds
+                                            const killer = log.Killer || 'Unknown/Environment';
+                                            const killedParts = log.Killed.split(':');
+                                            const killedName = killedParts[0] || 'Unknown Player';
+                                            const killerParts = killer.split(':');
+                                            const killerName = killerParts[0] || killer;
+
+                                            killLogListEl.insertAdjacentHTML('beforeend', `<div>[${timestamp}] ${killedName} was killed by ${killerName}.</div>`);
+                                        }
                                     });
                                 } else {
                                     killLogListEl.innerHTML = '<p class="text-slate-500">No kill logs available.</p>';
                                 }
                             }
                         } else {
-                            if (killLogListEl) killLogListEl.innerHTML = '<p class="text-red-400">Failed to load kill logs from ER:LC API.</p>';
+                            if (killLogListEl) killLogListEl.innerHTML = '<p class="text-red-400">Failed to load kill logs or no data returned from ER:LC API.</p>';
                         }
                     } catch (error) {
                         console.error("Error refreshing kill logs from ER:LC API:", error);
@@ -1830,14 +1940,14 @@
                 },
 
                 async refreshCommandLogs() {
-                    // This data is still fetched directly from Firebase as it represents actions within Zappy, not ER:LC game events.
+                    // This data is still fetched directly from Firebase as it represents Zappy's internal command audit logs, not ER:LC game events.
                     const serverId = ZappyApp.state.currentServer.id;
                     const commandLogsCollectionRef = collection(db, `/artifacts/${appId}/public/data/servers/${serverId}/commandLogs`);
                     const q = query(commandLogsCollectionRef);
                     onSnapshot(q, (snapshot) => {
                         if (ZappyApp.elements.commandLogList) ZappyApp.elements.commandLogList.innerHTML = '';
                         if (snapshot.empty) {
-                            if (ZappyApp.elements.commandLogList) ZappyApp.elements.commandLogList.innerHTML = '<p class="text-slate-500">No command logs available.</p>';
+                            if (ZappyApp.elements.commandLogList) ZappyApp.elements.commandLogList.innerHTML = '<p class="text-slate-500">No Zappy command logs available.</p>';
                             return;
                         }
                         snapshot.docs.sort((a, b) => b.data().timestamp.toDate() - a.data().timestamp.toDate())
@@ -1849,8 +1959,8 @@
                                 `);
                             });
                     }, (error) => {
-                        console.error("Error listening to command logs:", error);
-                        if (ZappyApp.elements.commandLogList) ZappyApp.elements.commandLogList.innerHTML = '<p class="text-red-400">Failed to load command logs (permission error).</p>';
+                        console.error("Error listening to Zappy command logs:", error);
+                        if (ZappyApp.elements.commandLogList) ZappyApp.elements.commandLogList.innerHTML = '<p class="text-red-400">Failed to load Zappy command logs (permission error).</p>';
                     });
                 },
 
@@ -1903,8 +2013,9 @@
                     if (executeCommandButton) executeCommandButton.addEventListener('click', this.handleExecuteCommand.bind(this));
                     const saveServerNameBtn = document.getElementById('save-server-name-btn');
                     if (saveServerNameBtn) saveServerNameBtn.addEventListener('click', this.handleSaveServerName.bind(this));
+                    // Bind the function to save API Key to Firebase record
                     const saveApiKeyBtn = document.getElementById('save-api-key-btn');
-                    if (saveApiKeyBtn) saveApiKeyBtn.addEventListener('click', this.handleSaveApiKey.bind(this)); // Bind new API key save button
+                    if (saveApiKeyBtn) saveApiKeyBtn.addEventListener('click', this.handleSaveApiKeyForFirebaseRecord.bind(this));
                     const deleteServerBtn = document.getElementById('delete-server-btn');
                     if (deleteServerBtn) deleteServerBtn.addEventListener('click', this.handleDeleteServer.bind(this));
 
