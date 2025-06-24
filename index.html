@@ -191,6 +191,7 @@
                     <div id="shift-controls" class="card p-4 flex items-center gap-4">
                         <p class="text-slate-300">Your Shift: <span id="shift-timer" class="font-mono">00:00:00</span></p>
                         <button id="shift-toggle-btn" class="btn btn-primary">Start Shift</button>
+                         <p id="shift-controls-message" class="text-sm mt-2 text-center"></p>
                     </div>
                 </div>
             </header>
@@ -306,6 +307,10 @@
                              <p id="owner-join-requests-list-error" class="text-red-400 text-sm mt-2 text-center"></p>
                         </div>
                         <div class="card">
+                            <h3 class="text-xl font-semibold text-white mb-4">Manage Server Members</h3>
+                            <div id="server-members-list" class="log-box mb-4">No members to display.</div>
+                             <p id="server-members-message" class="text-sm mt-2 text-center"></p>
+                            <hr class="border-slate-700 my-6">
                             <h3 class="text-xl font-semibold text-white mb-4">Server Settings</h3>
                             <p class="text-slate-400 text-sm mb-4">Only the server name can be changed after creation.</p>
                             <label for="edit-server-name" class="block mb-2">Server Name</label>
@@ -469,6 +474,9 @@
                 ownerJoinRequestsListError: document.getElementById('owner-join-requests-list-error'), // Added
                 ownerSettingsSuccess: document.getElementById('owner-settings-success'), // Added
                 ownerSettingsError: document.getElementById('owner-settings-error'), // Added
+                serverMembersList: document.getElementById('server-members-list'), // Added
+                serverMembersMessage: document.getElementById('server-members-message'), // Added
+                shiftControlsMessage: document.getElementById('shift-controls-message'), // Added
             },
 
             // --- UTILITIES ---
@@ -906,10 +914,11 @@
                     ZappyApp.elements.playerList.innerHTML = '';
                     ZappyApp.elements.joinRequestsDisplay.innerHTML = '';
                     ZappyApp.elements.shiftLeaderboard.innerHTML = 'Loading...';
-                    ZappyApp.elements.ownerJoinRequestsList.innerHTML = 'No pending requests.'; // Reset for owner tab
+                    ZappyApp.elements.ownerJoinRequestsList.innerHTML = '<p class="text-slate-500">No pending requests.</p>'; // Reset for owner tab
                     ZappyApp.elements.vehicleList.innerHTML = 'No vehicle data available.';
                     ZappyApp.elements.killLogList.innerHTML = 'No kill logs available.';
                     ZappyApp.elements.commandLogList.innerHTML = 'No command logs available.';
+                    ZappyApp.elements.serverMembersList.innerHTML = '<p class="text-slate-500">No members to display.</p>'; // Reset members list
                 },
 
                 setupOwnerControls(server) {
@@ -968,6 +977,10 @@
                                 <p><strong>Last Activity:</strong> ${data.lastActivity ? new Date(data.lastActivity.toDate()).toLocaleString() : 'N/A'}</p>
                                 <p class="text-xs text-slate-500 mt-2">More statistics (players online, vehicles, etc.) require ER:LC API integration.</p>
                             `;
+                            // Update server members list for owner tab if current user is owner
+                            if (ZappyApp.state.currentServer.ownerId === userId) {
+                                this.displayServerMembers(data.members || []);
+                            }
                         } else {
                             ZappyApp.elements.serverStatsOutput.innerHTML = '<p class="text-red-400">Server data not found.</p>';
                         }
@@ -1002,74 +1015,8 @@
                     ZappyApp.state.unsubscribeListeners.push(unsubscribeLog);
 
 
-                    // Players & Join Requests Listener
-                    const unsubscribePlayers = onSnapshot(serverDocRef, async (docSnap) => {
-                        if (docSnap.exists()) {
-                            const serverData = docSnap.data();
-                            const onlinePlayersDiv = ZappyApp.elements.playerList;
-                            const joinRequestsDiv = ZappyApp.elements.joinRequestsDisplay;
-
-                            onlinePlayersDiv.innerHTML = '';
-                            joinRequestsDiv.innerHTML = '';
-
-                            const members = serverData.members || [];
-                            const joinRequests = serverData.joinRequests || [];
-
-                            ZappyApp.elements.playerCount.textContent = members.length;
-                            ZappyApp.elements.queueCount.textContent = joinRequests.length;
-
-                            if (members.length === 0) {
-                                onlinePlayersDiv.innerHTML = '<p class="text-slate-500">No members online.</p>';
-                            } else {
-                                // Fetch user emails for members
-                                for (const memberId of members) {
-                                    const userDoc = await getDoc(doc(db, `/artifacts/${appId}/users/${memberId}/userData`));
-                                    const userEmail = userDoc.exists() ? (userDoc.data().email || memberId) : memberId;
-                                    onlinePlayersDiv.insertAdjacentHTML('beforeend', `<li>${userEmail} (${memberId === userId ? 'You' : memberId})</li>`);
-                                }
-                            }
-
-                            if (ZappyApp.state.currentServer.ownerId === userId) {
-                                // Only show join requests to owner
-                                if (joinRequests.length === 0) {
-                                    joinRequestsDiv.innerHTML = '<p class="text-slate-500">No pending join requests.</p>';
-                                } else {
-                                    for (const requesterId of joinRequests) {
-                                        const userDoc = await getDoc(doc(db, `/artifacts/${appId}/users/${requesterId}/userData`));
-                                        const requesterEmail = userDoc.exists() ? (userDoc.data().email || requesterId) : requesterId;
-                                        joinRequestsDiv.insertAdjacentHTML('beforeend', `
-                                            <li class="flex justify-between items-center py-1">
-                                                <span>${requesterEmail} (${requesterId})</span>
-                                                <div>
-                                                    <button class="btn btn-primary btn-sm accept-join-btn" data-requester-id="${requesterId}">Accept</button>
-                                                    <button class="btn btn-danger btn-sm reject-join-btn" data-requester-id="${requesterId}">Reject</button>
-                                                </div>
-                                            </li>
-                                        `);
-                                    }
-                                    // Add event listeners for accept/reject buttons
-                                    joinRequestsDiv.querySelectorAll('.accept-join-btn').forEach(button => {
-                                        button.addEventListener('click', this.handleJoinRequestAction.bind(this, 'accept'));
-                                    });
-                                    joinRequestsDiv.querySelectorAll('.reject-join-btn').forEach(button => {
-                                        button.addEventListener('click', this.handleJoinRequestAction.bind(this, 'reject'));
-                                    });
-                                }
-                            } else {
-                                joinRequestsDiv.innerHTML = '<p class="text-slate-500">Only server owner can view join requests.</p>';
-                            }
-
-                            // Update join requests in Owner Admin tab
-                            if (ZappyApp.state.currentServer.ownerId === userId) {
-                                this.displayOwnerJoinRequests(joinRequests);
-                            }
-                        }
-                    }, (error) => {
-                        console.error("Error listening to players/requests:", error);
-                        ZappyApp.elements.playerList.innerHTML = '<p class="text-red-400">Failed to load players.</p>';
-                        ZappyApp.elements.joinRequestsDisplay.innerHTML = '<p class="text-red-400">Failed to load join requests (permission error).</p>';
-                    });
-                    ZappyApp.state.unsubscribeListeners.push(unsubscribePlayers);
+                    // Players & Join Requests Listener - This listener is already on serverDocRef, so it handles join requests directly.
+                    // This is sufficient for display. The members list is handled separately in displayServerMembers.
 
                     // Shifts Leaderboard Listener
                     const shiftsCollectionRef = collection(db, `/artifacts/${appId}/public/data/servers/${serverId}/shifts`);
@@ -1092,6 +1039,8 @@
 
                         // Use Promise.all to await all user data fetches before updating UI
                         const shiftElements = await Promise.all(sortedShifts.map(async ([userId, totalDuration]) => {
+                            // Defensive check for userId before attempting to get userData
+                            if (!userId) return '';
                             const userDoc = await getDoc(doc(db, `/artifacts/${appId}/users/${userId}/userData`));
                             const userEmail = userDoc.exists() ? (userDoc.data().email || userId) : userId;
                             return `
@@ -1168,9 +1117,79 @@
                     });
                 },
 
+                async displayServerMembers(members) {
+                    const listEl = ZappyApp.elements.serverMembersList;
+                    listEl.innerHTML = ''; // Clear existing list
+                    ZappyApp.elements.serverMembersMessage.textContent = ''; // Clear previous messages
+
+                    if (members.length === 0) {
+                        listEl.innerHTML = '<p class="text-slate-500">No members in this server.</p>';
+                        return;
+                    }
+
+                    for (const memberId of members) {
+                        // Avoid fetching user data for the current authenticated user (performance)
+                        const userEmail = memberId === ZappyApp.state.currentUser.uid
+                            ? (ZappyApp.state.currentUser.email || memberId)
+                            : (await getDoc(doc(db, `/artifacts/${appId}/users/${memberId}/userData`))).data()?.email || memberId;
+
+                        let kickButtonHtml = '';
+                        // Only allow kicking if the current user is the owner AND not kicking themselves
+                        if (ZappyApp.state.currentServer.ownerId === ZappyApp.state.currentUser.uid && memberId !== ZappyApp.state.currentUser.uid) {
+                            kickButtonHtml = `<button class="btn btn-danger btn-sm kick-member-btn" data-member-id="${memberId}">Kick</button>`;
+                        }
+
+                        listEl.insertAdjacentHTML('beforeend', `
+                            <div class="flex justify-between items-center card p-3">
+                                <span>${userEmail} (${memberId}) ${memberId === ZappyApp.state.currentServer.ownerId ? '👑 Owner' : ''} ${memberId === ZappyApp.state.currentUser.uid ? '(You)' : ''}</span>
+                                <div>
+                                    ${kickButtonHtml}
+                                </div>
+                            </div>
+                        `);
+                    }
+
+                    // Add event listeners for kick buttons
+                    listEl.querySelectorAll('.kick-member-btn').forEach(button => {
+                        button.addEventListener('click', this.handleKickMember.bind(this));
+                    });
+                },
+
+                async handleKickMember(e) {
+                    const memberIdToKick = e.target.dataset.memberId;
+                    const serverId = ZappyApp.state.currentServer.id;
+                    const serverDocRef = doc(db, `/artifacts/${appId}/public/data/servers`, serverId);
+
+                    ZappyApp.elements.serverMembersMessage.textContent = ''; // Clear previous messages
+
+                    if (!memberIdToKick || memberIdToKick === ZappyApp.state.currentUser.uid) {
+                        ZappyApp.ui.displayMessage('server-members-message', 'Cannot kick yourself or an invalid member.', true);
+                        return;
+                    }
+
+                    ZappyApp.utils.showConfirmModal(
+                        'Kick Member',
+                        `Are you sure you want to kick ${memberIdToKick} from the server?`,
+                        async () => {
+                            ZappyApp.elements.loadingOverlay.classList.remove('hidden');
+                            try {
+                                await updateDoc(serverDocRef, {
+                                    members: arrayRemove(memberIdToKick)
+                                });
+                                ZappyApp.ui.displayMessage('server-members-message', `Member ${memberIdToKick} kicked successfully.`, false);
+                            } catch (error) {
+                                console.error("Error kicking member:", error);
+                                ZappyApp.ui.displayMessage('server-members-message', `Failed to kick member: ${error.message}. Check permissions.`, true);
+                            } finally {
+                                ZappyApp.elements.loadingOverlay.classList.add('hidden');
+                            }
+                        }
+                    );
+                },
 
                 async checkActiveShift() {
                     const userId = ZappyApp.state.currentUser.uid;
+                    // Ensure the userDataRef is correctly formed and always available
                     const userDataRef = doc(db, `/artifacts/${appId}/users/${userId}/userData`);
                     
                     // Use onSnapshot for real-time updates to active shift status
@@ -1189,7 +1208,12 @@
                         }
                     }, (error) => {
                         console.error("Error listening to active shift status:", error);
-                        ZappyApp.ui.displayMessage('shift-controls', 'Failed to load shift status (permission error).', true);
+                        // Only display error if it's a permission issue, not just data non-existence
+                        if (error.code === 'permission-denied' || error.code === 'unavailable') {
+                             ZappyApp.ui.displayMessage('shift-controls-message', 'Failed to load shift status (permission error).', true);
+                        } else {
+                             ZappyApp.ui.displayMessage('shift-controls-message', `Error loading shift status: ${error.message}`, true);
+                        }
                     });
                     ZappyApp.state.unsubscribeListeners.push(unsubscribeShiftStatus);
                 },
@@ -1211,6 +1235,7 @@
                     const userId = ZappyApp.state.currentUser.uid;
                     const serverId = ZappyApp.state.currentServer.id;
                     const userDataRef = doc(db, `/artifacts/${appId}/users/${userId}/userData`);
+                    ZappyApp.elements.shiftControlsMessage.textContent = ''; // Clear previous messages
 
                     try {
                         if (ZappyApp.state.shiftTimerRunning) {
@@ -1218,9 +1243,10 @@
                             const now = new Date();
                             const durationSeconds = Math.floor((now.getTime() - ZappyApp.state.shiftStartTime.getTime()) / 1000);
 
-                            // Fetch current totalShiftDuration safely
+                            // Fetch current totalShiftDuration safely and defensively
                             const userDocSnap = await getDoc(userDataRef);
-                            const currentTotalDuration = userDocSnap.exists() && userDocSnap.data().totalShiftDuration ? userDocSnap.data().totalShiftDuration : 0;
+                            const currentTotalDuration = userDocSnap.exists() && typeof userDocSnap.data().totalShiftDuration === 'number'
+                                                         ? userDocSnap.data().totalShiftDuration : 0;
 
                             // Update user's total shift duration and set activeShift to false
                             await updateDoc(userDataRef, {
@@ -1239,32 +1265,27 @@
                                 recordedAt: serverTimestamp()
                             });
 
-                            ZappyApp.ui.displayMessage('shift-controls', 'Shift ended.', false);
+                            ZappyApp.ui.displayMessage('shift-controls-message', 'Shift ended.', false);
                         } else {
                             // Start shift
                             const now = new Date();
                             ZappyApp.state.shiftStartTime = now;
 
-                            // Ensure user data document exists and initialize totalShiftDuration if not
-                            const userDocSnap = await getDoc(userDataRef);
-                            if (!userDocSnap.exists()) {
-                                await setDoc(userDataRef, {
-                                    email: ZappyApp.state.currentUser.email || 'Anonymous User',
-                                    totalShiftDuration: 0,
-                                    createdAt: serverTimestamp()
-                                });
-                            }
-
-                            await updateDoc(userDataRef, {
+                            // Ensure user data document exists and initialize totalShiftDuration if not.
+                            // SetDoc with merge: true is robust here for initial creation/update.
+                            await setDoc(userDataRef, {
                                 activeShift: true,
                                 shiftStartTime: now,
-                            });
+                                email: ZappyApp.state.currentUser.email || 'Anonymous User', // Store email for display in leaderboard
+                                totalShiftDuration: 0, // Will be updated on subsequent shifts if not already present
+                                createdAt: serverTimestamp() // Add if document is new
+                            }, { merge: true });
 
-                            ZappyApp.ui.displayMessage('shift-controls', 'Shift started!', false);
+                            ZappyApp.ui.displayMessage('shift-controls-message', 'Shift started!', false);
                         }
                     } catch (error) {
                         console.error("Error toggling shift:", error);
-                        ZappyApp.ui.displayMessage('shift-controls', `Error: ${error.message}. Check user data permissions.`, true);
+                        ZappyApp.ui.displayMessage('shift-controls-message', `Error: ${error.message}. Check user data permissions.`, true);
                     } finally {
                         ZappyApp.elements.loadingOverlay.classList.add('hidden');
                     }
@@ -1388,6 +1409,7 @@
                                 await deleteCollection(`/artifacts/${appId}/public/data/servers/${serverId}/commandLogs`);
                                 await deleteCollection(`/artifacts/${appId}/public/data/servers/${serverId}/shifts`);
                                 await deleteCollection(`/artifacts/${appId}/public/data/servers/${serverId}/logs`); // Ensure logs are also deleted
+                                await deleteCollection(`/artifacts/${appId}/public/data/servers/${serverId}/settings`); // Delete settings subcollection
 
                                 // Add more subcollections here as they are added (vehicles, killlogs etc.)
 
@@ -1412,7 +1434,7 @@
                 // Mock functions for other tabs (refresh buttons)
                 refreshStats() {
                     console.log('Refreshing server stats...');
-                    ZappyApp.ui.displayMessage('server-stats-output', 'Stats refreshed (simulated)!', false);
+                    ZappyApp.ui.displayMessage('server-stats-output', 'Stats refreshed!', false);
                     // The onSnapshot listener handles actual data updates
                 },
                 refreshPlayers() {
