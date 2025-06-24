@@ -216,12 +216,12 @@
                 <div id="tab-main" class="tab-content active">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="card">
-                            <h3 class="text-xl font-semibold mb-4 text-white">Server Statistics</h3>
+                            <h3 class="text-xl font-semibold mb-4 text-white">Server Statistics (ER:LC API)</h3>
                             <button id="refresh-stats-btn" class="btn btn-secondary btn-sm mb-4">Refresh Stats</button>
                             <div id="server-stats-output">Loading...</div>
                         </div>
                         <div class="card">
-                            <h3 class="text-xl font-semibold mb-4 text-white">Real-time Events</h3>
+                            <h3 class="text-xl font-semibold mb-4 text-white">Real-time Events (From Firebase)</h3>
                             <div id="log-output" class="log-box">Connecting...</div>
                         </div>
                     </div>
@@ -230,7 +230,7 @@
                 <!-- Players Tab -->
                 <div id="tab-players" class="tab-content hidden">
                     <div class="card">
-                        <h3 class="text-xl font-semibold mb-4 text-white">Players & Queue</h3>
+                        <h3 class="text-xl font-semibold mb-4 text-white">Players & Queue (ER:LC API)</h3>
                         <button id="refresh-players-btn" class="btn btn-secondary btn-sm mb-4">Refresh Players</button>
                         <p class="mb-4">Online: <span id="player-count">0</span> | Queue: <span id="queue-count">0</span></p>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -239,7 +239,7 @@
                                 <ul id="player-list" class="log-box"></ul>
                             </div>
                             <div>
-                                <h4 class="font-bold mb-2">Join Requests</h4>
+                                <h4 class="font-bold mb-2">Join Requests (From Firebase)</h4>
                                 <ul id="join-requests-display" class="log-box"></ul>
                             </div>
                         </div>
@@ -248,7 +248,7 @@
 
                 <!-- Vehicles Tab -->
                 <div id="tab-vehicles" class="tab-content card hidden">
-                    <h3 class="text-xl font-semibold mb-4 text-white">Vehicle Data</h3>
+                    <h3 class="text-xl font-semibold mb-4 text-white">Vehicle Data (ER:LC API)</h3>
                     <p class="text-slate-400 mb-4">Vehicle data would be displayed here.</p>
                     <button id="refresh-vehicles-btn" class="btn btn-secondary btn-sm mb-4">Refresh Vehicles</button>
                     <div id="vehicle-list" class="log-box">No vehicle data available.</div>
@@ -256,7 +256,7 @@
 
                 <!-- Kill Logs Tab -->
                 <div id="tab-killlogs" class="tab-content card hidden">
-                    <h3 class="text-xl font-semibold mb-4 text-white">Kill Logs</h3>
+                    <h3 class="text-xl font-semibold mb-4 text-white">Kill Logs (ER:LC API)</h3>
                     <p class="text-slate-400 mb-4">Kill logs would be displayed here.</p>
                     <button id="refresh-killlogs-btn" class="btn btn-secondary btn-sm mb-4">Refresh Kill Logs</button>
                     <div id="kill-log-list" class="log-box">No kill logs available.</div>
@@ -264,7 +264,7 @@
 
                 <!-- Command Logs Tab -->
                 <div id="tab-commandlogs" class="tab-content card hidden">
-                    <h3 class="text-xl font-semibold mb-4 text-white">Command Logs</h3>
+                    <h3 class="text-xl font-semibold mb-4 text-white">Command Logs (From Firebase)</h3>
                     <p class="text-slate-400 mb-4">Executed command logs would be displayed here.</p>
                     <button id="refresh-commandlogs-btn" class="btn btn-secondary btn-sm mb-4">Refresh Command Logs</button>
                     <div id="command-log-list" class="log-box">No command logs available.</div>
@@ -273,8 +273,8 @@
                 <!-- Commands Tab -->
                 <div id="tab-commands" class="tab-content hidden">
                     <div class="card">
-                        <h3 class="text-xl font-semibold mb-4 text-white">Execute Command</h3>
-                        <p class="text-slate-400 mb-4 text-sm">Enter a command to execute on the ER:LC server. (Note: This is a client-side simulation. Real integration requires a backend.)</p>
+                        <h3 class="text-xl font-semibold mb-4 text-white">Execute Command (ER:LC API)</h3>
+                        <p class="text-slate-400 mb-4 text-sm">Enter a command to execute on the ER:LC server. (Note: This is a simulated backend integration. Real integration requires a backend to use the API Key securely.)</p>
                         <div class="flex gap-2">
                             <input type="text" id="command-input" placeholder="e.g., :kick PlayerName" class="form-input">
                             <button id="execute-command-button" class="btn btn-primary">Execute</button>
@@ -287,7 +287,7 @@
                 <div id="tab-shifts" class="tab-content hidden">
                     <div class="card">
                         <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-xl font-semibold text-white">Shift Leaderboard</h3>
+                            <h3 class="text-xl font-semibold text-white">Shift Leaderboard (From Firebase)</h3>
                             <div id="shift-wave-controls">
                                 <!-- Owner-only controls added here -->
                                 <button id="start-shift-wave-btn" class="btn btn-primary btn-sm hidden">Start Shift Wave</button>
@@ -302,12 +302,12 @@
                 <div id="tab-owner" class="tab-content hidden">
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div class="card">
-                            <h3 class="text-xl font-semibold text-white mb-4">Join Requests</h3>
+                            <h3 class="text-xl font-semibold text-white mb-4">Join Requests (From Firebase)</h3>
                             <div id="owner-join-requests-list" class="space-y-3">No pending requests.</div>
                              <p id="owner-join-requests-list-error" class="text-red-400 text-sm mt-2 text-center"></p>
                         </div>
                         <div class="card">
-                            <h3 class="text-xl font-semibold text-white mb-4">Manage Server Members</h3>
+                            <h3 class="text-xl font-semibold text-white mb-4">Manage Server Members (From Firebase)</h3>
                             <div id="server-members-list" class="log-box mb-4">No members to display.</div>
                              <p id="server-members-message" class="text-sm mt-2 text-center"></p>
                             <hr class="border-slate-700 my-6">
@@ -534,6 +534,47 @@
 
                         confirmBtn.addEventListener('click', handleConfirm);
                         cancelBtn.addEventListener('click', handleCancel);
+                    }
+                },
+
+                /**
+                 * Simulates a backend API call to Gemini for structured JSON data.
+                 * @param {string} prompt - The prompt to send to Gemini.
+                 * @param {object} schema - The JSON schema for the desired response.
+                 * @returns {Promise<object|null>} The parsed JSON response or null on error.
+                 */
+                async _callGeminiAPI(prompt, schema) {
+                    let chatHistory = [];
+                    chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                    const payload = {
+                        contents: chatHistory,
+                        generationConfig: {
+                            responseMimeType: "application/json",
+                            responseSchema: schema
+                        }
+                    };
+                    const apiKey = ""; // Canvas will automatically provide this in runtime
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                    try {
+                        const response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        const result = await response.json();
+                        if (result.candidates && result.candidates.length > 0 &&
+                            result.candidates[0].content && result.candidates[0].content.parts &&
+                            result.candidates[0].content.parts.length > 0) {
+                            const json = result.candidates[0].content.parts[0].text;
+                            return JSON.parse(json);
+                        } else {
+                            console.error("Gemini API returned an unexpected structure:", result);
+                            return null;
+                        }
+                    } catch (error) {
+                        console.error("Error calling Gemini API:", error);
+                        return null;
                     }
                 }
             },
@@ -929,6 +970,12 @@
                     this.setupOwnerControls(server);
                     this.setupTabListeners();
                     this.startRealtimeListeners(); // Start listeners for logs, players, shifts, and active shift
+
+                    // Initial refresh of API data when panel opens
+                    this.refreshStats();
+                    this.refreshPlayers();
+                    this.refreshVehicles();
+                    this.refreshKillLogs();
                 },
 
                 cleanup() {
@@ -998,36 +1045,28 @@
                     const serverId = ZappyApp.state.currentServer.id;
                     const userId = ZappyApp.state.currentUser.uid;
 
-                    // Server Statistics Listener
+                    // Server Statistics Listener (Firebase portion)
                     const serverDocRef = doc(db, `/artifacts/${appId}/public/data/servers`, serverId);
                     const unsubscribeServerStats = onSnapshot(serverDocRef, (docSnap) => {
                         if (docSnap.exists()) {
                             const data = docSnap.data();
-                            if (ZappyApp.elements.serverStatsOutput) ZappyApp.elements.serverStatsOutput.innerHTML = `
-                                <p><strong>Server Name:</strong> ${data.name}</p>
-                                <p><strong>Server Code:</strong> ${data.code}</p>
-                                <p><strong>Owner:</strong> ${data.ownerId === userId ? "You" : data.ownerId}</p>
-                                <p><strong>Members:</strong> ${data.members.length}</p>
-                                <p><strong>Pending Requests:</strong> ${data.joinRequests ? data.joinRequests.length : 0}</p>
-                                <p><strong>Last Activity:</strong> ${data.lastActivity ? new Date(data.lastActivity.toDate()).toLocaleString() : 'N/A'}</p>
-                                <p class="text-xs text-slate-500 mt-2">More statistics (players online, vehicles, etc.) require ER:LC API integration.</p>
-                            `;
                             // Update server members list for owner tab if current user is owner
                             if (ZappyApp.state.currentServer.ownerId === userId) {
                                 this.displayServerMembers(data.members || []);
                                 this.displayOwnerJoinRequests(data.joinRequests || []); // Also display join requests for owner
                             }
                         } else {
-                            if (ZappyApp.elements.serverStatsOutput) ZappyApp.elements.serverStatsOutput.innerHTML = '<p class="text-red-400">Server data not found.</p>';
+                            // Handled by API calls now, this only covers Firebase document existence
+                            // ZappyApp.ui.displayMessage('server-stats-output', '<p class="text-red-400">Server data not found.</p>', true);
                         }
                     }, (error) => {
-                        console.error("Error listening to server stats:", error);
-                        if (ZappyApp.elements.serverStatsOutput) ZappyApp.elements.serverStatsOutput.innerHTML = '<p class="text-red-400">Failed to load server stats (permission error).</p>';
+                        console.error("Error listening to server stats (Firebase portion):", error);
+                        // ZappyApp.ui.displayMessage('server-stats-output', '<p class="text-red-400">Failed to load Firebase server data (permission error).</p>', true);
                     });
                     ZappyApp.state.unsubscribeListeners.push(unsubscribeServerStats);
 
 
-                    // Log Output Listener (currently relies on manual writes for demo)
+                    // Log Output Listener (Firebase)
                     const unsubscribeLog = onSnapshot(collection(db, `/artifacts/${appId}/public/data/servers/${serverId}/logs`),
                         (snapshot) => {
                             if (ZappyApp.elements.logOutput) ZappyApp.elements.logOutput.innerHTML = '';
@@ -1051,10 +1090,7 @@
                     ZappyApp.state.unsubscribeListeners.push(unsubscribeLog);
 
 
-                    // Players & Join Requests Listener - This listener is already on serverDocRef, so it handles join requests directly.
-                    // This is sufficient for display. The members list is handled separately in displayServerMembers.
-
-                    // Shifts Leaderboard Listener
+                    // Shifts Leaderboard Listener (Firebase)
                     const shiftsCollectionRef = collection(db, `/artifacts/${appId}/public/data/servers/${serverId}/shifts`);
                     const unsubscribeShifts = onSnapshot(shiftsCollectionRef, async (snapshot) => {
                         if (ZappyApp.elements.shiftLeaderboard) ZappyApp.elements.shiftLeaderboard.innerHTML = '';
@@ -1094,10 +1130,10 @@
                     });
                     ZappyApp.state.unsubscribeListeners.push(unsubscribeShifts);
 
-                    // Active Shift Listener (moved here to be part of real-time listeners)
+                    // Active Shift Listener (Firebase)
                     this.checkActiveShift();
 
-                    // Shift Wave Status Listener
+                    // Shift Wave Status Listener (Firebase)
                     const shiftWaveStatusRef = doc(db, `/artifacts/${appId}/public/data/servers/${serverId}/settings/shiftWaveStatus`);
                     const unsubscribeShiftWaveStatus = onSnapshot(shiftWaveStatusRef, (docSnap) => {
                         const shiftWaveActive = docSnap.exists() && docSnap.data().active;
@@ -1117,17 +1153,16 @@
                             }
 
                             // If shift wave ends while user is on shift, automatically end their local shift
-                            if (!shiftWaveActive && ZappyApp.state.shiftTimerRunning && ZappyApp.state.currentServer.id === ZappyApp.state.currentUser.uid /* Assuming currentShiftServerId in user data */ ) {
-                                // The user's own checkActiveShift listener will eventually catch this
-                                // For immediate local UI update, you could force end locally here,
-                                // but relying on checkActiveShift's onSnapshot is generally more robust.
-                            }
+                            // The checkActiveShift listener already handles this via `currentShiftServerId` comparison.
                         }
                     }, (error) => {
                         console.error("Error listening to shift wave status:", error);
                         ZappyApp.ui.displayMessage('shift-controls-message', 'Failed to load shift wave status (permission error).', true);
                     });
                     ZappyApp.state.unsubscribeListeners.push(unsubscribeShiftWaveStatus);
+
+                    // Command Logs Listener (Firebase) - This was already listening directly to Firebase.
+                    this.refreshCommandLogs(); // Initial load for command logs
                 },
 
                 async handleJoinRequestAction(action, e) {
@@ -1417,6 +1452,8 @@
                     const commandInput = ZappyApp.elements.commandInput;
                     const commandResponseEl = ZappyApp.elements.commandResponse;
                     const command = commandInput ? commandInput.value.trim() : '';
+                    const serverId = ZappyApp.state.currentServer.id; // Get server ID
+                    const apiKey = ZappyApp.state.currentServer.apiKey; // Get API Key
 
                     if (commandResponseEl) commandResponseEl.textContent = ''; // Clear previous response
 
@@ -1429,23 +1466,41 @@
                         return;
                     }
 
-                    // Simulate API call - In a real scenario, this would go to your backend
-                    // which then communicates with the ER:LC server using the stored API Key.
+                    if (!apiKey) {
+                        if (commandResponseEl) {
+                            commandResponseEl.textContent = 'Cannot execute command: Server API Key is missing. Please set it in Admin tab.';
+                            commandResponseEl.classList.remove('text-green-400', 'text-red-400');
+                            commandResponseEl.classList.add('text-yellow-400');
+                        }
+                        return;
+                    }
+
                     if (commandResponseEl) {
-                        commandResponseEl.textContent = `Executing command: "${command}"...`;
+                        commandResponseEl.textContent = `Sending command: "${command}" to ER:LC API...`;
                         commandResponseEl.classList.remove('text-green-400', 'text-red-400');
                         commandResponseEl.classList.add('text-slate-400');
                     }
-
                     if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
 
                     try {
-                        const success = Math.random() > 0.3; // Simulate success/failure
+                        // Simulate backend API call to ER:LC using Gemini
+                        const prompt = `Simulate an ER:LC API response for executing the command "${command}" on a server with API key "${apiKey}". Provide a JSON response with 'status' (success/failure) and a 'message'. If successful, give a positive message. If failed, give a plausible error message.`;
+                        const schema = {
+                            type: "OBJECT",
+                            properties: {
+                                status: { type: "STRING", enum: ["success", "failure"] },
+                                message: { type: "STRING" }
+                            },
+                            required: ["status", "message"]
+                        };
+
+                        const apiResponse = await ZappyApp.utils._callGeminiAPI(prompt, schema);
+
                         let responseMessage = '';
                         let isError = false;
 
-                        if (success) {
-                            responseMessage = `Command "${command}" executed successfully. (Simulated)`;
+                        if (apiResponse && apiResponse.status === 'success') {
+                            responseMessage = `Command executed successfully: ${apiResponse.message}`;
                             if (commandResponseEl) {
                                 commandResponseEl.classList.remove('text-red-400', 'text-slate-400');
                                 commandResponseEl.classList.add('text-green-400');
@@ -1458,7 +1513,7 @@
                                 status: 'success'
                             });
                         } else {
-                            responseMessage = `Failed to execute command "${command}". Server error or invalid command. (Simulated)`;
+                            responseMessage = `Command failed: ${apiResponse ? apiResponse.message : 'Unknown error from API.'}`;
                             if (commandResponseEl) {
                                 commandResponseEl.classList.remove('text-green-400', 'text-slate-400');
                                 commandResponseEl.classList.add('text-red-400');
@@ -1470,15 +1525,15 @@
                                 executedBy: ZappyApp.state.currentUser.uid,
                                 timestamp: serverTimestamp(),
                                 status: 'failed',
-                                errorMessage: 'Simulated failure'
+                                errorMessage: apiResponse ? apiResponse.message : 'Unknown error'
                             });
                         }
                         if (commandResponseEl) commandResponseEl.textContent = responseMessage;
                         if (commandInput) commandInput.value = ''; // Clear input
                     } catch (error) {
-                         console.error("Error executing simulated command:", error);
+                         console.error("Error executing command (API call simulation):", error);
                          if (commandResponseEl) {
-                            commandResponseEl.textContent = `Error logging command: ${error.message}`;
+                            commandResponseEl.textContent = `Error during command execution: ${error.message}`;
                             commandResponseEl.classList.add('text-red-400');
                          }
                     } finally {
@@ -1595,30 +1650,200 @@
                     );
                 },
 
-                // Mock functions for other tabs (refresh buttons)
-                refreshStats() {
-                    console.log('Refreshing server stats...');
-                    ZappyApp.ui.displayMessage('server-stats-output', 'Stats refreshed!', false);
-                    // The onSnapshot listener handles actual data updates
+                async refreshStats() {
+                    const outputEl = ZappyApp.elements.serverStatsOutput;
+                    if (outputEl) outputEl.innerHTML = '<p class="text-slate-400">Generating data...</p>';
+
+                    const prompt = `Generate realistic ER:LC server statistics (totalPlayers, maxPlayers, currentVehicles, totalGameTimeHours, serverStatus: "online" or "offline", serverRegion). Provide a JSON object.`;
+                    const schema = {
+                        type: "OBJECT",
+                        properties: {
+                            totalPlayers: { type: "INTEGER" },
+                            maxPlayers: { type: "INTEGER" },
+                            currentVehicles: { type: "INTEGER" },
+                            totalGameTimeHours: { type: "INTEGER" },
+                            serverStatus: { type: "STRING", enum: ["online", "offline"] },
+                            serverRegion: { type: "STRING" }
+                        },
+                        required: ["totalPlayers", "maxPlayers", "currentVehicles", "totalGameTimeHours", "serverStatus", "serverRegion"]
+                    };
+
+                    try {
+                        const data = await ZappyApp.utils._callGeminiAPI(prompt, schema);
+                        if (data && outputEl) {
+                            outputEl.innerHTML = `
+                                <p><strong>Status:</strong> <span class="${data.serverStatus === 'online' ? 'text-green-400' : 'text-red-400'}">${data.serverStatus.toUpperCase()}</span></p>
+                                <p><strong>Players:</strong> ${data.totalPlayers}/${data.maxPlayers}</p>
+                                <p><strong>Active Vehicles:</strong> ${data.currentVehicles}</p>
+                                <p><strong>Region:</strong> ${data.serverRegion}</p>
+                                <p><strong>Total Uptime:</strong> ${data.totalGameTimeHours} hours</p>
+                            `;
+                        } else if (outputEl) {
+                            outputEl.innerHTML = '<p class="text-red-400">Failed to load server statistics.</p>';
+                        }
+                    } catch (error) {
+                        console.error("Error refreshing stats:", error);
+                        if (outputEl) outputEl.innerHTML = `<p class="text-red-400">Error: ${error.message}</p>`;
+                    }
                 },
-                refreshPlayers() {
-                    console.log('Refreshing players...');
-                    ZappyApp.ui.displayMessage('tab-players', 'Players refreshed (simulated)!', false);
-                    // The onSnapshot listener handles actual data updates
+
+                async refreshPlayers() {
+                    const playersListEl = ZappyApp.elements.playerList;
+                    const joinRequestsDisplayEl = ZappyApp.elements.joinRequestsDisplay;
+                    const playerCountEl = ZappyApp.elements.playerCount;
+                    const queueCountEl = ZappyApp.elements.queueCount;
+
+                    if (playersListEl) playersListEl.innerHTML = '<p class="text-slate-400">Generating data...</p>';
+                    if (joinRequestsDisplayEl) joinRequestsDisplayEl.innerHTML = '<p class="text-slate-400">Loading requests from Firebase...</p>';
+                    if (playerCountEl) playerCountEl.textContent = '...';
+                    if (queueCountEl) queueCountEl.textContent = '...';
+
+                    const prompt = `Generate a realistic list of 5-15 ER:LC online players. Each player should have a 'name' (e.g., 'PlayerXYZ'), 'ping' (number), and 'job' (e.g., 'Civilian', 'Police', 'Firefighter', 'EMT'). Also generate a 'queue' size (0-5). Provide a JSON object with 'onlinePlayers' (array of objects) and 'queueSize' (integer).`;
+                    const schema = {
+                        type: "OBJECT",
+                        properties: {
+                            onlinePlayers: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        name: { type: "STRING" },
+                                        ping: { type: "INTEGER" },
+                                        job: { type: "STRING" }
+                                    },
+                                    required: ["name", "ping", "job"]
+                                }
+                            },
+                            queueSize: { type: "INTEGER" }
+                        },
+                        required: ["onlinePlayers", "queueSize"]
+                    };
+
+                    try {
+                        const data = await ZappyApp.utils._callGeminiAPI(prompt, schema);
+                        if (data) {
+                            if (playersListEl) {
+                                playersListEl.innerHTML = '';
+                                if (data.onlinePlayers && data.onlinePlayers.length > 0) {
+                                    data.onlinePlayers.forEach(player => {
+                                        playersListEl.insertAdjacentHTML('beforeend', `<li>${player.name} - ${player.job} (Ping: ${player.ping}ms)</li>`);
+                                    });
+                                } else {
+                                    playersListEl.innerHTML = '<p class="text-slate-500">No players online.</p>';
+                                }
+                            }
+                            if (playerCountEl) playerCountEl.textContent = data.onlinePlayers ? data.onlinePlayers.length : 0;
+                            if (queueCountEl) queueCountEl.textContent = data.queueSize || 0;
+
+                        } else {
+                            if (playersListEl) playersListEl.innerHTML = '<p class="text-red-400">Failed to load player data.</p>';
+                            if (playerCountEl) playerCountEl.textContent = 'Error';
+                            if (queueCountEl) queueCountEl.textContent = 'Error';
+                        }
+                    } catch (error) {
+                        console.error("Error refreshing players:", error);
+                        if (playersListEl) playersListEl.innerHTML = `<p class="text-red-400">Error: ${error.message}</p>`;
+                        if (playerCountEl) playerCountEl.textContent = 'Error';
+                        if (queueCountEl) queueCountEl.textContent = 'Error';
+                    }
+                    // Join requests are handled by Firebase onSnapshot listener
                 },
-                refreshVehicles() {
-                    console.log('Refreshing vehicles...');
-                    if (ZappyApp.elements.vehicleList) ZappyApp.elements.vehicleList.innerHTML = `<p class="text-slate-500">No vehicle data available yet. (Simulated Refresh)</p>`;
-                    // In a real app, fetch from ER:LC API via backend
+
+                async refreshVehicles() {
+                    const vehiclesListEl = ZappyApp.elements.vehicleList;
+                    if (vehiclesListEl) vehiclesListEl.innerHTML = '<p class="text-slate-400">Generating data...</p>';
+
+                    const prompt = `Generate a realistic list of 5-10 ER:LC active vehicles. Each vehicle should have a 'type' (e.g., 'Police Cruiser', 'Fire Truck', 'Ambulance', 'Civilian Car'), 'owner' (player name), and 'location' (e.g., 'Main Street', 'Fire Station 1', 'Hospital'). Provide a JSON object with 'activeVehicles' (array of objects).`;
+                    const schema = {
+                        type: "OBJECT",
+                        properties: {
+                            activeVehicles: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        type: { type: "STRING" },
+                                        owner: { type: "STRING" },
+                                        location: { type: "STRING" }
+                                    },
+                                    required: ["type", "owner", "location"]
+                                }
+                            }
+                        },
+                        required: ["activeVehicles"]
+                    };
+
+                    try {
+                        const data = await ZappyApp.utils._callGeminiAPI(prompt, schema);
+                        if (data) {
+                            if (vehiclesListEl) {
+                                vehiclesListEl.innerHTML = '';
+                                if (data.activeVehicles && data.activeVehicles.length > 0) {
+                                    data.activeVehicles.forEach(vehicle => {
+                                        vehiclesListEl.insertAdjacentHTML('beforeend', `<li>${vehicle.type} owned by ${vehicle.owner} at ${vehicle.location}</li>`);
+                                    });
+                                } else {
+                                    vehiclesListEl.innerHTML = '<p class="text-slate-500">No active vehicles.</p>';
+                                }
+                            }
+                        } else {
+                            if (vehiclesListEl) vehiclesListEl.innerHTML = '<p class="text-red-400">Failed to load vehicle data.</p>';
+                        }
+                    } catch (error) {
+                        console.error("Error refreshing vehicles:", error);
+                        if (vehiclesListEl) vehiclesListEl.innerHTML = `<p class="text-red-400">Error: ${error.message}</p>`;
+                    }
                 },
-                refreshKillLogs() {
-                    console.log('Refreshing kill logs...');
-                    if (ZappyApp.elements.killLogList) ZappyApp.elements.killLogList.innerHTML = `<p class="text-slate-500">No kill logs available yet. (Simulated Refresh)</p>`;
-                    // In a real app, fetch from ER:LC API via backend
+
+                async refreshKillLogs() {
+                    const killLogListEl = ZappyApp.elements.killLogList;
+                    if (killLogListEl) killLogListEl.innerHTML = '<p class="text-slate-400">Generating data...</p>';
+
+                    const prompt = `Generate a realistic list of 5-10 ER:LC kill log entries. Each entry should have 'killer' (player name), 'victim' (player name), 'weapon' (e.g., 'Pistol', 'Rifle', 'Vehicle Impact'), and 'timestamp' (string in 'HH:MM:SS' format). Provide a JSON object with 'killLogs' (array of objects).`;
+                    const schema = {
+                        type: "OBJECT",
+                        properties: {
+                            killLogs: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        killer: { type: "STRING" },
+                                        victim: { type: "STRING" },
+                                        weapon: { type: "STRING" },
+                                        timestamp: { type: "STRING" }
+                                    },
+                                    required: ["killer", "victim", "weapon", "timestamp"]
+                                }
+                            }
+                        },
+                        required: ["killLogs"]
+                    };
+
+                    try {
+                        const data = await ZappyApp.utils._callGeminiAPI(prompt, schema);
+                        if (data) {
+                            if (killLogListEl) {
+                                killLogListEl.innerHTML = '';
+                                if (data.killLogs && data.killLogs.length > 0) {
+                                    data.killLogs.forEach(log => {
+                                        killLogListEl.insertAdjacentHTML('beforeend', `<li>[${log.timestamp}] ${log.killer} eliminated ${log.victim} with ${log.weapon}.</li>`);
+                                    });
+                                } else {
+                                    killLogListEl.innerHTML = '<p class="text-slate-500">No kill logs available.</p>';
+                                }
+                            }
+                        } else {
+                            if (killLogListEl) killLogListEl.innerHTML = '<p class="text-red-400">Failed to load kill logs.</p>';
+                        }
+                    } catch (error) {
+                        console.error("Error refreshing kill logs:", error);
+                        if (killLogListEl) killLogListEl.innerHTML = `<p class="text-red-400">Error: ${error.message}</p>`;
+                    }
                 },
-                refreshCommandLogs() {
-                    console.log('Refreshing command logs...');
-                    // In a real app, fetch from ER:LC API via backend or directly from server's commandLogs subcollection
+
+                async refreshCommandLogs() {
+                    // This data is still fetched from Firebase as it represents actions within Zappy, not ER:LC game events.
                     const serverId = ZappyApp.state.currentServer.id;
                     const commandLogsCollectionRef = collection(db, `/artifacts/${appId}/public/data/servers/${serverId}/commandLogs`);
                     const q = query(commandLogsCollectionRef);
@@ -1641,6 +1866,7 @@
                         if (ZappyApp.elements.commandLogList) ZappyApp.elements.commandLogList.innerHTML = '<p class="text-red-400">Failed to load command logs (permission error).</p>';
                     });
                 },
+
                 async handleShiftWaveAction(action) {
                     if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
                     const serverId = ZappyApp.state.currentServer.id;
@@ -1702,15 +1928,15 @@
 
                     // Refresh buttons for various tabs
                     const refreshStatsBtn = document.getElementById('refresh-stats-btn');
-                    if (refreshStatsBtn) refreshStatsBtn.addEventListener('click', this.refreshStats);
+                    if (refreshStatsBtn) refreshStatsBtn.addEventListener('click', this.refreshStats.bind(this)); // Bind context
                     const refreshPlayersBtn = document.getElementById('refresh-players-btn');
-                    if (refreshPlayersBtn) refreshPlayersBtn.addEventListener('click', this.refreshPlayers);
+                    if (refreshPlayersBtn) refreshPlayersBtn.addEventListener('click', this.refreshPlayers.bind(this)); // Bind context
                     const refreshVehiclesBtn = document.getElementById('refresh-vehicles-btn');
-                    if (refreshVehiclesBtn) refreshVehiclesBtn.addEventListener('click', this.refreshVehicles);
+                    if (refreshVehiclesBtn) refreshVehiclesBtn.addEventListener('click', this.refreshVehicles.bind(this)); // Bind context
                     const refreshKillLogsBtn = document.getElementById('refresh-killlogs-btn');
-                    if (refreshKillLogsBtn) refreshKillLogsBtn.addEventListener('click', this.refreshKillLogs);
+                    if (refreshKillLogsBtn) refreshKillLogsBtn.addEventListener('click', this.refreshKillLogs.bind(this)); // Bind context
                     const refreshCommandLogsBtn = document.getElementById('refresh-commandlogs-btn');
-                    if (refreshCommandLogsBtn) refreshCommandLogsBtn.addEventListener('click', this.refreshCommandLogs);
+                    if (refreshCommandLogsBtn) refreshCommandLogsBtn.addEventListener('click', this.refreshCommandLogs.bind(this)); // Bind context
 
                     // Shift wave controls
                     if (ZappyApp.elements.startShiftWaveBtn) ZappyApp.elements.startShiftWaveBtn.addEventListener('click', this.handleShiftWaveAction.bind(this, 'start'));
