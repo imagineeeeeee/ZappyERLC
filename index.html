@@ -143,7 +143,8 @@
                     <h1 class="text-3xl font-bold text-white">Your Servers</h1>
                     <p class="text-slate-400">Manage your servers or join a new one.</p>
                 </div>
-                <div class="flex items-center gap-4">
+                <div class="flex flex-col md:flex-row items-center gap-4">
+                    <span id="debug-info" class="text-xs text-slate-500"></span> <!-- Added for debugging App ID and User ID -->
                     <span id="user-email" class="text-sm text-slate-300"></span>
                     <button id="logout-btn" class="btn btn-secondary">Logout</button>
                 </div>
@@ -467,6 +468,7 @@
                 joinServerError: document.getElementById('join-server-error'),
                 joinServerSuccess: document.getElementById('join-server-success'),
                 serverListError: document.getElementById('server-list-error'),
+                debugInfoSpan: document.getElementById('debug-info'), // Reference to the new debug info span
                 // Panel Elements
                 panelServerName: document.getElementById('panel-server-name'),
                 panelServerCode: document.getElementById('panel-server-code'),
@@ -627,13 +629,14 @@
                     if (user && user.uid) { // Ensure user and user.uid are available
                         ZappyApp.state.currentUser = user;
                         ZappyApp.ui.updateUserInfo(user);
+                        ZappyApp.ui.updateDebugInfo(appId, user.uid); // Update debug info on login
                         // If user is logged in, directly show the dashboard and fetch their servers
                         ZappyApp.dashboard.fetchUserServers();
                         ZappyApp.ui.showView('dashboard');
                     } else {
                         ZappyApp.state.currentUser = null;
                         ZappyApp.state.currentServer = null;
-                        // ZappyApp.state.activeServerKey = null; // No longer needed as it's from currentServer
+                        ZappyApp.ui.updateDebugInfo('N/A', 'N/A'); // Clear debug info on logout
                         ZappyApp.ui.showView('auth'); // Go to Firebase login/register
                         ZappyApp.panel.cleanup(); // Clean up any active listeners
                     }
@@ -666,6 +669,14 @@
                 updateUserInfo(user) {
                     if (user && ZappyApp.elements.userEmailSpan) {
                         ZappyApp.elements.userEmailSpan.textContent = user.email || (user.isAnonymous ? "Anonymous User" : "Logged In");
+                    }
+                },
+
+                // New function to update debugging info on the UI
+                updateDebugInfo(appId, userId) {
+                    if (ZappyApp.elements.debugInfoSpan) {
+                        ZappyApp.elements.debugInfoSpan.textContent = `App ID: ${appId} | User ID: ${userId.substring(0, 8)}...`;
+                        ZappyApp.elements.debugInfoSpan.title = `Full App ID: ${appId}\nFull User ID: ${userId}`; // Full ID on hover
                     }
                 },
 
@@ -802,7 +813,7 @@
                         return;
                     }
 
-                    console.log(`[fetchUserServers] Fetching servers for user UID: ${ZappyApp.state.currentUser.uid} using appId: ${appId}`);
+                    console.log(`%c[fetchUserServers] Fetching servers for user UID: ${ZappyApp.state.currentUser.uid} using appId: ${appId}`, 'color: yellow;'); // Highlight important log
 
                     const serverListEl = ZappyApp.elements.serverList;
                     if (serverListEl) serverListEl.innerHTML = '<p class="text-slate-400">Loading your server groups...</p>';
@@ -814,13 +825,14 @@
 
                     // Fetch server groups the current user is a member of
                     const serversCollectionRef = collection(db, `/artifacts/${appId}/public/data/servers`);
+                    console.log(`[fetchUserServers] Firestore collection path being queried: /artifacts/${appId}/public/data/servers`);
                     const q = query(serversCollectionRef,
                                     where('members', 'array-contains', ZappyApp.state.currentUser.uid));
 
                     const unsubscribe = onSnapshot(q, (snapshot) => {
-                        console.log("[onSnapshot servers] Snapshot received:", snapshot.size, "documents.");
+                        console.log(`%c[onSnapshot servers] Snapshot received. Number of documents: ${snapshot.size}`, 'color: lightblue;'); // Highlight important log
                         if (snapshot.empty) {
-                            console.log("[onSnapshot servers] No server groups found for this user.");
+                            console.log("[onSnapshot servers] No server groups found for this user in the specified path.");
                             if (serverListEl) serverListEl.innerHTML = '<p class="text-slate-400">You have no Zappy server groups. Create or join one!</p>';
                             return;
                         }
@@ -828,7 +840,7 @@
                         snapshot.forEach((doc) => {
                             const server = { id: doc.id, ...doc.data() };
                             const isOwner = server.ownerId === ZappyApp.state.currentUser.uid;
-                            console.log(`[onSnapshot servers] Found server: ${server.name} (ID: ${server.id}), Owner: ${isOwner}`);
+                            console.log(`%c[onSnapshot servers] Found server: '${server.name}' (ID: '${server.id}'), Owner: ${isOwner}, Members: ${JSON.stringify(server.members)}`, 'color: lightgreen;'); // Detailed log
                             if (serverListEl) serverListEl.insertAdjacentHTML('beforeend', `
                                 <div class="card flex flex-col justify-between">
                                     <div>
@@ -839,7 +851,7 @@
                                 </div>`);
                         });
                     }, (error) => {
-                        console.error("[onSnapshot servers] Error fetching servers:", error);
+                        console.error(`%c[onSnapshot servers] Error fetching servers: ${error.message}`, 'color: red; font-weight: bold;'); // Highlight errors
                         ZappyApp.ui.displayMessage('server-list-error', `Could not load server groups: ${error.message}. Please check your Firebase permissions.`, true);
                         if (serverListEl) serverListEl.innerHTML = '<p class="text-red-400">Failed to load server groups.</p>';
                     });
