@@ -312,12 +312,20 @@
                              <p id="server-members-message" class="text-sm mt-2 text-center"></p>
                             <hr class="border-slate-700 my-6">
                             <h3 class="text-xl font-semibold text-white mb-4">Server Settings</h3>
-                            <p class="text-slate-400 text-sm mb-4">Only the server name can be changed after creation.</p>
+                            <p class="text-slate-400 text-sm mb-4">Only the server name can be changed after creation. The server code is permanently linked to the server's database ID.</p>
                             <label for="edit-server-name" class="block mb-2">Server Name</label>
                             <input type="text" id="edit-server-name" class="form-input mb-4">
                             <button id="save-server-name-btn" class="btn btn-primary">Save Name</button>
                              <p id="owner-settings-success" class="text-green-400 text-sm mt-2 text-center"></p>
                              <p id="owner-settings-error" class="text-red-400 text-sm mt-2 text-center"></p>
+
+                            <hr class="border-slate-700 my-6">
+                            <label for="edit-api-key" class="block mb-2">ER:LC Server API Key</label>
+                            <input type="password" id="edit-api-key" class="form-input mb-4">
+                            <button id="save-api-key-btn" class="btn btn-primary">Save API Key</button>
+                            <p id="owner-api-key-success" class="text-green-400 text-sm mt-2 text-center"></p>
+                            <p id="owner-api-key-error" class="text-red-400 text-sm mt-2 text-center"></p>
+
                             <hr class="border-slate-700 my-6">
                             <h4 class="font-semibold text-red-400 mb-2">Danger Zone</h4>
                             <button id="delete-server-btn" class="btn btn-danger">Delete Server</button>
@@ -477,6 +485,10 @@
                 serverMembersList: document.getElementById('server-members-list'), // Added
                 serverMembersMessage: document.getElementById('server-members-message'), // Added
                 shiftControlsMessage: document.getElementById('shift-controls-message'), // Added
+                editApiKeyInput: document.getElementById('edit-api-key'), // Added
+                saveApiKeyBtn: document.getElementById('save-api-key-btn'), // Added
+                ownerApiKeySuccess: document.getElementById('owner-api-key-success'), // Added
+                ownerApiKeyError: document.getElementById('owner-api-key-error'), // Added
             },
 
             // --- UTILITIES ---
@@ -547,7 +559,7 @@
                         // Clear any ongoing listeners when logging out
                         ZappyApp.panel.cleanup();
                     }
-                    ZappyApp.elements.loadingOverlay.classList.add('hidden');
+                    if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                 });
 
                 // Attempt initial sign-in via custom token (from environment) or anonymously
@@ -724,7 +736,7 @@
                             if (serverListEl) serverListEl.innerHTML = '<p class="text-slate-400">You have no servers. Create or join one!</p>';
                             return;
                         }
-                        if (serverListEl) serverListEl.innerHTML = '';
+                        if (serverListEl) serverListEl.innerHTML = ''; // Clear existing content
                         snapshot.forEach((doc) => {
                             const server = { id: doc.id, ...doc.data() };
                             const isOwner = server.ownerId === ZappyApp.state.currentUser.uid;
@@ -912,6 +924,7 @@
                     if (ZappyApp.elements.panelServerName) ZappyApp.elements.panelServerName.textContent = server.name;
                     if (ZappyApp.elements.panelServerCode) ZappyApp.elements.panelServerCode.textContent = `Code: ${server.code}`;
                     if (ZappyApp.elements.editServerNameInput) ZappyApp.elements.editServerNameInput.value = server.name;
+                    if (ZappyApp.elements.editApiKeyInput) ZappyApp.elements.editApiKeyInput.value = server.apiKey || ''; // Populate API key input
 
                     this.setupOwnerControls(server);
                     this.setupTabListeners();
@@ -1002,6 +1015,7 @@
                             // Update server members list for owner tab if current user is owner
                             if (ZappyApp.state.currentServer.ownerId === userId) {
                                 this.displayServerMembers(data.members || []);
+                                this.displayOwnerJoinRequests(data.joinRequests || []); // Also display join requests for owner
                             }
                         } else {
                             if (ZappyApp.elements.serverStatsOutput) ZappyApp.elements.serverStatsOutput.innerHTML = '<p class="text-red-400">Server data not found.</p>';
@@ -1082,6 +1096,38 @@
 
                     // Active Shift Listener (moved here to be part of real-time listeners)
                     this.checkActiveShift();
+
+                    // Shift Wave Status Listener
+                    const shiftWaveStatusRef = doc(db, `/artifacts/${appId}/public/data/servers/${serverId}/settings/shiftWaveStatus`);
+                    const unsubscribeShiftWaveStatus = onSnapshot(shiftWaveStatusRef, (docSnap) => {
+                        const shiftWaveActive = docSnap.exists() && docSnap.data().active;
+                        if (ZappyApp.elements.shiftToggleButton) {
+                            // Disable start shift button if no shift wave is active
+                            if (!shiftWaveActive) {
+                                ZappyApp.elements.shiftToggleButton.setAttribute('disabled', 'true');
+                                ZappyApp.elements.shiftToggleButton.classList.add('opacity-50', 'cursor-not-allowed');
+                                ZappyApp.ui.displayMessage('shift-controls-message', 'No active shift wave. Cannot start shift.', true);
+                            } else {
+                                ZappyApp.elements.shiftToggleButton.removeAttribute('disabled');
+                                ZappyApp.elements.shiftToggleButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                                // Clear message if it was about shift wave inactivity
+                                if (ZappyApp.elements.shiftControlsMessage.textContent.includes('No active shift wave')) {
+                                    ZappyApp.elements.shiftControlsMessage.textContent = '';
+                                }
+                            }
+
+                            // If shift wave ends while user is on shift, automatically end their local shift
+                            if (!shiftWaveActive && ZappyApp.state.shiftTimerRunning && ZappyApp.state.currentServer.id === ZappyApp.state.currentUser.uid /* Assuming currentShiftServerId in user data */ ) {
+                                // The user's own checkActiveShift listener will eventually catch this
+                                // For immediate local UI update, you could force end locally here,
+                                // but relying on checkActiveShift's onSnapshot is generally more robust.
+                            }
+                        }
+                    }, (error) => {
+                        console.error("Error listening to shift wave status:", error);
+                        ZappyApp.ui.displayMessage('shift-controls-message', 'Failed to load shift wave status (permission error).', true);
+                    });
+                    ZappyApp.state.unsubscribeListeners.push(unsubscribeShiftWaveStatus);
                 },
 
                 async handleJoinRequestAction(action, e) {
@@ -1223,27 +1269,59 @@
 
                 async checkActiveShift() {
                     const userId = ZappyApp.state.currentUser.uid;
-                    // Ensure the userDataRef is correctly formed and always available
-                    const userDataRef = doc(db, `/artifacts/${appId}/users`, userId); // Corrected path
-                    
+                    const userDataRef = doc(db, `/artifacts/${appId}/users`, userId);
+                    const serverId = ZappyApp.state.currentServer ? ZappyApp.state.currentServer.id : null; // Get current server ID
+
                     // Use onSnapshot for real-time updates to active shift status
-                    const unsubscribeShiftStatus = onSnapshot(userDataRef, (docSnap) => {
-                        // Defensive check for docSnap.exists() and then data properties
-                        if (docSnap.exists() && docSnap.data().activeShift && docSnap.data().shiftStartTime) {
-                            ZappyApp.state.shiftStartTime = docSnap.data().shiftStartTime.toDate(); // Convert Firebase Timestamp to Date
+                    const unsubscribeShiftStatus = onSnapshot(userDataRef, async (docSnap) => {
+                        const userData = docSnap.data();
+                        const isShiftActiveInFirestore = userData && userData.activeShift && userData.shiftStartTime && userData.currentShiftServerId === serverId;
+
+                        let shiftWaveIsActive = false;
+                        if (isShiftActiveInFirestore && serverId) {
+                            try {
+                                const shiftWaveStatusDoc = await getDoc(doc(db, `/artifacts/${appId}/public/data/servers/${serverId}/settings/shiftWaveStatus`));
+                                shiftWaveIsActive = shiftWaveStatusDoc.exists() && shiftWaveStatusDoc.data().active;
+                            } catch (error) {
+                                console.error("Error checking shift wave status:", error);
+                                // Assume false if unable to read (e.g., permissions or non-existent)
+                                shiftWaveIsActive = false;
+                            }
+                        }
+
+                        if (isShiftActiveInFirestore && shiftWaveIsActive) {
+                            ZappyApp.state.shiftStartTime = userData.shiftStartTime.toDate();
                             ZappyApp.state.shiftTimerRunning = true;
                             if (ZappyApp.elements.shiftToggleButton) ZappyApp.elements.shiftToggleButton.textContent = 'End Shift';
                             this.startShiftTimer();
                         } else {
+                            // If shift was active but now should not be (e.g., shift wave ended or server changed)
+                            if (ZappyApp.state.shiftTimerRunning) {
+                                clearInterval(ZappyApp.state.shiftInterval);
+                                ZappyApp.state.shiftInterval = null;
+                            }
                             ZappyApp.state.shiftTimerRunning = false;
                             if (ZappyApp.elements.shiftToggleButton) ZappyApp.elements.shiftToggleButton.textContent = 'Start Shift';
                             if (ZappyApp.elements.shiftTimer) ZappyApp.elements.shiftTimer.textContent = '00:00:00';
-                            clearInterval(ZappyApp.state.shiftInterval);
-                            ZappyApp.state.shiftInterval = null;
+
+                            // If shift was active but now not allowed to be, try to reset it in Firestore
+                            if (userData && userData.activeShift) {
+                                console.log('Automatically ending shift in Firestore due to wave inactivity or server mismatch.');
+                                try {
+                                    await updateDoc(userDataRef, {
+                                        activeShift: false,
+                                        shiftStartTime: null,
+                                        currentShiftServerId: null, // Clear the server ID when shift ends
+                                    });
+                                    ZappyApp.ui.displayMessage('shift-controls-message', 'Your shift ended automatically.', false);
+                                } catch (error) {
+                                    console.error("Error automatically ending shift:", error);
+                                    ZappyApp.ui.displayMessage('shift-controls-message', 'Error resetting shift status.', true);
+                                }
+                            }
                         }
                     }, (error) => {
                         console.error("Error listening to active shift status:", error);
-                        // Only display error if it's a permission issue, not just data non-existence
                         if (error.code === 'permission-denied' || error.code === 'unavailable') {
                              ZappyApp.ui.displayMessage('shift-controls-message', 'Failed to load shift status (permission error).', true);
                         } else {
@@ -1252,6 +1330,7 @@
                     });
                     ZappyApp.state.unsubscribeListeners.push(unsubscribeShiftStatus);
                 },
+
 
                 startShiftTimer() {
                     if (ZappyApp.state.shiftInterval) clearInterval(ZappyApp.state.shiftInterval);
@@ -1269,8 +1348,9 @@
                     if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
                     const userId = ZappyApp.state.currentUser.uid;
                     const serverId = ZappyApp.state.currentServer.id;
-                    const userDataRef = doc(db, `/artifacts/${appId}/users`, userId); // Corrected path
-                    if (ZappyApp.elements.shiftControlsMessage) ZappyApp.elements.shiftControlsMessage.textContent = ''; // Clear previous messages
+                    const userDataRef = doc(db, `/artifacts/${appId}/users`, userId);
+                    const shiftControlsMessageEl = ZappyApp.elements.shiftControlsMessage;
+                    if (shiftControlsMessageEl) shiftControlsMessageEl.textContent = ''; // Clear previous messages
 
                     try {
                         if (ZappyApp.state.shiftTimerRunning) {
@@ -1278,19 +1358,17 @@
                             const now = new Date();
                             const durationSeconds = Math.floor((now.getTime() - ZappyApp.state.shiftStartTime.getTime()) / 1000);
 
-                            // Fetch current totalShiftDuration safely and defensively
                             const userDocSnap = await getDoc(userDataRef);
                             const currentTotalDuration = userDocSnap.exists() && typeof userDocSnap.data().totalShiftDuration === 'number'
                                                          ? userDocSnap.data().totalShiftDuration : 0;
 
-                            // Update user's total shift duration and set activeShift to false
                             await updateDoc(userDataRef, {
                                 activeShift: false,
                                 shiftStartTime: null,
+                                currentShiftServerId: null, // Clear the server ID when shift ends
                                 totalShiftDuration: currentTotalDuration + durationSeconds
                             });
 
-                            // Record this shift session in server's shifts collection
                             await addDoc(collection(db, `/artifacts/${appId}/public/data/servers/${serverId}/shifts`), {
                                 userId: userId,
                                 serverId: serverId,
@@ -1303,24 +1381,33 @@
                             ZappyApp.ui.displayMessage('shift-controls-message', 'Shift ended.', false);
                         } else {
                             // Start shift
+                            // First, check if there's an active shift wave for this server
+                            const shiftWaveStatusRef = doc(db, `/artifacts/${appId}/public/data/servers/${serverId}/settings/shiftWaveStatus`);
+                            const shiftWaveStatusDoc = await getDoc(shiftWaveStatusRef);
+                            const shiftWaveActive = shiftWaveStatusDoc.exists() && shiftWaveStatusDoc.data().active;
+
+                            if (!shiftWaveActive) {
+                                ZappyApp.ui.displayMessage('shift-controls-message', 'Cannot start shift: No active shift wave on this server.', true);
+                                return; // Stop execution
+                            }
+
                             const now = new Date();
                             ZappyApp.state.shiftStartTime = now;
 
-                            // Ensure user data document exists and initialize totalShiftDuration if not.
-                            // SetDoc with merge: true is robust here for initial creation/update.
                             await setDoc(userDataRef, {
                                 activeShift: true,
                                 shiftStartTime: now,
-                                email: ZappyApp.state.currentUser.email || 'Anonymous User', // Store email for display in leaderboard
+                                currentShiftServerId: serverId, // Store the server ID for which the shift is active
+                                email: ZappyApp.state.currentUser.email || 'Anonymous User',
                                 totalShiftDuration: 0, // Will be updated on subsequent shifts if not already present
-                                createdAt: serverTimestamp() // Add if document is new
+                                createdAt: serverTimestamp()
                             }, { merge: true });
 
                             ZappyApp.ui.displayMessage('shift-controls-message', 'Shift started!', false);
                         }
                     } catch (error) {
                         console.error("Error toggling shift:", error);
-                        ZappyApp.ui.displayMessage('shift-controls-message', `Error: ${error.message}. Check user data permissions.`, true);
+                        ZappyApp.ui.displayMessage('shift-controls-message', `Error: ${error.message}. Check user data and shift wave permissions.`, true);
                     } finally {
                         if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                     }
@@ -1431,6 +1518,38 @@
                     }
                 },
 
+                async handleSaveApiKey() {
+                    const newApiKey = ZappyApp.elements.editApiKeyInput?.value.trim();
+                    const serverId = ZappyApp.state.currentServer.id;
+                    const serverDocRef = doc(db, `/artifacts/${appId}/public/data/servers`, serverId);
+
+                    if (ZappyApp.elements.ownerApiKeySuccess) ZappyApp.elements.ownerApiKeySuccess.textContent = '';
+                    if (ZappyApp.elements.ownerApiKeyError) ZappyApp.elements.ownerApiKeyError.textContent = '';
+
+                    if (!newApiKey) {
+                        ZappyApp.ui.displayMessage('owner-api-key-error', 'API Key cannot be empty.', true);
+                        return;
+                    }
+
+                    if (newApiKey === ZappyApp.state.currentServer.apiKey) {
+                        ZappyApp.ui.displayMessage('owner-api-key-success', 'API Key is already up to date.', false);
+                        return;
+                    }
+
+                    if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
+                    try {
+                        await updateDoc(serverDocRef, { apiKey: newApiKey });
+                        ZappyApp.state.currentServer.apiKey = newApiKey; // Update local state
+                        ZappyApp.ui.displayMessage('owner-api-key-success', 'API Key updated successfully!', false);
+                    } catch (error) {
+                        console.error("Error updating API Key:", error);
+                        ZappyApp.ui.displayMessage('owner-api-key-error', `Failed to update API Key: ${error.message}`, true);
+                    } finally {
+                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
+                    }
+                },
+
+
                 handleDeleteServer() {
                     ZappyApp.utils.showConfirmModal(
                         'Delete Server',
@@ -1535,9 +1654,30 @@
                         } else if (action === 'end') {
                             await setDoc(shiftWaveStatusRef, { active: false, endTime: serverTimestamp(), triggeredBy: ZappyApp.state.currentUser.uid });
                             ZappyApp.ui.displayMessage('shift-controls-message', 'Shift wave ended!', false);
+
+                            // WIPE SHIFTS FOR THIS SERVER
+                            console.log(`Clearing all shifts for server: ${serverId}`);
+                            const shiftsCollectionRef = collection(db, `/artifacts/${appId}/public/data/servers/${serverId}/shifts`);
+                            const shiftsSnapshot = await getDocs(shiftsCollectionRef);
+                            const batchDeleteShifts = writeBatch(db);
+                            shiftsSnapshot.docs.forEach(doc => {
+                                batchDeleteShifts.delete(doc.ref);
+                            });
+                            if (shiftsSnapshot.empty) {
+                                console.log('No shifts to clear.');
+                            } else {
+                                await batchDeleteShifts.commit();
+                                console.log('All shifts for this server cleared successfully.');
+                                ZappyApp.ui.displayMessage('shift-controls-message', 'Shift wave ended and all shifts cleared!', false);
+                            }
+
+                            // Optional: Reset active shifts for users who were on this server's shift wave
+                            // This would be a more advanced feature, likely requiring backend logic for robustness.
+                            // For client-side only, their individual `checkActiveShift` listeners
+                            // will handle local state updates due to `shiftWaveStatus.active` changing.
                         }
                     } catch (error) {
-                        console.error(`Error ${action}ing shift wave:`, error);
+                        console.error(`Error ${action}ing shift wave or wiping shifts:`, error);
                         ZappyApp.ui.displayMessage('shift-controls-message', `Failed to ${action} shift wave: ${error.message}`, true);
                     } finally {
                         if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
@@ -1555,6 +1695,8 @@
                     if (executeCommandButton) executeCommandButton.addEventListener('click', this.handleExecuteCommand.bind(this));
                     const saveServerNameBtn = document.getElementById('save-server-name-btn');
                     if (saveServerNameBtn) saveServerNameBtn.addEventListener('click', this.handleSaveServerName.bind(this));
+                    const saveApiKeyBtn = document.getElementById('save-api-key-btn');
+                    if (saveApiKeyBtn) saveApiKeyBtn.addEventListener('click', this.handleSaveApiKey.bind(this)); // Bind new API key save button
                     const deleteServerBtn = document.getElementById('delete-server-btn');
                     if (deleteServerBtn) deleteServerBtn.addEventListener('click', this.handleDeleteServer.bind(this));
 
