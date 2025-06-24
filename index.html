@@ -829,32 +829,34 @@
                     let allServers = {}; // Use an object to store servers by ID to deduplicate
 
                     // Listener for servers where the current user is a member
+                    console.log(`%c[DEBUG onSnapshot] Attaching listener for servers where user is a MEMBER.`, 'color: orange;');
                     const qMembers = query(serversCollectionRef, where('members', 'array-contains', ZappyApp.state.currentUser.uid));
                     const unsubscribeMembers = onSnapshot(qMembers, (snapshot) => {
-                        console.log(`%c[onSnapshot members] Snapshot received for members. Number of documents: ${snapshot.size}`, 'color: lightblue;');
+                        console.log(`%c[DEBUG onSnapshot members] Snapshot received. Number of documents: ${snapshot.size}`, 'color: lightblue;');
                         snapshot.forEach(doc => {
                             const server = { id: doc.id, ...doc.data() };
                             allServers[server.id] = server;
                         });
                         this.renderServerList(allServers);
                     }, (error) => {
-                        console.error(`%c[onSnapshot members] Error fetching member servers: ${error.message}`, 'color: red; font-weight: bold;');
+                        console.error(`%c[DEBUG onSnapshot Error] Error fetching member servers: ${error.code} - ${error.message}`, 'color: red; font-weight: bold;'); // Detailed error log
                         ZappyApp.ui.displayMessage('server-list-error', `Could not load joined server groups: ${error.message}. Please check your Firebase permissions.`, true);
                         this.renderServerList(allServers); // Still try to render whatever we have
                     });
                     ZappyApp.state.unsubscribeListeners.push(unsubscribeMembers);
 
                     // Listener for servers where the current user is the owner
+                    console.log(`%c[DEBUG onSnapshot] Attaching listener for servers where user is an OWNER.`, 'color: orange;');
                     const qOwners = query(serversCollectionRef, where('ownerId', '==', ZappyApp.state.currentUser.uid));
                     const unsubscribeOwners = onSnapshot(qOwners, (snapshot) => {
-                        console.log(`%c[onSnapshot owners] Snapshot received for owners. Number of documents: ${snapshot.size}`, 'color: purple;');
+                        console.log(`%c[DEBUG onSnapshot owners] Snapshot received. Number of documents: ${snapshot.size}`, 'color: purple;');
                         snapshot.forEach(doc => {
                             const server = { id: doc.id, ...doc.data() };
                             allServers[server.id] = server;
                         });
                         this.renderServerList(allServers);
                     }, (error) => {
-                        console.error(`%c[onSnapshot owners] Error fetching owned servers: ${error.message}`, 'color: red; font-weight: bold;');
+                        console.error(`%c[DEBUG onSnapshot Error] Error fetching owned servers: ${error.code} - ${error.message}`, 'color: red; font-weight: bold;'); // Detailed error log
                         ZappyApp.ui.displayMessage('server-list-error', `Could not load owned server groups: ${error.message}. Please check your Firebase permissions.`, true);
                         this.renderServerList(allServers); // Still try to render whatever we have
                     });
