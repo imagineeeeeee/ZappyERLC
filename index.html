@@ -823,39 +823,76 @@
                     ZappyApp.state.unsubscribeListeners.forEach(unsub => unsub());
                     ZappyApp.state.unsubscribeListeners = [];
 
-                    // Fetch server groups the current user is a member of
                     const serversCollectionRef = collection(db, `/artifacts/${appId}/public/data/servers`);
                     console.log(`[fetchUserServers] Firestore collection path being queried: /artifacts/${appId}/public/data/servers`);
-                    const q = query(serversCollectionRef,
-                                    where('members', 'array-contains', ZappyApp.state.currentUser.uid));
 
-                    const unsubscribe = onSnapshot(q, (snapshot) => {
-                        console.log(`%c[onSnapshot servers] Snapshot received. Number of documents: ${snapshot.size}`, 'color: lightblue;'); // Highlight important log
-                        if (snapshot.empty) {
-                            console.log("[onSnapshot servers] No server groups found for this user in the specified path.");
-                            if (serverListEl) serverListEl.innerHTML = '<p class="text-slate-400">You have no Zappy server groups. Create or join one!</p>';
-                            return;
-                        }
-                        if (serverListEl) serverListEl.innerHTML = ''; // Clear existing content
-                        snapshot.forEach((doc) => {
+                    let allServers = {}; // Use an object to store servers by ID to deduplicate
+
+                    // Listener for servers where the current user is a member
+                    const qMembers = query(serversCollectionRef, where('members', 'array-contains', ZappyApp.state.currentUser.uid));
+                    const unsubscribeMembers = onSnapshot(qMembers, (snapshot) => {
+                        console.log(`%c[onSnapshot members] Snapshot received for members. Number of documents: ${snapshot.size}`, 'color: lightblue;');
+                        snapshot.forEach(doc => {
                             const server = { id: doc.id, ...doc.data() };
-                            const isOwner = server.ownerId === ZappyApp.state.currentUser.uid;
-                            console.log(`%c[onSnapshot servers] Found server: '${server.name}' (ID: '${server.id}'), Owner: ${isOwner}, Members: ${JSON.stringify(server.members)}`, 'color: lightgreen;'); // Detailed log
-                            if (serverListEl) serverListEl.insertAdjacentHTML('beforeend', `
-                                <div class="card flex flex-col justify-between">
-                                    <div>
-                                        <h4 class="text-lg font-bold text-white">${server.name}</h4>
-                                        <p class="text-sm text-slate-400 mb-4">${isOwner ? '👑 Owner' : '👥 Member'}</p>
-                                    </div>
-                                    <button class="btn btn-primary mt-auto select-server-btn" data-server-id="${server.id}">Open Panel</button>
-                                </div>`);
+                            allServers[server.id] = server;
                         });
+                        this.renderServerList(allServers);
                     }, (error) => {
-                        console.error(`%c[onSnapshot servers] Error fetching servers: ${error.message}`, 'color: red; font-weight: bold;'); // Highlight errors
-                        ZappyApp.ui.displayMessage('server-list-error', `Could not load server groups: ${error.message}. Please check your Firebase permissions.`, true);
-                        if (serverListEl) serverListEl.innerHTML = '<p class="text-red-400">Failed to load server groups.</p>';
+                        console.error(`%c[onSnapshot members] Error fetching member servers: ${error.message}`, 'color: red; font-weight: bold;');
+                        ZappyApp.ui.displayMessage('server-list-error', `Could not load joined server groups: ${error.message}. Please check your Firebase permissions.`, true);
+                        this.renderServerList(allServers); // Still try to render whatever we have
                     });
-                    ZappyApp.state.unsubscribeListeners.push(unsubscribe); // Store for cleanup
+                    ZappyApp.state.unsubscribeListeners.push(unsubscribeMembers);
+
+                    // Listener for servers where the current user is the owner
+                    const qOwners = query(serversCollectionRef, where('ownerId', '==', ZappyApp.state.currentUser.uid));
+                    const unsubscribeOwners = onSnapshot(qOwners, (snapshot) => {
+                        console.log(`%c[onSnapshot owners] Snapshot received for owners. Number of documents: ${snapshot.size}`, 'color: purple;');
+                        snapshot.forEach(doc => {
+                            const server = { id: doc.id, ...doc.data() };
+                            allServers[server.id] = server;
+                        });
+                        this.renderServerList(allServers);
+                    }, (error) => {
+                        console.error(`%c[onSnapshot owners] Error fetching owned servers: ${error.message}`, 'color: red; font-weight: bold;');
+                        ZappyApp.ui.displayMessage('server-list-error', `Could not load owned server groups: ${error.message}. Please check your Firebase permissions.`, true);
+                        this.renderServerList(allServers); // Still try to render whatever we have
+                    });
+                    ZappyApp.state.unsubscribeListeners.push(unsubscribeOwners);
+                },
+
+                renderServerList(serversMap) {
+                    const serverListEl = ZappyApp.elements.serverList;
+                    if (!serverListEl) return;
+
+                    const serversArray = Object.values(serversMap).sort((a, b) => {
+                        // Sort by creation date (newest first) or by name if creation date is missing
+                        if (a.createdAt && b.createdAt) {
+                            // Firestore Timestamp to Date object for comparison
+                            const dateA = a.createdAt.toDate ? a.createdAt.toDate() : a.createdAt;
+                            const dateB = b.createdAt.toDate ? b.createdAt.toDate() : b.createdAt;
+                            return dateB.getTime() - dateA.getTime();
+                        }
+                        return a.name.localeCompare(b.name);
+                    });
+
+                    if (serversArray.length === 0) {
+                        serverListEl.innerHTML = '<p class="text-slate-400">You have no Zappy server groups. Create or join one!</p>';
+                        return;
+                    }
+
+                    serverListEl.innerHTML = ''; // Clear existing content
+                    serversArray.forEach((server) => {
+                        const isOwner = server.ownerId === ZappyApp.state.currentUser.uid;
+                        serverListEl.insertAdjacentHTML('beforeend', `
+                            <div class="card flex flex-col justify-between">
+                                <div>
+                                    <h4 class="text-lg font-bold text-white">${server.name}</h4>
+                                    <p class="text-sm text-slate-400 mb-4">${isOwner ? '👑 Owner' : '👥 Member'}</p>
+                                </div>
+                                <button class="btn btn-primary mt-auto select-server-btn" data-server-id="${server.id}">Open Panel</button>
+                            </div>`);
+                    });
                 },
 
                 async handleSelectServer(e) {
