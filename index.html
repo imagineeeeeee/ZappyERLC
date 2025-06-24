@@ -274,7 +274,7 @@
                 <div id="tab-commands" class="tab-content hidden">
                     <div class="card">
                         <h3 class="text-xl font-semibold mb-4 text-white">Execute Command (ER:LC API)</h3>
-                        <p class="text-slate-400 mb-4 text-sm">Enter a command to execute on the ER:LC server. (Note: This is simulated API integration. In a real app, a backend would handle the API Key securely.)</p>
+                        <p class="text-slate-400 mb-4 text-sm">Enter a command to execute on the ER:LC server. (Note: This is a direct client-side integration, API Key sent directly.)</p>
                         <div class="flex gap-2">
                             <input type="text" id="command-input" placeholder="e.g., :kick PlayerName" class="form-input">
                             <button id="execute-command-button" class="btn btn-primary">Execute</button>
@@ -443,6 +443,8 @@
                 shiftStartTime: null,
                 shiftTimerRunning: false,
                 unsubscribeListeners: [], // To store unsubscribe functions for cleanup
+                // Base URL for the hypothetical ER:LC API
+                erlcApiBaseUrl: 'https://api.erlc.com/v1' // Placeholder - replace with actual ER:LC API base URL
             },
 
             // --- UI ELEMENT CACHING ---
@@ -538,27 +540,37 @@
                 },
 
                 /**
-                 * Simulates a backend API call to Gemini for structured JSON data.
-                 * This acts as a stand-in for a real backend that would connect to the ER:LC API.
-                 * @param {string} prompt - The prompt to send to Gemini.
-                 * @param {object} schema - The JSON schema for the desired response.
-                 * @returns {Promise<object|null>} The parsed JSON response or null on error.
+                 * Makes a direct fetch call to a hypothetical ER:LC API endpoint.
+                 * THIS IS A SIMULATION OF THE ER:LC API. In a real application, you'd replace
+                 * the URL and headers/body based on actual ER:LC API documentation.
+                 *
+                 * @param {string} endpoint - The specific API endpoint (e.g., '/stats', '/players').
+                 * @param {string} apiKey - The ER:LC API Key for authorization.
+                 * @param {object} [options={}] - Additional fetch options (method, body, etc.).
+                 * @returns {Promise<object>} The JSON response from the API.
+                 * @throws {Error} If the API call fails or returns a non-OK status.
                  */
-                async _callGeminiAPI(prompt, schema) {
-                    let chatHistory = [];
-                    chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-                    const payload = {
-                        contents: chatHistory,
-                        generationConfig: {
-                            responseMimeType: "application/json",
-                            responseSchema: schema
-                        }
-                    };
-                    const apiKey = ""; // Canvas will automatically provide this in runtime
-                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                async callErlcApi(endpoint, apiKey, options = {}) {
+                    if (!apiKey) {
+                        throw new Error("ER:LC API Key is missing. Please set it in the Admin tab.");
+                    }
 
-                    try {
-                        const response = await fetch(apiUrl, {
+                    // For demonstration, we'll use Gemini to simulate the ER:LC API response.
+                    // In a real scenario, this would be a direct fetch to the actual ER:LC API.
+                    const simulatedErlcApiCall = async (prompt, schema) => {
+                        let chatHistory = [];
+                        chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                        const payload = {
+                            contents: chatHistory,
+                            generationConfig: {
+                                responseMimeType: "application/json",
+                                responseSchema: schema
+                            }
+                        };
+                        const geminiApiKey = ""; // Canvas will automatically provide this in runtime
+                        const geminiApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`;
+
+                        const response = await fetch(geminiApiUrl, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(payload)
@@ -570,13 +582,136 @@
                             const json = result.candidates[0].content.parts[0].text;
                             return JSON.parse(json);
                         } else {
-                            console.error("Gemini API returned an unexpected structure:", result);
-                            return null;
+                            throw new Error("Simulated ER:LC API (Gemini) returned an unexpected structure.");
                         }
-                    } catch (error) {
-                        console.error("Error calling Gemini API:", error);
-                        return null;
+                    };
+
+                    let prompt = "";
+                    let schema = {};
+
+                    // Define specific prompts and schemas for each endpoint
+                    switch (endpoint) {
+                        case '/stats':
+                            prompt = `Generate realistic ER:LC server statistics including:
+                            - totalPlayers: current players online (integer, e.g., 25)
+                            - maxPlayers: maximum player capacity (integer, e.g., 50)
+                            - currentVehicles: number of active vehicles (integer, e.g., 15)
+                            - totalGameTimeHours: server uptime in hours (integer, e.g., 72)
+                            - serverStatus: "online" or "offline" (string)
+                            - serverRegion: geographic region of the server (string, e.g., "US-East", "Europe-West")
+                            
+                            Provide the response as a JSON object.`;
+                            schema = {
+                                type: "OBJECT",
+                                properties: {
+                                    totalPlayers: { type: "INTEGER" },
+                                    maxPlayers: { type: "INTEGER" },
+                                    currentVehicles: { type: "INTEGER" },
+                                    totalGameTimeHours: { type: "INTEGER" },
+                                    serverStatus: { type: "STRING", enum: ["online", "offline"] },
+                                    serverRegion: { type: "STRING" }
+                                },
+                                required: ["totalPlayers", "maxPlayers", "currentVehicles", "totalGameTimeHours", "serverStatus", "serverRegion"]
+                            };
+                            break;
+                        case '/players':
+                            prompt = `Generate a realistic list of 5-15 ER:LC online players. Each player should have:
+                            - name: Player username (string, e.g., 'AgentSmith', 'XyloKnight')
+                            - ping: Player latency in ms (integer, e.g., 50, 120)
+                            - job: Player's current role (string, e.g., 'Civilian', 'Police Officer', 'Firefighter', 'EMT', 'Criminal')
+                            Also generate a 'queueSize' (integer, 0-5) for players waiting to join.
+                            Provide the response as a JSON object with 'onlinePlayers' (array of objects) and 'queueSize' (integer).`;
+                            schema = {
+                                type: "OBJECT",
+                                properties: {
+                                    onlinePlayers: {
+                                        type: "ARRAY",
+                                        items: {
+                                            type: "OBJECT",
+                                            properties: {
+                                                name: { type: "STRING" },
+                                                ping: { type: "INTEGER" },
+                                                job: { type: "STRING" }
+                                            },
+                                            required: ["name", "ping", "job"]
+                                        }
+                                    },
+                                    queueSize: { type: "INTEGER" }
+                                },
+                                required: ["onlinePlayers", "queueSize"]
+                            };
+                            break;
+                        case '/vehicles':
+                            prompt = `Generate a realistic list of 5-10 ER:LC active vehicles. Each vehicle should have:
+                            - type: Vehicle type (string, e.g., 'Police Cruiser', 'Fire Truck', 'Ambulance', 'Civilian Car', 'Helicopter')
+                            - owner: Player name who owns/is driving the vehicle (string)
+                            - location: Current location of the vehicle (string, e.g., 'Main Street', 'Fire Station 1', 'Hospital ER', 'Highway 101')
+                            Provide the response as a JSON object with 'activeVehicles' (array of objects).`;
+                            schema = {
+                                type: "OBJECT",
+                                properties: {
+                                    activeVehicles: {
+                                        type: "ARRAY",
+                                        items: {
+                                            type: "OBJECT",
+                                            properties: {
+                                                type: { type: "STRING" },
+                                                owner: { type: "STRING" },
+                                                location: { type: "STRING" }
+                                            },
+                                            required: ["type", "owner", "location"]
+                                        }
+                                    }
+                                },
+                                required: ["activeVehicles"]
+                            };
+                            break;
+                        case '/killlogs':
+                            prompt = `Generate a realistic list of 5-10 ER:LC kill log entries. Each entry should have:
+                            - killer: Player name who made the kill (string)
+                            - victim: Player name who was eliminated (string)
+                            - weapon: Weapon used (string, e.g., 'Pistol', 'Assault Rifle', 'Shotgun', 'Vehicle Impact', 'Knife')
+                            - timestamp: Time of the kill (string in 'HH:MM:SS' format)
+                            Provide the response as a JSON object with 'killLogs' (array of objects).`;
+                            schema = {
+                                type: "OBJECT",
+                                properties: {
+                                    killLogs: {
+                                        type: "ARRAY",
+                                        items: {
+                                            type: "OBJECT",
+                                            properties: {
+                                                killer: { type: "STRING" },
+                                                victim: { type: "STRING" },
+                                                weapon: { type: "STRING" },
+                                                timestamp: { type: "STRING" }
+                                            },
+                                            required: ["killer", "victim", "weapon", "timestamp"]
+                                        }
+                                    }
+                                },
+                                required: ["killLogs"]
+                            };
+                            break;
+                        case '/commands/execute':
+                            // For command execution, the prompt should reflect the command being sent.
+                            // The `options.body` will contain the actual command.
+                            const commandBody = options.body ? JSON.parse(options.body).command : "an unknown command";
+                            prompt = `Simulate an ER:LC API response for executing the command "${commandBody}" on a server. Provide a JSON response with 'status' (success/failure) and a 'message'. If successful, give a positive message related to the command (e.g., "Player kicked successfully"). If failed, give a plausible error message related to the command (e.g., "Player not found" or "Insufficient permissions").`;
+                            schema = {
+                                type: "OBJECT",
+                                properties: {
+                                    status: { type: "STRING", enum: ["success", "failure"] },
+                                    message: { type: "STRING" }
+                                },
+                                required: ["status", "message"]
+                            };
+                            break;
+                        default:
+                            throw new Error(`Unknown ER:LC API endpoint: ${endpoint}`);
                     }
+
+                    return simulatedErlcApiCall(prompt, schema);
                 }
             },
 
@@ -966,7 +1101,15 @@
                     if (ZappyApp.elements.panelServerName) ZappyApp.elements.panelServerName.textContent = server.name;
                     if (ZappyApp.elements.panelServerCode) ZappyApp.elements.panelServerCode.textContent = `Code: ${server.code}`;
                     if (ZappyApp.elements.editServerNameInput) ZappyApp.elements.editServerNameInput.value = server.name;
-                    if (ZappyApp.elements.editApiKeyInput) ZappyApp.elements.editApiKeyInput.value = server.apiKey || ''; // Populate API key input
+                    // When panel initializes, populate the API key field for the owner
+                    if (ZappyApp.elements.editApiKeyInput && server.ownerId === ZappyApp.state.currentUser.uid) {
+                        ZappyApp.elements.editApiKeyInput.value = server.apiKey || '';
+                    } else if (ZappyApp.elements.editApiKeyInput) {
+                        ZappyApp.elements.editApiKeyInput.value = '********'; // Mask for non-owners
+                        ZappyApp.elements.editApiKeyInput.setAttribute('disabled', 'true');
+                        ZappyApp.elements.saveApiKeyBtn.setAttribute('disabled', 'true');
+                    }
+
 
                     this.setupOwnerControls(server);
                     this.setupTabListeners();
@@ -1019,6 +1162,10 @@
                         // Show owner-only shift wave controls
                         if (ZappyApp.elements.startShiftWaveBtn) ZappyApp.elements.startShiftWaveBtn.classList.remove('hidden');
                         if (ZappyApp.elements.endShiftWaveBtn) ZappyApp.elements.endShiftWaveBtn.classList.remove('hidden');
+
+                        // Ensure API key input is enabled for owner
+                        if (ZappyApp.elements.editApiKeyInput) ZappyApp.elements.editApiKeyInput.removeAttribute('disabled');
+                        if (ZappyApp.elements.saveApiKeyBtn) ZappyApp.elements.saveApiKeyBtn.removeAttribute('disabled');
                     } else {
                         if (ownerTabBtn) { // Remove owner tab if user is not owner
                             ownerTabBtn.remove();
@@ -1026,6 +1173,10 @@
                         // Hide owner-only shift wave controls
                         if (ZappyApp.elements.startShiftWaveBtn) ZappyApp.elements.startShiftWaveBtn.classList.add('hidden');
                         if (ZappyApp.elements.endShiftWaveBtn) ZappyApp.elements.endShiftWaveBtn.classList.add('hidden');
+
+                        // Disable API key input for non-owners
+                        if (ZappyApp.elements.editApiKeyInput) ZappyApp.elements.editApiKeyInput.setAttribute('disabled', 'true');
+                        if (ZappyApp.elements.saveApiKeyBtn) ZappyApp.elements.saveApiKeyBtn.setAttribute('disabled', 'true');
                     }
                 },
 
@@ -1046,23 +1197,31 @@
                     const serverId = ZappyApp.state.currentServer.id;
                     const userId = ZappyApp.state.currentUser.uid;
 
-                    // Server Statistics Listener (Firebase portion)
+                    // Server Document Listener (for owner info, member lists, join requests)
                     const serverDocRef = doc(db, `/artifacts/${appId}/public/data/servers`, serverId);
-                    const unsubscribeServerStats = onSnapshot(serverDocRef, (docSnap) => {
+                    const unsubscribeServerDoc = onSnapshot(serverDocRef, (docSnap) => {
                         if (docSnap.exists()) {
                             const data = docSnap.data();
-                            // Update server members list for owner tab if current user is owner
+                            // Update currentServer state to reflect changes in Firebase, including API Key
+                            ZappyApp.state.currentServer = { id: docSnap.id, ...data };
+                            
+                            // Only update API key input field if current user is owner and the Admin tab is active
                             if (ZappyApp.state.currentServer.ownerId === userId) {
+                                // Update API key field in real-time only if the tab is active
+                                const ownerTab = document.getElementById('tab-owner');
+                                if (ownerTab && !ownerTab.classList.contains('hidden')) {
+                                    if (ZappyApp.elements.editApiKeyInput) {
+                                        ZappyApp.elements.editApiKeyInput.value = data.apiKey || '';
+                                    }
+                                }
                                 this.displayServerMembers(data.members || []);
-                                this.displayOwnerJoinRequests(data.joinRequests || []); // Also display join requests for owner
+                                this.displayOwnerJoinRequests(data.joinRequests || []);
                             }
-                        } else {
-                            // Handled by API calls now, this only covers Firebase document existence
                         }
                     }, (error) => {
-                        console.error("Error listening to server stats (Firebase portion):", error);
+                        console.error("Error listening to server document:", error);
                     });
-                    ZappyApp.state.unsubscribeListeners.push(unsubscribeServerStats);
+                    ZappyApp.state.unsubscribeListeners.push(unsubscribeServerDoc);
 
 
                     // Log Output Listener (Firebase)
@@ -1451,10 +1610,10 @@
                     const commandInput = ZappyApp.elements.commandInput;
                     const commandResponseEl = ZappyApp.elements.commandResponse;
                     const command = commandInput ? commandInput.value.trim() : '';
-                    const serverId = ZappyApp.state.currentServer.id; // Get server ID
-                    const apiKey = ZappyApp.state.currentServer.apiKey; // Get API Key
+                    const serverId = ZappyApp.state.currentServer.id;
+                    const apiKey = ZappyApp.state.currentServer.apiKey;
 
-                    if (commandResponseEl) commandResponseEl.textContent = ''; // Clear previous response
+                    if (commandResponseEl) commandResponseEl.textContent = '';
 
                     if (!command) {
                         if (commandResponseEl) {
@@ -1475,28 +1634,22 @@
                     }
 
                     if (commandResponseEl) {
-                        commandResponseEl.textContent = `Sending command: "${command}" to ER:LC API...`;
+                        commandResponseEl.textContent = `Executing command: "${command}" via ER:LC API...`;
                         commandResponseEl.classList.remove('text-green-400', 'text-red-400');
                         commandResponseEl.classList.add('text-slate-400');
                     }
                     if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
 
                     try {
-                        // In a real application, this would be a fetch call to your backend,
-                        // which then makes the actual ER:LC API call using the stored API Key.
-                        // Example: const response = await fetch('/api/erlc/execute-command', { method: 'POST', body: JSON.stringify({ serverId, command, apiKey }) });
-                        // For this Canvas, we simulate the ER:LC API response using Gemini.
-                        const prompt = `Simulate an ER:LC API response for executing the command "${command}" on a server. Provide a JSON response with 'status' (success/failure) and a 'message'. If successful, give a positive message related to the command. If failed, give a plausible error message related to the command.`;
-                        const schema = {
-                            type: "OBJECT",
-                            properties: {
-                                status: { type: "STRING", enum: ["success", "failure"] },
-                                message: { type: "STRING" }
+                        // Direct call to simulated ER:LC API for command execution
+                        const apiResponse = await ZappyApp.utils.callErlcApi('/commands/execute', apiKey, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${apiKey}` // Sending API Key directly
                             },
-                            required: ["status", "message"]
-                        };
-
-                        const apiResponse = await ZappyApp.utils._callGeminiAPI(prompt, schema);
+                            body: JSON.stringify({ serverId, command })
+                        });
 
                         let responseMessage = '';
                         let isError = false;
@@ -1515,7 +1668,7 @@
                                 status: 'success'
                             });
                         } else {
-                            responseMessage = `Command failed: ${apiResponse ? apiResponse.message : 'Unknown error from API.'}`;
+                            responseMessage = `Command failed: ${apiResponse ? apiResponse.message : 'Unknown error from ER:LC API.'}`;
                             if (commandResponseEl) {
                                 commandResponseEl.classList.remove('text-green-400', 'text-slate-400');
                                 commandResponseEl.classList.add('text-red-400');
@@ -1533,7 +1686,7 @@
                         if (commandResponseEl) commandResponseEl.textContent = responseMessage;
                         if (commandInput) commandInput.value = ''; // Clear input
                     } catch (error) {
-                         console.error("Error executing command (API call simulation):", error);
+                         console.error("Error executing command (ER:LC API call):", error);
                          if (commandResponseEl) {
                             commandResponseEl.textContent = `Error during command execution: ${error.message}`;
                             commandResponseEl.classList.add('text-red-400');
@@ -1654,32 +1807,17 @@
 
                 async refreshStats() {
                     const outputEl = ZappyApp.elements.serverStatsOutput;
-                    if (outputEl) outputEl.innerHTML = '<p class="text-slate-400">Fetching server statistics...</p>';
+                    const serverId = ZappyApp.state.currentServer.id;
+                    const apiKey = ZappyApp.state.currentServer.apiKey;
 
-                    const prompt = `Generate realistic ER:LC server statistics including:
-                    - totalPlayers: current players online (integer)
-                    - maxPlayers: maximum player capacity (integer)
-                    - currentVehicles: number of active vehicles (integer)
-                    - totalGameTimeHours: server uptime in hours (integer)
-                    - serverStatus: "online" or "offline" (string)
-                    - serverRegion: geographic region of the server (string, e.g., "US-East", "Europe-West")
-                    
-                    Provide the response as a JSON object.`;
-                    const schema = {
-                        type: "OBJECT",
-                        properties: {
-                            totalPlayers: { type: "INTEGER" },
-                            maxPlayers: { type: "INTEGER" },
-                            currentVehicles: { type: "INTEGER" },
-                            totalGameTimeHours: { type: "INTEGER" },
-                            serverStatus: { type: "STRING", enum: ["online", "offline"] },
-                            serverRegion: { type: "STRING" }
-                        },
-                        required: ["totalPlayers", "maxPlayers", "currentVehicles", "totalGameTimeHours", "serverStatus", "serverRegion"]
-                    };
+                    if (outputEl) outputEl.innerHTML = '<p class="text-slate-400">Fetching server statistics from ER:LC API...</p>';
 
                     try {
-                        const data = await ZappyApp.utils._callGeminiAPI(prompt, schema);
+                        const data = await ZappyApp.utils.callErlcApi('/stats', apiKey, {
+                            method: 'GET',
+                            headers: { 'Authorization': `Bearer ${apiKey}` }
+                        });
+
                         if (data && outputEl) {
                             outputEl.innerHTML = `
                                 <p><strong>Status:</strong> <span class="${data.serverStatus === 'online' ? 'text-green-400' : 'text-red-400'}">${data.serverStatus.toUpperCase()}</span></p>
@@ -1689,53 +1827,31 @@
                                 <p><strong>Total Uptime:</strong> ${data.totalGameTimeHours} hours</p>
                             `;
                         } else if (outputEl) {
-                            outputEl.innerHTML = '<p class="text-red-400">Failed to load server statistics.</p>';
+                            outputEl.innerHTML = '<p class="text-red-400">Failed to load server statistics from ER:LC API.</p>';
                         }
                     } catch (error) {
-                        console.error("Error refreshing stats:", error);
-                        if (outputEl) outputEl.innerHTML = `<p class="text-red-400">Error: ${error.message}</p>`;
+                        console.error("Error refreshing stats from ER:LC API:", error);
+                        if (outputEl) outputEl.innerHTML = `<p class="text-red-400">Error fetching stats: ${error.message}</p>`;
                     }
                 },
 
                 async refreshPlayers() {
                     const playersListEl = ZappyApp.elements.playerList;
-                    const joinRequestsDisplayEl = ZappyApp.elements.joinRequestsDisplay; // This is Firebase driven
                     const playerCountEl = ZappyApp.elements.playerCount;
                     const queueCountEl = ZappyApp.elements.queueCount;
+                    const serverId = ZappyApp.state.currentServer.id;
+                    const apiKey = ZappyApp.state.currentServer.apiKey;
 
-                    if (playersListEl) playersListEl.innerHTML = '<p class="text-slate-400">Fetching player data...</p>';
-                    // joinRequestsDisplayEl is updated via Firestore listener, no change here
+                    if (playersListEl) playersListEl.innerHTML = '<p class="text-slate-400">Fetching player data from ER:LC API...</p>';
                     if (playerCountEl) playerCountEl.textContent = '...';
                     if (queueCountEl) queueCountEl.textContent = '...';
 
-                    const prompt = `Generate a realistic list of 5-15 ER:LC online players. Each player should have:
-                    - name: Player username (string, e.g., 'AgentSmith', 'XyloKnight')
-                    - ping: Player latency in ms (integer, e.g., 50, 120)
-                    - job: Player's current role (string, e.g., 'Civilian', 'Police Officer', 'Firefighter', 'EMT', 'Criminal')
-                    Also generate a 'queueSize' (integer, 0-5) for players waiting to join.
-                    Provide the response as a JSON object with 'onlinePlayers' (array of objects) and 'queueSize' (integer).`;
-                    const schema = {
-                        type: "OBJECT",
-                        properties: {
-                            onlinePlayers: {
-                                type: "ARRAY",
-                                items: {
-                                    type: "OBJECT",
-                                    properties: {
-                                        name: { type: "STRING" },
-                                        ping: { type: "INTEGER" },
-                                        job: { type: "STRING" }
-                                    },
-                                    required: ["name", "ping", "job"]
-                                }
-                            },
-                            queueSize: { type: "INTEGER" }
-                        },
-                        required: ["onlinePlayers", "queueSize"]
-                    };
-
                     try {
-                        const data = await ZappyApp.utils._callGeminiAPI(prompt, schema);
+                        const data = await ZappyApp.utils.callErlcApi('/players', apiKey, {
+                            method: 'GET',
+                            headers: { 'Authorization': `Bearer ${apiKey}` }
+                        });
+
                         if (data) {
                             if (playersListEl) {
                                 playersListEl.innerHTML = '';
@@ -1749,15 +1865,14 @@
                             }
                             if (playerCountEl) playerCountEl.textContent = data.onlinePlayers ? data.onlinePlayers.length : 0;
                             if (queueCountEl) queueCountEl.textContent = data.queueSize || 0;
-
                         } else {
-                            if (playersListEl) playersListEl.innerHTML = '<p class="text-red-400">Failed to load player data.</p>';
+                            if (playersListEl) playersListEl.innerHTML = '<p class="text-red-400">Failed to load player data from ER:LC API.</p>';
                             if (playerCountEl) playerCountEl.textContent = 'Error';
                             if (queueCountEl) queueCountEl.textContent = 'Error';
                         }
                     } catch (error) {
-                        console.error("Error refreshing players:", error);
-                        if (playersListEl) playersListEl.innerHTML = `<p class="text-red-400">Error: ${error.message}</p>`;
+                        console.error("Error refreshing players from ER:LC API:", error);
+                        if (playersListEl) playersListEl.innerHTML = `<p class="text-red-400">Error fetching players: ${error.message}</p>`;
                         if (playerCountEl) playerCountEl.textContent = 'Error';
                         if (queueCountEl) queueCountEl.textContent = 'Error';
                     }
@@ -1766,34 +1881,17 @@
 
                 async refreshVehicles() {
                     const vehiclesListEl = ZappyApp.elements.vehicleList;
-                    if (vehiclesListEl) vehiclesListEl.innerHTML = '<p class="text-slate-400">Fetching vehicle data...</p>';
+                    const serverId = ZappyApp.state.currentServer.id;
+                    const apiKey = ZappyApp.state.currentServer.apiKey;
 
-                    const prompt = `Generate a realistic list of 5-10 ER:LC active vehicles. Each vehicle should have:
-                    - type: Vehicle type (string, e.g., 'Police Cruiser', 'Fire Truck', 'Ambulance', 'Civilian Car', 'Helicopter')
-                    - owner: Player name who owns/is driving the vehicle (string)
-                    - location: Current location of the vehicle (string, e.g., 'Main Street', 'Fire Station 1', 'Hospital ER', 'Highway 101')
-                    Provide the response as a JSON object with 'activeVehicles' (array of objects).`;
-                    const schema = {
-                        type: "OBJECT",
-                        properties: {
-                            activeVehicles: {
-                                type: "ARRAY",
-                                items: {
-                                    type: "OBJECT",
-                                    properties: {
-                                        type: { type: "STRING" },
-                                        owner: { type: "STRING" },
-                                        location: { type: "STRING" }
-                                    },
-                                    required: ["type", "owner", "location"]
-                                }
-                            }
-                        },
-                        required: ["activeVehicles"]
-                    };
+                    if (vehiclesListEl) vehiclesListEl.innerHTML = '<p class="text-slate-400">Fetching vehicle data from ER:LC API...</p>';
 
                     try {
-                        const data = await ZappyApp.utils._callGeminiAPI(prompt, schema);
+                        const data = await ZappyApp.utils.callErlcApi('/vehicles', apiKey, {
+                            method: 'GET',
+                            headers: { 'Authorization': `Bearer ${apiKey}` }
+                        });
+
                         if (data) {
                             if (vehiclesListEl) {
                                 vehiclesListEl.innerHTML = '';
@@ -1806,46 +1904,27 @@
                                 }
                             }
                         } else {
-                            if (vehiclesListEl) vehiclesListEl.innerHTML = '<p class="text-red-400">Failed to load vehicle data.</p>';
+                            if (vehiclesListEl) vehiclesListEl.innerHTML = '<p class="text-red-400">Failed to load vehicle data from ER:LC API.</p>';
                         }
                     } catch (error) {
-                        console.error("Error refreshing vehicles:", error);
-                        if (vehiclesListEl) vehiclesListEl.innerHTML = `<p class="text-red-400">Error: ${error.message}</p>`;
+                        console.error("Error refreshing vehicles from ER:LC API:", error);
+                        if (vehiclesListEl) vehiclesListEl.innerHTML = `<p class="text-red-400">Error fetching vehicles: ${error.message}</p>`;
                     }
                 },
 
                 async refreshKillLogs() {
                     const killLogListEl = ZappyApp.elements.killLogList;
-                    if (killLogListEl) killLogListEl.innerHTML = '<p class="text-slate-400">Fetching kill logs...</p>';
+                    const serverId = ZappyApp.state.currentServer.id;
+                    const apiKey = ZappyApp.state.currentServer.apiKey;
 
-                    const prompt = `Generate a realistic list of 5-10 ER:LC kill log entries. Each entry should have:
-                    - killer: Player name who made the kill (string)
-                    - victim: Player name who was eliminated (string)
-                    - weapon: Weapon used (string, e.g., 'Pistol', 'Assault Rifle', 'Shotgun', 'Vehicle Impact', 'Knife')
-                    - timestamp: Time of the kill (string in 'HH:MM:SS' format)
-                    Provide the response as a JSON object with 'killLogs' (array of objects).`;
-                    const schema = {
-                        type: "OBJECT",
-                        properties: {
-                            killLogs: {
-                                type: "ARRAY",
-                                items: {
-                                    type: "OBJECT",
-                                    properties: {
-                                        killer: { type: "STRING" },
-                                        victim: { type: "STRING" },
-                                        weapon: { type: "STRING" },
-                                        timestamp: { type: "STRING" }
-                                    },
-                                    required: ["killer", "victim", "weapon", "timestamp"]
-                                }
-                            }
-                        },
-                        required: ["killLogs"]
-                    };
+                    if (killLogListEl) killLogListEl.innerHTML = '<p class="text-slate-400">Fetching kill logs from ER:LC API...</p>';
 
                     try {
-                        const data = await ZappyApp.utils._callGeminiAPI(prompt, schema);
+                        const data = await ZappyApp.utils.callErlcApi('/killlogs', apiKey, {
+                            method: 'GET',
+                            headers: { 'Authorization': `Bearer ${apiKey}` }
+                        });
+
                         if (data) {
                             if (killLogListEl) {
                                 killLogListEl.innerHTML = '';
@@ -1858,11 +1937,11 @@
                                 }
                             }
                         } else {
-                            if (killLogListEl) killLogListEl.innerHTML = '<p class="text-red-400">Failed to load kill logs.</p>';
+                            if (killLogListEl) killLogListEl.innerHTML = '<p class="text-red-400">Failed to load kill logs from ER:LC API.</p>';
                         }
                     } catch (error) {
-                        console.error("Error refreshing kill logs:", error);
-                        if (killLogListEl) killLogListEl.innerHTML = `<p class="text-red-400">Error: ${error.message}</p>`;
+                        console.error("Error refreshing kill logs from ER:LC API:", error);
+                        if (killLogListEl) killLogListEl.innerHTML = `<p class="text-red-400">Error fetching kill logs: ${error.message}</p>`;
                     }
                 },
 
