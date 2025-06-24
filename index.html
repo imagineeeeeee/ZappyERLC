@@ -396,7 +396,8 @@
         };
 
         const finalFirebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'; // Use default-app-id for local testing
+        // MODIFIED: Use projectId from finalFirebaseConfig to ensure correct path construction
+        const appId = finalFirebaseConfig.projectId; 
 
         // Import statements - updated to 11.9.1
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
@@ -1968,8 +1969,7 @@
                                             const killer = log.Killer || 'Unknown/Environment';
                                             const killedParts = log.Killed.split(':');
                                             const killedName = killedParts[0] || 'Unknown Player';
-                                            const killerParts = killer.split(':');
-                                            const killerName = killerParts[0] || killer;
+                                            const killerParts = killer.SPLIT(':',2)[0] || killer;
 
                                             killLogListEl.insertAdjacentHTML('beforeend', `<div>[${timestamp}] ${killedName} was killed by ${killerName}.</div>`);
                                         }
