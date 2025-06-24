@@ -498,28 +498,31 @@
                 },
                 // Custom modal for confirmation (replaces alert/confirm)
                 showConfirmModal(title, text, onConfirm) {
-                    ZappyApp.elements.confirmModal.querySelector('#confirm-modal-title').textContent = title;
-                    ZappyApp.elements.confirmModal.querySelector('#confirm-modal-text').textContent = text;
-                    ZappyApp.elements.confirmModal.classList.remove('hidden');
+                    const confirmModal = ZappyApp.elements.confirmModal;
+                    if (confirmModal) {
+                        confirmModal.querySelector('#confirm-modal-title').textContent = title;
+                        confirmModal.querySelector('#confirm-modal-text').textContent = text;
+                        confirmModal.classList.remove('hidden');
 
-                    const confirmBtn = ZappyApp.elements.confirmModal.querySelector('#confirm-modal-confirm-btn');
-                    const cancelBtn = ZappyApp.elements.confirmModal.querySelector('#confirm-modal-cancel-btn');
+                        const confirmBtn = confirmModal.querySelector('#confirm-modal-confirm-btn');
+                        const cancelBtn = confirmModal.querySelector('#confirm-modal-cancel-btn');
 
-                    const handleConfirm = () => {
-                        onConfirm();
-                        confirmBtn.removeEventListener('click', handleConfirm);
-                        cancelBtn.removeEventListener('click', handleCancel);
-                        ZappyApp.elements.confirmModal.classList.add('hidden');
-                    };
+                        const handleConfirm = () => {
+                            onConfirm();
+                            confirmBtn.removeEventListener('click', handleConfirm);
+                            cancelBtn.removeEventListener('click', handleCancel);
+                            confirmModal.classList.add('hidden');
+                        };
 
-                    const handleCancel = () => {
-                        confirmBtn.removeEventListener('click', handleConfirm);
-                        cancelBtn.removeEventListener('click', handleCancel);
-                        ZappyApp.elements.confirmModal.classList.add('hidden');
-                    };
+                        const handleCancel = () => {
+                            confirmBtn.removeEventListener('click', handleConfirm);
+                            cancelBtn.removeEventListener('click', handleCancel);
+                            confirmModal.classList.add('hidden');
+                        };
 
-                    confirmBtn.addEventListener('click', handleConfirm);
-                    cancelBtn.addEventListener('click', handleCancel);
+                        confirmBtn.addEventListener('click', handleConfirm);
+                        cancelBtn.addEventListener('click', handleCancel);
+                    }
                 }
             },
 
@@ -554,22 +557,23 @@
             // --- UI MANAGEMENT ---
             ui: {
                 showView(viewName) {
-                    ZappyApp.elements.authSection.classList.add('hidden');
-                    ZappyApp.elements.dashboardSection.classList.add('hidden');
-                    ZappyApp.elements.serverPanelSection.classList.add('hidden');
+                    // Defensive checks before adding 'hidden' class
+                    if (ZappyApp.elements.authSection) ZappyApp.elements.authSection.classList.add('hidden');
+                    if (ZappyApp.elements.dashboardSection) ZappyApp.elements.dashboardSection.classList.add('hidden');
+                    if (ZappyApp.elements.serverPanelSection) ZappyApp.elements.serverPanelSection.classList.add('hidden');
 
                     if (viewName === 'auth') {
-                        ZappyApp.elements.authSection.classList.remove('hidden');
+                        if (ZappyApp.elements.authSection) ZappyApp.elements.authSection.classList.remove('hidden');
                     } else if (viewName === 'dashboard') {
-                        ZappyApp.elements.dashboardSection.classList.remove('hidden');
+                        if (ZappyApp.elements.dashboardSection) ZappyApp.elements.dashboardSection.classList.remove('hidden');
                         ZappyApp.panel.cleanup(); // Clean up panel state when going back
                     } else if (viewName === 'panel') {
-                        ZappyApp.elements.serverPanelSection.classList.remove('hidden');
+                        if (ZappyApp.elements.serverPanelSection) ZappyApp.elements.serverPanelSection.classList.remove('hidden');
                     }
                 },
 
                 updateUserInfo(user) {
-                    if (user) {
+                    if (user && ZappyApp.elements.userEmailSpan) {
                         ZappyApp.elements.userEmailSpan.textContent = user.email || (user.isAnonymous ? "Anonymous User" : "Logged In");
                     }
                 },
@@ -593,7 +597,7 @@
                     document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
 
                     // Activate the selected tab button and content
-                    const selectedButton = ZappyApp.elements.panelTabButtons.querySelector(`[data-tab="${tabName}"]`);
+                    const selectedButton = ZappyApp.elements.panelTabButtons ? ZappyApp.elements.panelTabButtons.querySelector(`[data-tab="${tabName}"]`) : null;
                     const selectedContent = document.getElementById(`tab-${tabName}`);
 
                     if (selectedButton) selectedButton.classList.add('active');
@@ -605,7 +609,7 @@
             auth: {
                 async performInitialSignIn() {
                     try {
-                        ZappyApp.elements.loadingOverlay.classList.remove('hidden');
+                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
                         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                             await signInWithCustomToken(auth, __initial_auth_token);
                         } else {
@@ -614,16 +618,19 @@
                     } catch (error) {
                         console.error("Initial sign-in failed:", error);
                         ZappyApp.ui.showView('auth'); // Show manual login if token fails
-                        ZappyApp.elements.loadingOverlay.classList.add('hidden');
+                    } finally {
+                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                     }
                 },
 
                 async handleAuthForm(e) {
                     e.preventDefault();
-                    const email = document.getElementById('email').value;
-                    const pass = document.getElementById('password').value;
-                    const isRegister = document.getElementById('auth-title').textContent.includes('Register');
-                    ZappyApp.elements.loadingOverlay.classList.remove('hidden');
+                    const email = document.getElementById('email')?.value;
+                    const pass = document.getElementById('password')?.value;
+                    const authTitle = document.getElementById('auth-title');
+                    const isRegister = authTitle ? authTitle.textContent.includes('Register') : false;
+                    
+                    if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
 
                     try {
                         if (isRegister) {
@@ -636,7 +643,7 @@
                         ZappyApp.ui.displayMessage('auth-error', error.message, true);
                         console.error("Authentication Error:", error);
                     } finally {
-                        ZappyApp.elements.loadingOverlay.classList.add('hidden');
+                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                     }
                 },
 
@@ -651,29 +658,35 @@
                     const authError = document.getElementById('auth-error');
 
                     // Clear inputs and previous error message on toggle
-                    emailInput.value = '';
-                    passwordInput.value = '';
-                    authError.textContent = '';
+                    if (emailInput) emailInput.value = '';
+                    if (passwordInput) passwordInput.value = '';
+                    if (authError) authError.textContent = '';
 
 
-                    if (title.textContent.includes('Login')) {
-                        title.textContent = 'Register for Zappy';
-                        button.textContent = 'Register';
-                        prompt.textContent = 'Already have an account?';
-                        link.textContent = 'Login';
-                    } else {
-                        title.textContent = 'Login to Zappy';
-                        button.textContent = 'Login';
-                        prompt.textContent = "Don't have an account?";
-                        link.textContent = 'Register';
+                    if (title && button && prompt && link) {
+                        if (title.textContent.includes('Login')) {
+                            title.textContent = 'Register for Zappy';
+                            button.textContent = 'Register';
+                            prompt.textContent = 'Already have an account?';
+                            link.textContent = 'Login';
+                        } else {
+                            title.textContent = 'Login to Zappy';
+                            button.textContent = 'Login';
+                            prompt.textContent = "Don't have an account?";
+                            link.textContent = 'Register';
+                        }
                     }
                 },
 
                 bindEvents() {
-                    document.getElementById('auth-form').addEventListener('submit', this.handleAuthForm);
-                    document.getElementById('auth-toggle-link').addEventListener('click', this.toggleView);
-                    document.getElementById('logout-btn').addEventListener('click', async () => {
-                        ZappyApp.elements.loadingOverlay.classList.remove('hidden');
+                    const authForm = document.getElementById('auth-form');
+                    const authToggleLink = document.getElementById('auth-toggle-link');
+                    const logoutBtn = document.getElementById('logout-btn');
+
+                    if (authForm) authForm.addEventListener('submit', this.handleAuthForm);
+                    if (authToggleLink) authToggleLink.addEventListener('click', this.toggleView);
+                    if (logoutBtn) logoutBtn.addEventListener('click', async () => {
+                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
                         try {
                             await signOut(auth);
                             // Auth state listener handles view change
@@ -681,7 +694,7 @@
                             console.error("Logout failed:", error);
                             // Optionally display a message
                         } finally {
-                            ZappyApp.elements.loadingOverlay.classList.add('hidden');
+                            if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                         }
                     });
                 }
@@ -691,13 +704,13 @@
             dashboard: {
                 async fetchUserServers() {
                     if (!ZappyApp.state.currentUser) {
-                        ZappyApp.elements.serverList.innerHTML = '<p class="text-slate-400">You are not logged in.</p>';
+                        if (ZappyApp.elements.serverList) ZappyApp.elements.serverList.innerHTML = '<p class="text-slate-400">You are not logged in.</p>';
                         return;
                     }
 
                     const serverListEl = ZappyApp.elements.serverList;
-                    serverListEl.innerHTML = '<p class="text-slate-400">Loading your servers...</p>';
-                    ZappyApp.elements.serverListError.textContent = ''; // Clear previous errors
+                    if (serverListEl) serverListEl.innerHTML = '<p class="text-slate-400">Loading your servers...</p>';
+                    if (ZappyApp.elements.serverListError) ZappyApp.elements.serverListError.textContent = ''; // Clear previous errors
 
                     // Clear previous listeners for this section
                     ZappyApp.state.unsubscribeListeners.forEach(unsub => unsub());
@@ -708,14 +721,14 @@
 
                     const unsubscribe = onSnapshot(q, (snapshot) => {
                         if (snapshot.empty) {
-                            serverListEl.innerHTML = '<p class="text-slate-400">You have no servers. Create or join one!</p>';
+                            if (serverListEl) serverListEl.innerHTML = '<p class="text-slate-400">You have no servers. Create or join one!</p>';
                             return;
                         }
-                        serverListEl.innerHTML = '';
+                        if (serverListEl) serverListEl.innerHTML = '';
                         snapshot.forEach((doc) => {
                             const server = { id: doc.id, ...doc.data() };
                             const isOwner = server.ownerId === ZappyApp.state.currentUser.uid;
-                            serverListEl.insertAdjacentHTML('beforeend', `
+                            if (serverListEl) serverListEl.insertAdjacentHTML('beforeend', `
                                 <div class="card flex flex-col justify-between">
                                     <div>
                                         <h4 class="text-lg font-bold text-white">${server.name}</h4>
@@ -727,14 +740,14 @@
                     }, (error) => {
                         console.error("Error fetching servers:", error);
                         ZappyApp.ui.displayMessage('server-list-error', 'Could not load servers due to a permission error or network issue.', true);
-                        serverListEl.innerHTML = '<p class="text-red-400">Failed to load servers.</p>';
+                        if (serverListEl) serverListEl.innerHTML = '<p class="text-red-400">Failed to load servers.</p>';
                     });
                     ZappyApp.state.unsubscribeListeners.push(unsubscribe); // Store for cleanup
                 },
 
                 async handleSelectServer(e) {
                     if (e.target.classList.contains('select-server-btn')) {
-                        ZappyApp.elements.loadingOverlay.classList.remove('hidden');
+                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
                         const serverId = e.target.dataset.serverId;
                         try {
                             const serverDoc = await getDoc(doc(db, `/artifacts/${appId}/public/data/servers`, serverId));
@@ -748,35 +761,35 @@
                             console.error("Error selecting server:", error);
                             ZappyApp.ui.displayMessage('server-list-error', 'Failed to open server due to a permission error or network issue.', true);
                         } finally {
-                            ZappyApp.elements.loadingOverlay.classList.add('hidden');
+                            if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                         }
                     }
                 },
 
                 async handleCreateServer(e) {
                     e.preventDefault();
-                    ZappyApp.elements.loadingOverlay.classList.remove('hidden');
-                    const serverName = document.getElementById('server-name').value;
-                    const serverCode = document.getElementById('server-code').value.toUpperCase(); // Ensure uppercase for codes
-                    const apiKey = document.getElementById('api-key').value;
+                    if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
+                    const serverName = document.getElementById('server-name')?.value;
+                    const serverCode = document.getElementById('server-code')?.value.toUpperCase(); // Ensure uppercase for codes
+                    const apiKey = document.getElementById('api-key')?.value;
                     const createServerErrorEl = document.getElementById('create-server-error');
 
-                    createServerErrorEl.textContent = ''; // Clear previous errors
+                    if (createServerErrorEl) createServerErrorEl.textContent = ''; // Clear previous errors
 
                     if (!serverName || !serverCode || !apiKey) {
                         ZappyApp.ui.displayMessage('create-server-error', 'All fields are required.', true);
-                        ZappyApp.elements.loadingOverlay.classList.add('hidden');
+                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                         return;
                     }
 
                     if (serverCode.length < 4 || serverCode.length > 10) {
                         ZappyApp.ui.displayMessage('create-server-error', 'Server code must be 4-10 characters.', true);
-                        ZappyApp.elements.loadingOverlay.classList.add('hidden');
+                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                         return;
                     }
                     if (!/^[A-Z0-9]+$/.test(serverCode)) {
                         ZappyApp.ui.displayMessage('create-server-error', 'Server code can only contain uppercase letters and numbers.', true);
-                        ZappyApp.elements.loadingOverlay.classList.add('hidden');
+                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                         return;
                     }
 
@@ -802,26 +815,28 @@
                         });
 
                         ZappyApp.ui.displayMessage('create-server-error', 'Server created successfully!', false);
-                        ZappyApp.elements.createServerModal.classList.add('hidden');
-                        document.getElementById('create-server-form').reset(); // Clear form
+                        if (ZappyApp.elements.createServerModal) ZappyApp.elements.createServerModal.classList.add('hidden');
+                        const createServerForm = document.getElementById('create-server-form');
+                        if (createServerForm) createServerForm.reset(); // Clear form
                         // No need to fetch servers again, onSnapshot listener will update
                     } catch (error) {
                         console.error("Error creating server:", error);
                         ZappyApp.ui.displayMessage('create-server-error', `Error creating server: ${error.message}. Please check permissions.`, true);
                     } finally {
-                        ZappyApp.elements.loadingOverlay.classList.add('hidden');
+                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                     }
                 },
 
                 async handleJoinServer() {
-                    ZappyApp.elements.loadingOverlay.classList.remove('hidden');
-                    const joinCode = document.getElementById('join-code-input').value.toUpperCase();
-                    ZappyApp.elements.joinServerError.textContent = ''; // Clear previous errors
-                    ZappyApp.elements.joinServerSuccess.textContent = ''; // Clear previous success messages
+                    if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
+                    const joinCodeInput = document.getElementById('join-code-input');
+                    const joinCode = joinCodeInput ? joinCodeInput.value.toUpperCase() : '';
+                    if (ZappyApp.elements.joinServerError) ZappyApp.elements.joinServerError.textContent = ''; // Clear previous errors
+                    if (ZappyApp.elements.joinServerSuccess) ZappyApp.elements.joinServerSuccess.textContent = ''; // Clear previous success messages
 
                     if (!joinCode) {
                         ZappyApp.ui.displayMessage('join-server-error', 'Please enter a server code.', true);
-                        ZappyApp.elements.loadingOverlay.classList.add('hidden');
+                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                         return;
                     }
 
@@ -853,25 +868,33 @@
                         });
 
                         ZappyApp.ui.displayMessage('join-server-success', 'Join request sent! Awaiting owner approval.', false);
-                        document.getElementById('join-code-input').value = '';
+                        if (joinCodeInput) joinCodeInput.value = '';
                     } catch (error) {
                         console.error("Error joining server:", error);
                         ZappyApp.ui.displayMessage('join-server-error', `Error sending join request: ${error.message}. Please check permissions.`, true);
                     } finally {
-                        ZappyApp.elements.loadingOverlay.classList.add('hidden');
+                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                     }
                 },
 
                 bindEvents() {
-                    ZappyApp.elements.serverList.addEventListener('click', this.handleSelectServer);
-                    document.getElementById('show-create-server-modal-btn').addEventListener('click', () => {
-                        ZappyApp.elements.createServerModal.classList.remove('hidden');
-                        document.getElementById('create-server-error').textContent = ''; // Clear error on modal open
-                        document.getElementById('create-server-form').reset();
+                    if (ZappyApp.elements.serverList) ZappyApp.elements.serverList.addEventListener('click', this.handleSelectServer);
+                    const showCreateServerModalBtn = document.getElementById('show-create-server-modal-btn');
+                    if (showCreateServerModalBtn) showCreateServerModalBtn.addEventListener('click', () => {
+                        if (ZappyApp.elements.createServerModal) ZappyApp.elements.createServerModal.classList.remove('hidden');
+                        const createServerErrorEl = document.getElementById('create-server-error');
+                        if (createServerErrorEl) createServerErrorEl.textContent = ''; // Clear error on modal open
+                        const createServerForm = document.getElementById('create-server-form');
+                        if (createServerForm) createServerForm.reset();
                     });
-                    document.getElementById('cancel-create-server-btn').addEventListener('click', () => ZappyApp.elements.createServerModal.classList.add('hidden'));
-                    document.getElementById('create-server-form').addEventListener('submit', this.handleCreateServer);
-                    document.getElementById('join-server-btn').addEventListener('click', this.handleJoinServer);
+                    const cancelCreateServerBtn = document.getElementById('cancel-create-server-btn');
+                    if (cancelCreateServerBtn) cancelCreateServerBtn.addEventListener('click', () => {
+                        if (ZappyApp.elements.createServerModal) ZappyApp.elements.createServerModal.classList.add('hidden');
+                    });
+                    const createServerForm = document.getElementById('create-server-form');
+                    if (createServerForm) createServerForm.addEventListener('submit', this.handleCreateServer);
+                    const joinServerBtn = document.getElementById('join-server-btn');
+                    if (joinServerBtn) joinServerBtn.addEventListener('click', this.handleJoinServer);
                 }
             },
 
@@ -886,14 +909,13 @@
                     ZappyApp.ui.showTab('main'); // Default to main info tab
 
                     // Populate UI
-                    ZappyApp.elements.panelServerName.textContent = server.name;
-                    ZappyApp.elements.panelServerCode.textContent = `Code: ${server.code}`;
-                    ZappyApp.elements.editServerNameInput.value = server.name;
+                    if (ZappyApp.elements.panelServerName) ZappyApp.elements.panelServerName.textContent = server.name;
+                    if (ZappyApp.elements.panelServerCode) ZappyApp.elements.panelServerCode.textContent = `Code: ${server.code}`;
+                    if (ZappyApp.elements.editServerNameInput) ZappyApp.elements.editServerNameInput.value = server.name;
 
                     this.setupOwnerControls(server);
                     this.setupTabListeners();
-                    this.checkActiveShift();
-                    this.startRealtimeListeners(); // Start listeners for logs, players, shifts
+                    this.startRealtimeListeners(); // Start listeners for logs, players, shifts, and active shift
                 },
 
                 cleanup() {
@@ -902,31 +924,31 @@
                         clearInterval(ZappyApp.state.shiftInterval);
                         ZappyApp.state.shiftInterval = null;
                         ZappyApp.state.shiftTimerRunning = false;
-                        ZappyApp.elements.shiftToggleButton.textContent = 'Start Shift';
-                        ZappyApp.elements.shiftTimer.textContent = '00:00:00';
+                        if (ZappyApp.elements.shiftToggleButton) ZappyApp.elements.shiftToggleButton.textContent = 'Start Shift';
+                        if (ZappyApp.elements.shiftTimer) ZappyApp.elements.shiftTimer.textContent = '00:00:00';
                     }
                     // Unsubscribe all active Firestore listeners
                     ZappyApp.state.unsubscribeListeners.forEach(unsub => unsub());
                     ZappyApp.state.unsubscribeListeners = [];
                     // Reset UI elements when cleaning up
-                    ZappyApp.elements.logOutput.innerHTML = 'Connecting...';
-                    ZappyApp.elements.serverStatsOutput.innerHTML = 'Loading...';
-                    ZappyApp.elements.playerList.innerHTML = '';
-                    ZappyApp.elements.joinRequestsDisplay.innerHTML = '';
-                    ZappyApp.elements.shiftLeaderboard.innerHTML = 'Loading...';
-                    ZappyApp.elements.ownerJoinRequestsList.innerHTML = '<p class="text-slate-500">No pending requests.</p>'; // Reset for owner tab
-                    ZappyApp.elements.vehicleList.innerHTML = 'No vehicle data available.';
-                    ZappyApp.elements.killLogList.innerHTML = 'No kill logs available.';
-                    ZappyApp.elements.commandLogList.innerHTML = 'No command logs available.';
-                    ZappyApp.elements.serverMembersList.innerHTML = '<p class="text-slate-500">No members to display.</p>'; // Reset members list
+                    if (ZappyApp.elements.logOutput) ZappyApp.elements.logOutput.innerHTML = 'Connecting...';
+                    if (ZappyApp.elements.serverStatsOutput) ZappyApp.elements.serverStatsOutput.innerHTML = 'Loading...';
+                    if (ZappyApp.elements.playerList) ZappyApp.elements.playerList.innerHTML = '';
+                    if (ZappyApp.elements.joinRequestsDisplay) ZappyApp.elements.joinRequestsDisplay.innerHTML = '';
+                    if (ZappyApp.elements.shiftLeaderboard) ZappyApp.elements.shiftLeaderboard.innerHTML = 'Loading...';
+                    if (ZappyApp.elements.ownerJoinRequestsList) ZappyApp.elements.ownerJoinRequestsList.innerHTML = '<p class="text-slate-500">No pending requests.</p>'; // Reset for owner tab
+                    if (ZappyApp.elements.vehicleList) ZappyApp.elements.vehicleList.innerHTML = 'No vehicle data available.';
+                    if (ZappyApp.elements.killLogList) ZappyApp.elements.killLogList.innerHTML = 'No kill logs available.';
+                    if (ZappyApp.elements.commandLogList) ZappyApp.elements.commandLogList.innerHTML = 'No command logs available.';
+                    if (ZappyApp.elements.serverMembersList) ZappyApp.elements.serverMembersList.innerHTML = '<p class="text-slate-500">No members to display.</p>'; // Reset members list
                 },
 
                 setupOwnerControls(server) {
                     const isOwner = server.ownerId === ZappyApp.state.currentUser.uid;
-                    const ownerTabBtn = ZappyApp.elements.panelTabButtons.querySelector('[data-tab="owner"]');
+                    const ownerTabBtn = ZappyApp.elements.panelTabButtons ? ZappyApp.elements.panelTabButtons.querySelector('[data-tab="owner"]') : null;
 
                     if (isOwner) {
-                        if (!ownerTabBtn) { // Add owner tab if not present
+                        if (!ownerTabBtn && ZappyApp.elements.panelTabButtons) { // Add owner tab if not present
                             ZappyApp.elements.panelTabButtons.insertAdjacentHTML('beforeend',
                                 `<button class="tab-button btn btn-secondary" data-tab="owner" id="owner-tab-btn">Admin</button>`
                             );
@@ -934,15 +956,15 @@
                             this.setupTabListeners();
                         }
                         // Show owner-only shift wave controls
-                        ZappyApp.elements.startShiftWaveBtn.classList.remove('hidden');
-                        ZappyApp.elements.endShiftWaveBtn.classList.remove('hidden');
+                        if (ZappyApp.elements.startShiftWaveBtn) ZappyApp.elements.startShiftWaveBtn.classList.remove('hidden');
+                        if (ZappyApp.elements.endShiftWaveBtn) ZappyApp.elements.endShiftWaveBtn.classList.remove('hidden');
                     } else {
                         if (ownerTabBtn) { // Remove owner tab if user is not owner
                             ownerTabBtn.remove();
                         }
                         // Hide owner-only shift wave controls
-                        ZappyApp.elements.startShiftWaveBtn.classList.add('hidden');
-                        ZappyApp.elements.endShiftWaveBtn.classList.add('hidden');
+                        if (ZappyApp.elements.startShiftWaveBtn) ZappyApp.elements.startShiftWaveBtn.classList.add('hidden');
+                        if (ZappyApp.elements.endShiftWaveBtn) ZappyApp.elements.endShiftWaveBtn.classList.add('hidden');
                     }
                 },
 
@@ -968,7 +990,7 @@
                     const unsubscribeServerStats = onSnapshot(serverDocRef, (docSnap) => {
                         if (docSnap.exists()) {
                             const data = docSnap.data();
-                            ZappyApp.elements.serverStatsOutput.innerHTML = `
+                            if (ZappyApp.elements.serverStatsOutput) ZappyApp.elements.serverStatsOutput.innerHTML = `
                                 <p><strong>Server Name:</strong> ${data.name}</p>
                                 <p><strong>Server Code:</strong> ${data.code}</p>
                                 <p><strong>Owner:</strong> ${data.ownerId === userId ? "You" : data.ownerId}</p>
@@ -982,11 +1004,11 @@
                                 this.displayServerMembers(data.members || []);
                             }
                         } else {
-                            ZappyApp.elements.serverStatsOutput.innerHTML = '<p class="text-red-400">Server data not found.</p>';
+                            if (ZappyApp.elements.serverStatsOutput) ZappyApp.elements.serverStatsOutput.innerHTML = '<p class="text-red-400">Server data not found.</p>';
                         }
                     }, (error) => {
                         console.error("Error listening to server stats:", error);
-                        ZappyApp.elements.serverStatsOutput.innerHTML = '<p class="text-red-400">Failed to load server stats (permission error).</p>';
+                        if (ZappyApp.elements.serverStatsOutput) ZappyApp.elements.serverStatsOutput.innerHTML = '<p class="text-red-400">Failed to load server stats (permission error).</p>';
                     });
                     ZappyApp.state.unsubscribeListeners.push(unsubscribeServerStats);
 
@@ -994,9 +1016,9 @@
                     // Log Output Listener (currently relies on manual writes for demo)
                     const unsubscribeLog = onSnapshot(collection(db, `/artifacts/${appId}/public/data/servers/${serverId}/logs`),
                         (snapshot) => {
-                            ZappyApp.elements.logOutput.innerHTML = '';
+                            if (ZappyApp.elements.logOutput) ZappyApp.elements.logOutput.innerHTML = '';
                             if (snapshot.empty) {
-                                ZappyApp.elements.logOutput.innerHTML = '<p class="text-slate-500">No recent events.</p>';
+                                if (ZappyApp.elements.logOutput) ZappyApp.elements.logOutput.innerHTML = '<p class="text-slate-500">No recent events.</p>';
                                 return;
                             }
                             snapshot.docs.sort((a, b) => b.data().timestamp.toDate() - a.data().timestamp.toDate()) // Sort newest first
@@ -1004,12 +1026,12 @@
                                 .forEach(doc => {
                                     const log = doc.data();
                                     const timestamp = log.timestamp ? new Date(log.timestamp.toDate()).toLocaleTimeString() : 'N/A';
-                                    ZappyApp.elements.logOutput.insertAdjacentHTML('beforeend', `<p>[${timestamp}] ${log.message}</p>`);
+                                    if (ZappyApp.elements.logOutput) ZappyApp.elements.logOutput.insertAdjacentHTML('beforeend', `<p>[${timestamp}] ${log.message}</p>`);
                                 });
-                            ZappyApp.elements.logOutput.scrollTop = ZappyApp.elements.logOutput.scrollHeight; // Scroll to bottom
+                            if (ZappyApp.elements.logOutput) ZappyApp.elements.logOutput.scrollTop = ZappyApp.elements.logOutput.scrollHeight; // Scroll to bottom
                         }, (error) => {
                             console.error("Error listening to logs:", error);
-                            ZappyApp.elements.logOutput.innerHTML = '<p class="text-red-400">Failed to load logs (permission error).</p>';
+                            if (ZappyApp.elements.logOutput) ZappyApp.elements.logOutput.innerHTML = '<p class="text-red-400">Failed to load logs (permission error).</p>';
                         }
                     );
                     ZappyApp.state.unsubscribeListeners.push(unsubscribeLog);
@@ -1021,9 +1043,9 @@
                     // Shifts Leaderboard Listener
                     const shiftsCollectionRef = collection(db, `/artifacts/${appId}/public/data/servers/${serverId}/shifts`);
                     const unsubscribeShifts = onSnapshot(shiftsCollectionRef, async (snapshot) => {
-                        ZappyApp.elements.shiftLeaderboard.innerHTML = '';
+                        if (ZappyApp.elements.shiftLeaderboard) ZappyApp.elements.shiftLeaderboard.innerHTML = '';
                         if (snapshot.empty) {
-                            ZappyApp.elements.shiftLeaderboard.innerHTML = '<p class="text-slate-500">No shifts recorded yet.</p>';
+                            if (ZappyApp.elements.shiftLeaderboard) ZappyApp.elements.shiftLeaderboard.innerHTML = '<p class="text-slate-500">No shifts recorded yet.</p>';
                             return;
                         }
 
@@ -1041,7 +1063,7 @@
                         const shiftElements = await Promise.all(sortedShifts.map(async ([userId, totalDuration]) => {
                             // Defensive check for userId before attempting to get userData
                             if (!userId) return '';
-                            const userDoc = await getDoc(doc(db, `/artifacts/${appId}/users/${userId}/userData`));
+                            const userDoc = await getDoc(doc(db, `/artifacts/${appId}/users`, userId)); // Corrected path
                             const userEmail = userDoc.exists() ? (userDoc.data().email || userId) : userId;
                             return `
                                 <div class="flex justify-between items-center card p-3">
@@ -1050,13 +1072,16 @@
                                 </div>
                             `;
                         }));
-                        ZappyApp.elements.shiftLeaderboard.innerHTML = shiftElements.join('');
+                        if (ZappyApp.elements.shiftLeaderboard) ZappyApp.elements.shiftLeaderboard.innerHTML = shiftElements.join('');
 
                     }, (error) => {
                         console.error("Error listening to shifts:", error);
-                        ZappyApp.elements.shiftLeaderboard.innerHTML = '<p class="text-red-400">Failed to load shift leaderboard (permission error).</p>';
+                        if (ZappyApp.elements.shiftLeaderboard) ZappyApp.elements.shiftLeaderboard.innerHTML = '<p class="text-red-400">Failed to load shift leaderboard (permission error).</p>';
                     });
                     ZappyApp.state.unsubscribeListeners.push(unsubscribeShifts);
+
+                    // Active Shift Listener (moved here to be part of real-time listeners)
+                    this.checkActiveShift();
                 },
 
                 async handleJoinRequestAction(action, e) {
@@ -1064,8 +1089,8 @@
                     const serverId = ZappyApp.state.currentServer.id;
                     const serverDocRef = doc(db, `/artifacts/${appId}/public/data/servers`, serverId);
 
-                    ZappyApp.elements.loadingOverlay.classList.remove('hidden');
-                    ZappyApp.elements.ownerJoinRequestsListError.textContent = ''; // Clear previous errors
+                    if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
+                    if (ZappyApp.elements.ownerJoinRequestsListError) ZappyApp.elements.ownerJoinRequestsListError.textContent = ''; // Clear previous errors
                     try {
                         await updateDoc(serverDocRef, {
                             joinRequests: arrayRemove(requesterId) // Remove from requests regardless of action
@@ -1083,22 +1108,22 @@
                         console.error(`Error ${action}ing join request:`, error);
                         ZappyApp.ui.displayMessage('owner-join-requests-list-error', `Failed to ${action} user: ${error.message}`, true);
                     } finally {
-                        ZappyApp.elements.loadingOverlay.classList.add('hidden');
+                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                     }
                 },
 
                 displayOwnerJoinRequests(joinRequests) {
                     const listEl = ZappyApp.elements.ownerJoinRequestsList;
-                    listEl.innerHTML = '';
+                    if (listEl) listEl.innerHTML = '';
                     if (joinRequests.length === 0) {
-                        listEl.innerHTML = '<p class="text-slate-500">No pending requests.</p>';
+                        if (listEl) listEl.innerHTML = '<p class="text-slate-500">No pending requests.</p>';
                         return;
                     }
                     joinRequests.forEach(async (requesterId) => {
                         // Fetch user data for requester's email
-                        const userDoc = await getDoc(doc(db, `/artifacts/${appId}/users/${requesterId}/userData`));
+                        const userDoc = await getDoc(doc(db, `/artifacts/${appId}/users`, requesterId)); // Corrected path
                         const requesterEmail = userDoc.exists() ? (userDoc.data().email || requesterId) : requesterId;
-                        listEl.insertAdjacentHTML('beforeend', `
+                        if (listEl) listEl.insertAdjacentHTML('beforeend', `
                             <div class="flex justify-between items-center card p-3">
                                 <span>${requesterEmail} (${requesterId})</span>
                                 <div>
@@ -1109,29 +1134,36 @@
                         `);
                     });
                     // Re-add event listeners each time the list is rendered
-                    listEl.querySelectorAll('.accept-join-btn').forEach(button => {
-                        button.addEventListener('click', this.handleJoinRequestAction.bind(this, 'accept'));
-                    });
-                    listEl.querySelectorAll('.reject-join-btn').forEach(button => {
-                        button.addEventListener('click', this.handleJoinRequestAction.bind(this, 'reject'));
-                    });
+                    if (listEl) {
+                        listEl.querySelectorAll('.accept-join-btn').forEach(button => {
+                            button.addEventListener('click', this.handleJoinRequestAction.bind(this, 'accept'));
+                        });
+                        listEl.querySelectorAll('.reject-join-btn').forEach(button => {
+                            button.addEventListener('click', this.handleJoinRequestAction.bind(this, 'reject'));
+                        });
+                    }
                 },
 
                 async displayServerMembers(members) {
                     const listEl = ZappyApp.elements.serverMembersList;
-                    listEl.innerHTML = ''; // Clear existing list
-                    ZappyApp.elements.serverMembersMessage.textContent = ''; // Clear previous messages
+                    if (listEl) listEl.innerHTML = ''; // Clear existing list
+                    if (ZappyApp.elements.serverMembersMessage) ZappyApp.elements.serverMembersMessage.textContent = ''; // Clear previous messages
 
                     if (members.length === 0) {
-                        listEl.innerHTML = '<p class="text-slate-500">No members in this server.</p>';
+                        if (listEl) listEl.innerHTML = '<p class="text-slate-500">No members in this server.</p>';
                         return;
                     }
 
                     for (const memberId of members) {
                         // Avoid fetching user data for the current authenticated user (performance)
-                        const userEmail = memberId === ZappyApp.state.currentUser.uid
-                            ? (ZappyApp.state.currentUser.email || memberId)
-                            : (await getDoc(doc(db, `/artifacts/${appId}/users/${memberId}/userData`))).data()?.email || memberId;
+                        let userEmail;
+                        if (memberId === ZappyApp.state.currentUser.uid) {
+                            userEmail = ZappyApp.state.currentUser.email || memberId;
+                        } else {
+                            const userDoc = await getDoc(doc(db, `/artifacts/${appId}/users`, memberId)); // Corrected path
+                            userEmail = userDoc.exists() ? (userDoc.data().email || memberId) : memberId;
+                        }
+
 
                         let kickButtonHtml = '';
                         // Only allow kicking if the current user is the owner AND not kicking themselves
@@ -1139,7 +1171,7 @@
                             kickButtonHtml = `<button class="btn btn-danger btn-sm kick-member-btn" data-member-id="${memberId}">Kick</button>`;
                         }
 
-                        listEl.insertAdjacentHTML('beforeend', `
+                        if (listEl) listEl.insertAdjacentHTML('beforeend', `
                             <div class="flex justify-between items-center card p-3">
                                 <span>${userEmail} (${memberId}) ${memberId === ZappyApp.state.currentServer.ownerId ? '👑 Owner' : ''} ${memberId === ZappyApp.state.currentUser.uid ? '(You)' : ''}</span>
                                 <div>
@@ -1150,9 +1182,11 @@
                     }
 
                     // Add event listeners for kick buttons
-                    listEl.querySelectorAll('.kick-member-btn').forEach(button => {
-                        button.addEventListener('click', this.handleKickMember.bind(this));
-                    });
+                    if (listEl) {
+                        listEl.querySelectorAll('.kick-member-btn').forEach(button => {
+                            button.addEventListener('click', this.handleKickMember.bind(this));
+                        });
+                    }
                 },
 
                 async handleKickMember(e) {
@@ -1160,7 +1194,7 @@
                     const serverId = ZappyApp.state.currentServer.id;
                     const serverDocRef = doc(db, `/artifacts/${appId}/public/data/servers`, serverId);
 
-                    ZappyApp.elements.serverMembersMessage.textContent = ''; // Clear previous messages
+                    if (ZappyApp.elements.serverMembersMessage) ZappyApp.elements.serverMembersMessage.textContent = ''; // Clear previous messages
 
                     if (!memberIdToKick || memberIdToKick === ZappyApp.state.currentUser.uid) {
                         ZappyApp.ui.displayMessage('server-members-message', 'Cannot kick yourself or an invalid member.', true);
@@ -1171,7 +1205,7 @@
                         'Kick Member',
                         `Are you sure you want to kick ${memberIdToKick} from the server?`,
                         async () => {
-                            ZappyApp.elements.loadingOverlay.classList.remove('hidden');
+                            if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
                             try {
                                 await updateDoc(serverDocRef, {
                                     members: arrayRemove(memberIdToKick)
@@ -1181,7 +1215,7 @@
                                 console.error("Error kicking member:", error);
                                 ZappyApp.ui.displayMessage('server-members-message', `Failed to kick member: ${error.message}. Check permissions.`, true);
                             } finally {
-                                ZappyApp.elements.loadingOverlay.classList.add('hidden');
+                                if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                             }
                         }
                     );
@@ -1190,19 +1224,20 @@
                 async checkActiveShift() {
                     const userId = ZappyApp.state.currentUser.uid;
                     // Ensure the userDataRef is correctly formed and always available
-                    const userDataRef = doc(db, `/artifacts/${appId}/users/${userId}/userData`);
+                    const userDataRef = doc(db, `/artifacts/${appId}/users`, userId); // Corrected path
                     
                     // Use onSnapshot for real-time updates to active shift status
                     const unsubscribeShiftStatus = onSnapshot(userDataRef, (docSnap) => {
-                        if (docSnap.exists() && docSnap.data().activeShift) {
+                        // Defensive check for docSnap.exists() and then data properties
+                        if (docSnap.exists() && docSnap.data().activeShift && docSnap.data().shiftStartTime) {
                             ZappyApp.state.shiftStartTime = docSnap.data().shiftStartTime.toDate(); // Convert Firebase Timestamp to Date
                             ZappyApp.state.shiftTimerRunning = true;
-                            ZappyApp.elements.shiftToggleButton.textContent = 'End Shift';
+                            if (ZappyApp.elements.shiftToggleButton) ZappyApp.elements.shiftToggleButton.textContent = 'End Shift';
                             this.startShiftTimer();
                         } else {
                             ZappyApp.state.shiftTimerRunning = false;
-                            ZappyApp.elements.shiftToggleButton.textContent = 'Start Shift';
-                            ZappyApp.elements.shiftTimer.textContent = '00:00:00';
+                            if (ZappyApp.elements.shiftToggleButton) ZappyApp.elements.shiftToggleButton.textContent = 'Start Shift';
+                            if (ZappyApp.elements.shiftTimer) ZappyApp.elements.shiftTimer.textContent = '00:00:00';
                             clearInterval(ZappyApp.state.shiftInterval);
                             ZappyApp.state.shiftInterval = null;
                         }
@@ -1225,17 +1260,17 @@
                         if (ZappyApp.state.shiftStartTime) {
                             const now = new Date();
                             const durationSeconds = Math.floor((now.getTime() - ZappyApp.state.shiftStartTime.getTime()) / 1000);
-                            ZappyApp.elements.shiftTimer.textContent = ZappyApp.utils.formatDuration(durationSeconds);
+                            if (ZappyApp.elements.shiftTimer) ZappyApp.elements.shiftTimer.textContent = ZappyApp.utils.formatDuration(durationSeconds);
                         }
                     }, 1000);
                 },
 
                 async toggleShift() {
-                    ZappyApp.elements.loadingOverlay.classList.remove('hidden');
+                    if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
                     const userId = ZappyApp.state.currentUser.uid;
                     const serverId = ZappyApp.state.currentServer.id;
-                    const userDataRef = doc(db, `/artifacts/${appId}/users/${userId}/userData`);
-                    ZappyApp.elements.shiftControlsMessage.textContent = ''; // Clear previous messages
+                    const userDataRef = doc(db, `/artifacts/${appId}/users`, userId); // Corrected path
+                    if (ZappyApp.elements.shiftControlsMessage) ZappyApp.elements.shiftControlsMessage.textContent = ''; // Clear previous messages
 
                     try {
                         if (ZappyApp.state.shiftTimerRunning) {
@@ -1287,31 +1322,35 @@
                         console.error("Error toggling shift:", error);
                         ZappyApp.ui.displayMessage('shift-controls-message', `Error: ${error.message}. Check user data permissions.`, true);
                     } finally {
-                        ZappyApp.elements.loadingOverlay.classList.add('hidden');
+                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                     }
                 },
 
                 async handleExecuteCommand() {
                     const commandInput = ZappyApp.elements.commandInput;
                     const commandResponseEl = ZappyApp.elements.commandResponse;
-                    const command = commandInput.value.trim();
+                    const command = commandInput ? commandInput.value.trim() : '';
 
-                    commandResponseEl.textContent = ''; // Clear previous response
+                    if (commandResponseEl) commandResponseEl.textContent = ''; // Clear previous response
 
                     if (!command) {
-                        commandResponseEl.textContent = 'Please enter a command.';
-                        commandResponseEl.classList.remove('text-green-400', 'text-red-400');
-                        commandResponseEl.classList.add('text-yellow-400');
+                        if (commandResponseEl) {
+                            commandResponseEl.textContent = 'Please enter a command.';
+                            commandResponseEl.classList.remove('text-green-400', 'text-red-400');
+                            commandResponseEl.classList.add('text-yellow-400');
+                        }
                         return;
                     }
 
                     // Simulate API call - In a real scenario, this would go to your backend
                     // which then communicates with the ER:LC server using the stored API Key.
-                    commandResponseEl.textContent = `Executing command: "${command}"...`;
-                    commandResponseEl.classList.remove('text-green-400', 'text-red-400');
-                    commandResponseEl.classList.add('text-slate-400');
+                    if (commandResponseEl) {
+                        commandResponseEl.textContent = `Executing command: "${command}"...`;
+                        commandResponseEl.classList.remove('text-green-400', 'text-red-400');
+                        commandResponseEl.classList.add('text-slate-400');
+                    }
 
-                    ZappyApp.elements.loadingOverlay.classList.remove('hidden');
+                    if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
 
                     try {
                         const success = Math.random() > 0.3; // Simulate success/failure
@@ -1320,8 +1359,10 @@
 
                         if (success) {
                             responseMessage = `Command "${command}" executed successfully. (Simulated)`;
-                            commandResponseEl.classList.remove('text-red-400', 'text-slate-400');
-                            commandResponseEl.classList.add('text-green-400');
+                            if (commandResponseEl) {
+                                commandResponseEl.classList.remove('text-red-400', 'text-slate-400');
+                                commandResponseEl.classList.add('text-green-400');
+                            }
                             // Log successful command to Firestore for audit
                             await addDoc(collection(db, `/artifacts/${appId}/public/data/servers/${ZappyApp.state.currentServer.id}/commandLogs`), {
                                 command: command,
@@ -1331,8 +1372,10 @@
                             });
                         } else {
                             responseMessage = `Failed to execute command "${command}". Server error or invalid command. (Simulated)`;
-                            commandResponseEl.classList.remove('text-green-400', 'text-slate-400');
-                            commandResponseEl.classList.add('text-red-400');
+                            if (commandResponseEl) {
+                                commandResponseEl.classList.remove('text-green-400', 'text-slate-400');
+                                commandResponseEl.classList.add('text-red-400');
+                            }
                             isError = true;
                             // Log failed command
                             await addDoc(collection(db, `/artifacts/${appId}/public/data/servers/${ZappyApp.state.currentServer.id}/commandLogs`), {
@@ -1343,24 +1386,26 @@
                                 errorMessage: 'Simulated failure'
                             });
                         }
-                        commandResponseEl.textContent = responseMessage;
-                        commandInput.value = ''; // Clear input
+                        if (commandResponseEl) commandResponseEl.textContent = responseMessage;
+                        if (commandInput) commandInput.value = ''; // Clear input
                     } catch (error) {
                          console.error("Error executing simulated command:", error);
-                         commandResponseEl.textContent = `Error logging command: ${error.message}`;
-                         commandResponseEl.classList.add('text-red-400');
+                         if (commandResponseEl) {
+                            commandResponseEl.textContent = `Error logging command: ${error.message}`;
+                            commandResponseEl.classList.add('text-red-400');
+                         }
                     } finally {
-                        ZappyApp.elements.loadingOverlay.classList.add('hidden');
+                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                     }
                 },
 
                 async handleSaveServerName() {
-                    const newName = ZappyApp.elements.editServerNameInput.value.trim();
+                    const newName = ZappyApp.elements.editServerNameInput?.value.trim();
                     const serverId = ZappyApp.state.currentServer.id;
                     const serverDocRef = doc(db, `/artifacts/${appId}/public/data/servers`, serverId);
 
-                    ZappyApp.elements.ownerSettingsSuccess.textContent = '';
-                    ZappyApp.elements.ownerSettingsError.textContent = '';
+                    if (ZappyApp.elements.ownerSettingsSuccess) ZappyApp.elements.ownerSettingsSuccess.textContent = '';
+                    if (ZappyApp.elements.ownerSettingsError) ZappyApp.elements.ownerSettingsError.textContent = '';
 
                     if (!newName) {
                         ZappyApp.ui.displayMessage('owner-settings-error', 'Server name cannot be empty.', true);
@@ -1372,17 +1417,17 @@
                         return;
                     }
 
-                    ZappyApp.elements.loadingOverlay.classList.remove('hidden');
+                    if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
                     try {
                         await updateDoc(serverDocRef, { name: newName });
                         ZappyApp.state.currentServer.name = newName; // Update local state
-                        ZappyApp.elements.panelServerName.textContent = newName; // Update panel header
+                        if (ZappyApp.elements.panelServerName) ZappyApp.elements.panelServerName.textContent = newName; // Update panel header
                         ZappyApp.ui.displayMessage('owner-settings-success', 'Server name updated successfully!', false);
                     } catch (error) {
                         console.error("Error updating server name:", error);
                         ZappyApp.ui.displayMessage('owner-settings-error', `Failed to update server name: ${error.message}`, true);
                     } finally {
-                        ZappyApp.elements.loadingOverlay.classList.add('hidden');
+                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                     }
                 },
 
@@ -1391,7 +1436,7 @@
                         'Delete Server',
                         'This action is irreversible and will delete all server data, including member lists, join requests, and logs. Are you absolutely sure?',
                         async () => {
-                            ZappyApp.elements.loadingOverlay.classList.remove('hidden');
+                            if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
                             const serverId = ZappyApp.state.currentServer.id;
                             const serverDocRef = doc(db, `/artifacts/${appId}/public/data/servers`, serverId);
 
@@ -1425,7 +1470,7 @@
                                 console.error("Error deleting server:", error);
                                 ZappyApp.ui.displayMessage('owner-settings-error', `Failed to delete server: ${error.message}`, true);
                             } finally {
-                                ZappyApp.elements.loadingOverlay.classList.add('hidden');
+                                if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                             }
                         }
                     );
@@ -1444,12 +1489,12 @@
                 },
                 refreshVehicles() {
                     console.log('Refreshing vehicles...');
-                    ZappyApp.elements.vehicleList.innerHTML = `<p class="text-slate-500">No vehicle data available yet. (Simulated Refresh)</p>`;
+                    if (ZappyApp.elements.vehicleList) ZappyApp.elements.vehicleList.innerHTML = `<p class="text-slate-500">No vehicle data available yet. (Simulated Refresh)</p>`;
                     // In a real app, fetch from ER:LC API via backend
                 },
                 refreshKillLogs() {
                     console.log('Refreshing kill logs...');
-                    ZappyApp.elements.killLogList.innerHTML = `<p class="text-slate-500">No kill logs available yet. (Simulated Refresh)</p>`;
+                    if (ZappyApp.elements.killLogList) ZappyApp.elements.killLogList.innerHTML = `<p class="text-slate-500">No kill logs available yet. (Simulated Refresh)</p>`;
                     // In a real app, fetch from ER:LC API via backend
                 },
                 refreshCommandLogs() {
@@ -1459,65 +1504,75 @@
                     const commandLogsCollectionRef = collection(db, `/artifacts/${appId}/public/data/servers/${serverId}/commandLogs`);
                     const q = query(commandLogsCollectionRef);
                     onSnapshot(q, (snapshot) => {
-                        ZappyApp.elements.commandLogList.innerHTML = '';
+                        if (ZappyApp.elements.commandLogList) ZappyApp.elements.commandLogList.innerHTML = '';
                         if (snapshot.empty) {
-                            ZappyApp.elements.commandLogList.innerHTML = '<p class="text-slate-500">No command logs available.</p>';
+                            if (ZappyApp.elements.commandLogList) ZappyApp.elements.commandLogList.innerHTML = '<p class="text-slate-500">No command logs available.</p>';
                             return;
                         }
                         snapshot.docs.sort((a, b) => b.data().timestamp.toDate() - a.data().timestamp.toDate())
                             .forEach(doc => {
                                 const log = doc.data();
                                 const timestamp = log.timestamp ? new Date(log.timestamp.toDate()).toLocaleString() : 'N/A';
-                                ZappyApp.elements.commandLogList.insertAdjacentHTML('beforeend', `
+                                if (ZappyApp.elements.commandLogList) ZappyApp.elements.commandLogList.insertAdjacentHTML('beforeend', `
                                     <p>[${timestamp}] User: ${log.executedBy.substring(0, 8)}... | Command: "${log.command}" | Status: ${log.status}</p>
                                 `);
                             });
                     }, (error) => {
                         console.error("Error listening to command logs:", error);
-                        ZappyApp.elements.commandLogList.innerHTML = '<p class="text-red-400">Failed to load command logs (permission error).</p>';
+                        if (ZappyApp.elements.commandLogList) ZappyApp.elements.commandLogList.innerHTML = '<p class="text-red-400">Failed to load command logs (permission error).</p>';
                     });
                 },
                 async handleShiftWaveAction(action) {
-                    ZappyApp.elements.loadingOverlay.classList.remove('hidden');
+                    if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
                     const serverId = ZappyApp.state.currentServer.id;
                     const shiftWaveStatusRef = doc(db, `/artifacts/${appId}/public/data/servers/${serverId}/settings/shiftWaveStatus`);
+                    if (ZappyApp.elements.shiftControlsMessage) ZappyApp.elements.shiftControlsMessage.textContent = ''; // Clear previous messages
 
                     try {
                         if (action === 'start') {
                             await setDoc(shiftWaveStatusRef, { active: true, startTime: serverTimestamp(), triggeredBy: ZappyApp.state.currentUser.uid });
-                            ZappyApp.ui.displayMessage('shift-wave-controls-message', 'Shift wave started!', false); // Assuming a new element for this
+                            ZappyApp.ui.displayMessage('shift-controls-message', 'Shift wave started!', false);
                         } else if (action === 'end') {
                             await setDoc(shiftWaveStatusRef, { active: false, endTime: serverTimestamp(), triggeredBy: ZappyApp.state.currentUser.uid });
-                            ZappyApp.ui.displayMessage('shift-wave-controls-message', 'Shift wave ended!', false); // Assuming a new element for this
+                            ZappyApp.ui.displayMessage('shift-controls-message', 'Shift wave ended!', false);
                         }
                     } catch (error) {
                         console.error(`Error ${action}ing shift wave:`, error);
-                        ZappyApp.ui.displayMessage('shift-wave-controls-message', `Failed to ${action} shift wave: ${error.message}`, true);
+                        ZappyApp.ui.displayMessage('shift-controls-message', `Failed to ${action} shift wave: ${error.message}`, true);
                     } finally {
-                        ZappyApp.elements.loadingOverlay.classList.add('hidden');
+                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                     }
                 },
 
                 bindEvents() {
-                    document.getElementById('back-to-dashboard-btn').addEventListener('click', () => {
+                    const backToDashboardBtn = document.getElementById('back-to-dashboard-btn');
+                    if (backToDashboardBtn) backToDashboardBtn.addEventListener('click', () => {
                         ZappyApp.ui.showView('dashboard');
                         ZappyApp.panel.cleanup();
                     });
-                    ZappyApp.elements.shiftToggleButton.addEventListener('click', this.toggleShift.bind(this));
-                    document.getElementById('execute-command-button').addEventListener('click', this.handleExecuteCommand.bind(this));
-                    document.getElementById('save-server-name-btn').addEventListener('click', this.handleSaveServerName.bind(this));
-                    document.getElementById('delete-server-btn').addEventListener('click', this.handleDeleteServer.bind(this));
+                    if (ZappyApp.elements.shiftToggleButton) ZappyApp.elements.shiftToggleButton.addEventListener('click', this.toggleShift.bind(this));
+                    const executeCommandButton = document.getElementById('execute-command-button');
+                    if (executeCommandButton) executeCommandButton.addEventListener('click', this.handleExecuteCommand.bind(this));
+                    const saveServerNameBtn = document.getElementById('save-server-name-btn');
+                    if (saveServerNameBtn) saveServerNameBtn.addEventListener('click', this.handleSaveServerName.bind(this));
+                    const deleteServerBtn = document.getElementById('delete-server-btn');
+                    if (deleteServerBtn) deleteServerBtn.addEventListener('click', this.handleDeleteServer.bind(this));
 
                     // Refresh buttons for various tabs
-                    document.getElementById('refresh-stats-btn').addEventListener('click', this.refreshStats);
-                    document.getElementById('refresh-players-btn').addEventListener('click', this.refreshPlayers);
-                    document.getElementById('refresh-vehicles-btn').addEventListener('click', this.refreshVehicles);
-                    document.getElementById('refresh-killlogs-btn').addEventListener('click', this.refreshKillLogs);
-                    document.getElementById('refresh-commandlogs-btn').addEventListener('click', this.refreshCommandLogs);
+                    const refreshStatsBtn = document.getElementById('refresh-stats-btn');
+                    if (refreshStatsBtn) refreshStatsBtn.addEventListener('click', this.refreshStats);
+                    const refreshPlayersBtn = document.getElementById('refresh-players-btn');
+                    if (refreshPlayersBtn) refreshPlayersBtn.addEventListener('click', this.refreshPlayers);
+                    const refreshVehiclesBtn = document.getElementById('refresh-vehicles-btn');
+                    if (refreshVehiclesBtn) refreshVehiclesBtn.addEventListener('click', this.refreshVehicles);
+                    const refreshKillLogsBtn = document.getElementById('refresh-killlogs-btn');
+                    if (refreshKillLogsBtn) refreshKillLogsBtn.addEventListener('click', this.refreshKillLogs);
+                    const refreshCommandLogsBtn = document.getElementById('refresh-commandlogs-btn');
+                    if (refreshCommandLogsBtn) refreshCommandLogsBtn.addEventListener('click', this.refreshCommandLogs);
 
                     // Shift wave controls
-                    ZappyApp.elements.startShiftWaveBtn.addEventListener('click', this.handleShiftWaveAction.bind(this, 'start'));
-                    ZappyApp.elements.endShiftWaveBtn.addEventListener('click', this.handleShiftWaveAction.bind(this, 'end'));
+                    if (ZappyApp.elements.startShiftWaveBtn) ZappyApp.elements.startShiftWaveBtn.addEventListener('click', this.handleShiftWaveAction.bind(this, 'start'));
+                    if (ZappyApp.elements.endShiftWaveBtn) ZappyApp.elements.endShiftWaveBtn.addEventListener('click', this.handleShiftWaveAction.bind(this, 'end'));
 
                     // Initial setup of tab listeners
                     this.setupTabListeners();
