@@ -174,7 +174,7 @@
                 <div id="server-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <!-- Server cards will be injected here -->
                 </div>
-                 <p id="server-list-error" class="text-red-400 text-sm mt-2 text-center"></p>
+                 <p id="server-list-error" class="text-red-4-00 text-sm mt-2 text-center"></p>
             </div>
         </div>
 
@@ -619,8 +619,12 @@
 
                 // The primary auth state listener that drives the app
                 onAuthStateChanged(auth, async (user) => {
-                    if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
+                    console.log("[Auth State Changed] User:", user);
                     if (user) {
+                        console.log("[Auth State Changed] User UID:", user.uid);
+                    }
+                    if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
+                    if (user && user.uid) { // Ensure user and user.uid are available
                         ZappyApp.state.currentUser = user;
                         ZappyApp.ui.updateUserInfo(user);
                         // If user is logged in, directly show the dashboard and fetch their servers
@@ -698,16 +702,16 @@
                     try {
                         if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
                         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                            console.log("[Initial Sign-in] Attempting sign-in with custom token.");
                             await signInWithCustomToken(auth, __initial_auth_token);
                         } else {
+                            console.log("[Initial Sign-in] No custom token, attempting anonymous sign-in.");
                             await signInAnonymously(auth);
                         }
                     } catch (error) {
                         console.error("Initial sign-in failed:", error);
                         ZappyApp.ui.showView('auth'); // Show manual login if token fails
                     } finally {
-                        // The `onAuthStateChanged` listener will handle showing the correct view
-                        // based on user login status, including the new API key input screen.
                         if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                     }
                 },
@@ -792,10 +796,13 @@
             // --- DASHBOARD MODULE ---
             dashboard: {
                 async fetchUserServers() {
-                    if (!ZappyApp.state.currentUser) {
-                        if (ZappyApp.elements.serverList) ZappyApp.elements.serverList.innerHTML = '<p class="text-slate-400">You are not logged in.</p>';
+                    if (!ZappyApp.state.currentUser || !ZappyApp.state.currentUser.uid) {
+                        console.log("[fetchUserServers] No current user or UID available. Cannot fetch servers.");
+                        if (ZappyApp.elements.serverList) ZappyApp.elements.serverList.innerHTML = '<p class="text-slate-400">Please log in to view your server groups.</p>';
                         return;
                     }
+
+                    console.log(`[fetchUserServers] Fetching servers for user UID: ${ZappyApp.state.currentUser.uid} using appId: ${appId}`);
 
                     const serverListEl = ZappyApp.elements.serverList;
                     if (serverListEl) serverListEl.innerHTML = '<p class="text-slate-400">Loading your server groups...</p>';
@@ -806,11 +813,14 @@
                     ZappyApp.state.unsubscribeListeners = [];
 
                     // Fetch server groups the current user is a member of
-                    const q = query(collection(db, `/artifacts/${appId}/public/data/servers`),
+                    const serversCollectionRef = collection(db, `/artifacts/${appId}/public/data/servers`);
+                    const q = query(serversCollectionRef,
                                     where('members', 'array-contains', ZappyApp.state.currentUser.uid));
 
                     const unsubscribe = onSnapshot(q, (snapshot) => {
+                        console.log("[onSnapshot servers] Snapshot received:", snapshot.size, "documents.");
                         if (snapshot.empty) {
+                            console.log("[onSnapshot servers] No server groups found for this user.");
                             if (serverListEl) serverListEl.innerHTML = '<p class="text-slate-400">You have no Zappy server groups. Create or join one!</p>';
                             return;
                         }
@@ -818,6 +828,7 @@
                         snapshot.forEach((doc) => {
                             const server = { id: doc.id, ...doc.data() };
                             const isOwner = server.ownerId === ZappyApp.state.currentUser.uid;
+                            console.log(`[onSnapshot servers] Found server: ${server.name} (ID: ${server.id}), Owner: ${isOwner}`);
                             if (serverListEl) serverListEl.insertAdjacentHTML('beforeend', `
                                 <div class="card flex flex-col justify-between">
                                     <div>
@@ -828,8 +839,8 @@
                                 </div>`);
                         });
                     }, (error) => {
-                        console.error("Error fetching servers:", error);
-                        ZappyApp.ui.displayMessage('server-list-error', 'Could not load server groups due to a permission error or network issue.', true);
+                        console.error("[onSnapshot servers] Error fetching servers:", error);
+                        ZappyApp.ui.displayMessage('server-list-error', `Could not load server groups: ${error.message}. Please check your Firebase permissions.`, true);
                         if (serverListEl) serverListEl.innerHTML = '<p class="text-red-400">Failed to load server groups.</p>';
                     });
                     ZappyApp.state.unsubscribeListeners.push(unsubscribe); // Store for cleanup
@@ -839,6 +850,7 @@
                     if (e.target.classList.contains('select-server-btn')) {
                         if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
                         const serverId = e.target.dataset.serverId;
+                        console.log(`[handleSelectServer] Attempting to select server ID: ${serverId}`);
                         try {
                             const serverDoc = await getDoc(doc(db, `/artifacts/${appId}/public/data/servers`, serverId));
                             if (serverDoc.exists()) {
@@ -846,8 +858,10 @@
                                 ZappyApp.state.currentServer = { id: serverDoc.id, ...serverData };
                                 // Set activeServerKey from the Firebase-stored key of the selected server
                                 ZappyApp.state.activeServerKey = serverData.apiKey || null;
+                                console.log("[handleSelectServer] Server selected:", ZappyApp.state.currentServer.name, "API Key (first 5 chars):", ZappyApp.state.activeServerKey ? ZappyApp.state.activeServerKey.substring(0,5) : "None");
                                 ZappyApp.panel.init();
                             } else {
+                                console.warn(`[handleSelectServer] Server document with ID ${serverId} does not exist.`);
                                 ZappyApp.ui.displayMessage('server-list-error', 'Server group not found.', true);
                             }
                         } catch (error) {
@@ -906,6 +920,7 @@
                             createdAt: serverTimestamp(),
                             lastActivity: serverTimestamp()
                         });
+                        console.log(`[handleCreateServer] Server '${serverName}' created with code '${serverCode}'.`);
 
                         ZappyApp.ui.displayMessage('create-server-error', 'Server group created successfully!', false);
                         if (ZappyApp.elements.createServerModal) ZappyApp.elements.createServerModal.classList.add('hidden');
@@ -959,6 +974,7 @@
                         await updateDoc(serverDocRef, {
                             joinRequests: arrayUnion(userId)
                         });
+                        console.log(`[handleJoinServer] Join request sent for user ${userId} to server ${joinCode}.`);
 
                         ZappyApp.ui.displayMessage('join-server-success', 'Join request sent! Awaiting owner approval.', false);
                         if (joinCodeInput) joinCodeInput.value = '';
@@ -1136,7 +1152,7 @@
                             this.displayOwnerJoinRequests(data.joinRequests || []);
                         }
                     }, (error) => {
-                        console.error("Error listening to server document:", error);
+                        console.error("[Server Doc Listener] Error listening to server document:", error);
                     });
                     ZappyApp.state.unsubscribeListeners.push(unsubscribeServerDoc);
 
@@ -1158,7 +1174,7 @@
                                 });
                             if (ZappyApp.elements.logOutput) ZappyApp.elements.logOutput.scrollTop = ZappyApp.elements.logOutput.scrollHeight; // Scroll to bottom
                         }, (error) => {
-                            console.error("Error listening to logs:", error);
+                            console.error("[Log Output Listener] Error listening to logs:", error);
                             if (ZappyApp.elements.logOutput) ZappyApp.elements.logOutput.innerHTML = '<p class="text-red-400">Failed to load Zappy events (permission error).</p>';
                         }
                     );
@@ -1200,7 +1216,7 @@
                         if (ZappyApp.elements.shiftLeaderboard) ZappyApp.elements.shiftLeaderboard.innerHTML = shiftElements.join('');
 
                     }, (error) => {
-                        console.error("Error listening to shifts:", error);
+                        console.error("[Shifts Leaderboard Listener] Error listening to shifts:", error);
                         if (ZappyApp.elements.shiftLeaderboard) ZappyApp.elements.shiftLeaderboard.innerHTML = '<p class="text-red-400">Failed to load shift leaderboard (permission error).</p>';
                     });
                     ZappyApp.state.unsubscribeListeners.push(unsubscribeShifts);
@@ -1231,7 +1247,7 @@
                             // The checkActiveShift listener already handles this via `currentShiftServerId` comparison.
                         }
                     }, (error) => {
-                        console.error("Error listening to shift wave status:", error);
+                        console.error("[Shift Wave Status Listener] Error listening to shift wave status:", error);
                         ZappyApp.ui.displayMessage('shift-controls-message', 'Failed to load shift wave status (permission error).', true);
                     });
                     ZappyApp.state.unsubscribeListeners.push(unsubscribeShiftWaveStatus);
@@ -1260,6 +1276,7 @@
                         } else {
                             ZappyApp.ui.displayMessage('owner-join-requests-list-error', `User ${requesterId} rejected.`, false);
                         }
+                        console.log(`[handleJoinRequestAction] User ${requesterId} ${action}ed for server ${serverId}.`);
                     } catch (error) {
                         console.error(`Error ${action}ing join request:`, error);
                         ZappyApp.ui.displayMessage('owner-join-requests-list-error', `Failed to ${action} user: ${error.message}`, true);
@@ -1367,6 +1384,7 @@
                                     members: arrayRemove(memberIdToKick)
                                 });
                                 ZappyApp.ui.displayMessage('server-members-message', `Member ${memberIdToKick} kicked successfully.`, false);
+                                console.log(`[handleKickMember] Member ${memberIdToKick} kicked from server ${serverId}.`);
                             } catch (error) {
                                 console.error("Error kicking member:", error);
                                 ZappyApp.ui.displayMessage('server-members-message', `Failed to kick member: ${error.message}. Check permissions.`, true);
@@ -1393,7 +1411,7 @@
                                 const shiftWaveStatusDoc = await getDoc(doc(db, `/artifacts/${appId}/public/data/servers/${serverId}/settings/shiftWaveStatus`));
                                 shiftWaveIsActive = shiftWaveStatusDoc.exists() && shiftWaveStatusDoc.data().active;
                             } catch (error) {
-                                console.error("Error checking shift wave status:", error);
+                                console.error("[checkActiveShift] Error checking shift wave status:", error);
                                 // Assume false if unable to read (e.g., permissions or non-existent)
                                 shiftWaveIsActive = false;
                             }
@@ -1404,6 +1422,7 @@
                             ZappyApp.state.shiftTimerRunning = true;
                             if (ZappyApp.elements.shiftToggleButton) ZappyApp.elements.shiftToggleButton.textContent = 'End Shift';
                             this.startShiftTimer();
+                            console.log(`[checkActiveShift] Shift active for user ${userId} on server ${serverId}.`);
                         } else {
                             // If shift was active but now should not be (e.g., shift wave ended or server changed)
                             if (ZappyApp.state.shiftTimerRunning) {
@@ -1416,7 +1435,7 @@
 
                             // If shift was active but now not allowed to be, try to reset it in Firestore
                             if (userData && userData.activeShift) {
-                                console.log('Automatically ending shift in Firestore due to wave inactivity or server mismatch.');
+                                console.log('[checkActiveShift] Automatically ending shift in Firestore due to wave inactivity or server mismatch.');
                                 try {
                                     await updateDoc(userDataRef, {
                                         activeShift: false,
@@ -1425,13 +1444,13 @@
                                     });
                                     ZappyApp.ui.displayMessage('shift-controls-message', 'Your shift ended automatically.', false);
                                 } catch (error) {
-                                    console.error("Error automatically ending shift:", error);
+                                    console.error("[checkActiveShift] Error automatically ending shift:", error);
                                     ZappyApp.ui.displayMessage('shift-controls-message', 'Error resetting shift status.', true);
                                 }
                             }
                         }
                     }, (error) => {
-                        console.error("Error listening to active shift status:", error);
+                        console.error("[checkActiveShift] Error listening to active shift status:", error);
                         if (error.code === 'permission-denied' || error.code === 'unavailable') {
                              ZappyApp.ui.displayMessage('shift-controls-message', 'Failed to load shift status (permission error).', true);
                         } else {
@@ -1487,6 +1506,7 @@
                                 duration: durationSeconds,
                                 recordedAt: serverTimestamp()
                             });
+                            console.log(`[toggleShift] Shift ended for user ${userId} on server ${serverId}. Duration: ${durationSeconds}s`);
 
                             ZappyApp.ui.displayMessage('shift-controls-message', 'Shift ended.', false);
                         } else {
@@ -1512,6 +1532,7 @@
                                 totalShiftDuration: 0, // Will be updated on subsequent shifts if not already present
                                 createdAt: serverTimestamp()
                             }, { merge: true });
+                            console.log(`[toggleShift] Shift started for user ${userId} on server ${serverId}.`);
 
                             ZappyApp.ui.displayMessage('shift-controls-message', 'Shift started!', false);
                         }
@@ -1599,6 +1620,7 @@
                         }
                         if (commandResponseEl) commandResponseEl.textContent = responseMessage;
                         if (commandInput) commandInput.value = ''; // Clear input
+                        console.log(`[handleExecuteCommand] Command '${command}' executed with status: ${status}.`);
 
                         // Log command to Firestore for audit
                         await addDoc(collection(db, `/artifacts/${appId}/public/data/servers/${serverId}/commandLogs`), {
@@ -1653,6 +1675,7 @@
                         ZappyApp.state.currentServer.name = newName; // Update local state
                         if (ZappyApp.elements.panelServerName) ZappyApp.elements.panelServerName.textContent = newName; // Update panel header
                         ZappyApp.ui.displayMessage('owner-settings-success', 'Server group name updated successfully!', false);
+                        console.log(`[handleSaveServerName] Server name updated to '${newName}' for server ${serverId}.`);
                     } catch (error) {
                         console.error("Error updating server name:", error);
                         ZappyApp.ui.displayMessage('owner-settings-error', `Failed to update server group name: ${error.message}`, true);
@@ -1682,6 +1705,7 @@
                         ZappyApp.state.activeServerKey = newApiKey || null;
                         ZappyApp.state.currentServer.apiKey = newApiKey || null; // Update local state for record
                         ZappyApp.ui.displayMessage('owner-api-key-success', 'API Key (in Zappy DB) updated successfully!', false);
+                        console.log(`[handleSaveApiKeyForFirebaseRecord] API Key for server ${serverId} updated.`);
                     } catch (error) {
                         console.error("Error updating API Key (in Firebase):", error);
                         ZappyApp.ui.displayMessage('owner-api-key-error', `Failed to update API Key (in Zappy DB): ${error.message}`, true);
@@ -1724,6 +1748,7 @@
                                 ZappyApp.state.currentServer = null; // Clear current server state
                                 ZappyApp.ui.displayMessage('server-list-error', 'Server group deleted successfully.', false); // Display message on dashboard
                                 ZappyApp.ui.showView('dashboard');
+                                console.log(`[handleDeleteServer] Server group ${serverId} deleted.`);
                             } catch (error) {
                                 console.error("Error deleting server group:", error);
                                 ZappyApp.ui.displayMessage('owner-settings-error', `Failed to delete server group: ${error.message}`, true);
@@ -1740,6 +1765,7 @@
 
                     try {
                         const data = await ZappyApp.utils.callErlcApi('/server', { method: 'GET' }); // Endpoint from script.js
+                        console.log("[refreshStats] ER:LC Server Stats API response:", data);
 
                         // Based on script.js and image_4fceb9.png: { Name, OwnerId, CurrentPlayers, MaxPlayers, AccVerifiedReq, TeamBalance }
                         if (data && typeof data === 'object' && Object.keys(data).length > 0) {
@@ -1765,16 +1791,27 @@
                     const playersListEl = ZappyApp.elements.playerList;
                     const playerCountEl = ZappyApp.elements.playerCount;
                     const queueCountEl = ZappyApp.elements.queueCount;
-                    const queueListUl = document.getElementById('queue-list'); // Ensure this is selected for queue display
+                    // The queue is displayed alongside players, so ensure the proper element exists.
+                    // The HTML currently has a general 'join-requests-display' for Firebase join requests,
+                    // but the API also provides a queue. Let's ensure a dedicated queue display.
+                    // For now, I'll log it and assume 'join-requests-display' can double for API queue if needed,
+                    // but ideally, separate elements for internal Zappy join requests vs. ER:LC queue.
+                    // Re-evaluated: The 'Join Requests (From Firebase)' is distinct from ER:LC Queue.
+                    // The provided HTML doesn't have a specific `ul` for ER:LC API queue, so I'll just
+                    // update the `queue-count` and log the queue array.
+                    // For a proper UI, we would need to add a new `ul` like `id="erlc-queue-list"`.
 
                     if (playersListEl) playersListEl.innerHTML = '<p class="text-slate-400">Fetching player data from ER:LC API...</p>';
-                    if (queueListUl) queueListUl.innerHTML = '<p class="text-slate-400">Fetching queue data from ER:LC API...</p>';
                     if (playerCountEl) playerCountEl.textContent = '...';
                     if (queueCountEl) queueCountEl.textContent = '...';
 
                     try {
                         const onlinePlayers = await ZappyApp.utils.callErlcApi('/server/players', { method: 'GET' }); // Endpoint from image_4fcef1.png
                         const queuePlayers = await ZappyApp.utils.callErlcApi('/server/queue', { method: 'GET' }); // Endpoint from image_4fce1f.png
+
+                        console.log("[refreshPlayers] Online Players API response:", onlinePlayers);
+                        console.log("[refreshPlayers] Queue Players API response:", queuePlayers);
+
 
                         if (onlinePlayers && Array.isArray(onlinePlayers)) {
                             if (playersListEl) {
@@ -1805,19 +1842,11 @@
 
                         // Update queue separately
                         if (queuePlayers && Array.isArray(queuePlayers)) { // image_4fce1f.png shows queue as an array of integers (IDs)
-                            if (queueListUl) {
-                                queueListUl.innerHTML = '';
-                                if (queuePlayers.length > 0) {
-                                    queuePlayers.forEach(id => {
-                                        queueListUl.insertAdjacentHTML('beforeend', `<li>Player ID: ${id}</li>`);
-                                    });
-                                } else {
-                                    queueListUl.innerHTML = '<p class="text-slate-500">Queue is currently empty.</p>';
-                                }
-                            }
+                            // Assuming queueListUl is not available, just update the count and log
                             if (queueCountEl) queueCountEl.textContent = queuePlayers.length;
+                            // If a dedicated queue list UI element were present (e.g., <ul id="erlc-queue-list">), we would populate it here.
+                            // For now, this just updates the count and the data is in the console log.
                         } else {
-                            if (queueListUl) queueListUl.innerHTML = '<p class="text-red-400">Failed to load queue data from ER:LC API.</p>';
                             if (queueCountEl) queueCountEl.textContent = 'Error';
                         }
 
@@ -1826,7 +1855,7 @@
                         console.error("Error refreshing players/queue from ER:LC API:", error);
                         if (playersListEl) playersListEl.innerHTML = `<p class="text-red-400">Error fetching players: ${error.message}</p>`;
                         if (playerCountEl) playerCountEl.textContent = 'Error';
-                        if (queueListUl) queueListUl.innerHTML = `<p class="text-red-400">Error fetching queue: ${error.message}</p>`;
+                        // if (queueListUl) queueListUl.innerHTML = `<p class="text-red-400">Error fetching queue: ${error.message}</p>`; // Not a dedicated UL for now
                         if (queueCountEl) queueCountEl.textContent = 'Error';
                     }
                     // Join requests are handled by Firebase onSnapshot listener (displayOwnerJoinRequests is called via serverDocRef listener)
@@ -1838,6 +1867,7 @@
 
                     try {
                         const data = await ZappyApp.utils.callErlcApi('/server/vehicles', { method: 'GET' }); // Endpoint from image_4fcdf8.png
+                        console.log("[refreshVehicles] ER:LC Vehicles API response:", data);
 
                         // Based on image_4fcdf8.png: { Texture, Name, Owner }
                         if (data && Array.isArray(data)) {
@@ -1872,6 +1902,7 @@
 
                     try {
                         const data = await ZappyApp.utils.callErlcApi('/server/killlogs', { method: 'GET' }); // Endpoint from image_4fce1f.png
+                        console.log("[refreshKillLogs] ER:LC Kill Logs API response:", data);
 
                         // Based on image_4fce1f.png: { Killed, Killer, Timestamp }
                         if (data && Array.isArray(data)) {
@@ -1911,6 +1942,7 @@
                     const commandLogsCollectionRef = collection(db, `/artifacts/${appId}/public/data/servers/${serverId}/commandLogs`);
                     const q = query(commandLogsCollectionRef);
                     onSnapshot(q, (snapshot) => {
+                        console.log("[refreshCommandLogs] Zappy Command Logs snapshot received:", snapshot.size, "documents.");
                         if (ZappyApp.elements.commandLogList) ZappyApp.elements.commandLogList.innerHTML = '';
                         if (snapshot.empty) {
                             if (ZappyApp.elements.commandLogList) ZappyApp.elements.commandLogList.innerHTML = '<p class="text-slate-500">No Zappy command logs available.</p>';
@@ -1925,7 +1957,7 @@
                                 `);
                             });
                     }, (error) => {
-                        console.error("Error listening to Zappy command logs:", error);
+                        console.error("[refreshCommandLogs] Error listening to Zappy command logs:", error);
                         if (ZappyApp.elements.commandLogList) ZappyApp.elements.commandLogList.innerHTML = '<p class="text-red-400">Failed to load Zappy command logs (permission error).</p>';
                     });
                 },
@@ -1940,9 +1972,11 @@
                         if (action === 'start') {
                             await setDoc(shiftWaveStatusRef, { active: true, startTime: serverTimestamp(), triggeredBy: ZappyApp.state.currentUser.uid });
                             ZappyApp.ui.displayMessage('shift-controls-message', 'Shift wave started!', false);
+                            console.log(`[handleShiftWaveAction] Shift wave started for server ${serverId}.`);
                         } else if (action === 'end') {
                             await setDoc(shiftWaveStatusRef, { active: false, endTime: serverTimestamp(), triggeredBy: ZappyApp.state.currentUser.uid });
                             ZappyApp.ui.displayMessage('shift-controls-message', 'Shift wave ended!', false);
+                            console.log(`[handleShiftWaveAction] Shift wave ended for server ${serverId}.`);
 
                             // WIPE SHIFTS FOR THIS SERVER
                             console.log(`Clearing all shifts for server: ${serverId}`);
