@@ -880,7 +880,7 @@
                     }
                 },
                 
-                async function handleJoinServer() {
+                async handleJoinServer() {
                     if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
                     const joinCodeInput = document.getElementById('join-code-input');
                     const joinCode = joinCodeInput ? joinCodeInput.value.toUpperCase() : '';
