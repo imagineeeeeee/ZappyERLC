@@ -886,7 +886,7 @@
                         if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                         return;
                     }
-const userId = ZappyApp.state.currentUser.uid; // This will now be guaranteed to exist and be valid for Firebase Auth
+                    const userId = ZappyApp.state.currentUser.uid; // This will now be guaranteed to exist and be valid for Firebase Auth
                     if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
                     const joinCodeInput = document.getElementById('join-code-input');
                     const joinCode = joinCodeInput ? joinCodeInput.value.toUpperCase() : '';
