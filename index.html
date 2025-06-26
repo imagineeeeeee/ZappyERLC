@@ -398,6 +398,8 @@
         const finalFirebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
         // MODIFIED: Use projectId from finalFirebaseConfig to ensure correct path construction
         const appId = finalFirebaseConfig.projectId; 
+        console.log(`%c[App Initialization] Zappy App ID (projectId) being used: ${appId}`, 'color: yellow; font-weight: bold;');
+
 
         // Import statements - updated to 11.9.1
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
@@ -2011,7 +2013,7 @@
                                             const killer = log.Killer || 'Unknown/Environment';
                                             const killedParts = log.Killed.split(':');
                                             const killedName = killedParts[0] || 'Unknown Player';
-                                            const killerParts = killer.SPLIT(':',2)[0] || killer;
+                                            const killerName = killer.split(':',2)[0] || killer; // Fixed SPLIT to split
 
                                             killLogListEl.insertAdjacentHTML('beforeend', `<div>[${timestamp}] ${killedName} was killed by ${killerName}.</div>`);
                                         }
