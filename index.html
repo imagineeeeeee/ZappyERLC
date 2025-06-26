@@ -358,7 +358,7 @@
                 <div class="mb-6">
                     <label for="api-key" class="block mb-2 text-sm font-medium">ER:LC Server API Key (Optional)</label>
                     <input type="password" id="api-key" class="form-input">
-                    <p class="text-xs text-yellow-400 mt-1">This key will be stored in Zappy's database for this server group and used for direct API calls. <strong class="text-red-400">WARNING: This key will be visible in your browser's developer tools when this server is selected. Use with caution.</strong></p>
+                    <p class="text-xs text-yellow-400 mt-1">This key will be stored in Zappy's database for this server group and used for direct API calls. <strong class="text-red-400">WARNING: This key will be visible in your browser's developer tools when this server is selected. Use with caution.</strong></strongp>
                 </div>
                 <p id="create-server-error" class="text-red-400 text-sm mb-4"></p>
                 <div class="flex justify-end gap-4">
@@ -851,14 +851,12 @@
 
             // --- DASHBOARD MODULE ---
             dashboard: {
+                // MODIFIED: Simplified fetchUserServers to use a single onSnapshot listener
                 async fetchUserServers() {
-                    if (!ZappyApp.state.currentUser || !ZappyApp.state.currentUser.uid) {
-                        console.log("[fetchUserServers] No current user or UID available. Cannot fetch servers.");
-                        if (ZappyApp.elements.serverList) ZappyApp.elements.serverList.innerHTML = '<p class="text-slate-400">Please log in to view your server groups.</p>';
+                    if (!ZappyApp.state.currentUser) {
+                        if (ZappyApp.elements.serverList) ZappyApp.elements.serverList.innerHTML = '<p class="text-slate-400">You are not logged in.</p>';
                         return;
                     }
-
-                    console.log(`%c[fetchUserServers] Fetching servers for user UID: ${ZappyApp.state.currentUser.uid} using appId: ${appId}`, 'color: yellow;'); // Highlight important log
 
                     const serverListEl = ZappyApp.elements.serverList;
                     if (serverListEl) serverListEl.innerHTML = '<p class="text-slate-400">Loading your server groups...</p>';
@@ -869,78 +867,46 @@
                     ZappyApp.state.unsubscribeListeners = [];
 
                     const serversCollectionRef = collection(db, `/artifacts/${appId}/public/data/servers`);
-                    console.log(`[fetchUserServers] Firestore collection path being queried: /artifacts/${appId}/public/data/servers`);
+                    console.log(`%c[fetchUserServers] Firestore collection path being queried: /artifacts/${appId}/public/data/servers`, 'color: yellow;');
 
-                    let allServers = {}; // Use an object to store servers by ID to deduplicate
+                    // Consolidate queries: Retrieve servers where the user is a member.
+                    // This implicitly covers owned servers if the owner is always added to the 'members' array during creation.
+                    // Removed explicit query for 'ownerId' and manual merging.
+                    // Removed sorting by 'createdAt' as it was not in the provided snippet.
+                    const q = query(serversCollectionRef,
+                                     where('members', 'array-contains', ZappyApp.state.currentUser.uid));
 
-                    // Listener for servers where the current user is a member
-                    console.log(`%c[DEBUG onSnapshot] Attaching listener for servers where user is a MEMBER.`, 'color: orange;');
-                    const qMembers = query(serversCollectionRef, where('members', 'array-contains', ZappyApp.state.currentUser.uid));
-                    const unsubscribeMembers = onSnapshot(qMembers, (snapshot) => {
-                        console.log(`%c[DEBUG onSnapshot members] Snapshot received. Number of documents: ${snapshot.size}`, 'color: lightblue;');
-                        snapshot.forEach(doc => {
-                            const server = { id: doc.id, ...doc.data() };
-                            allServers[server.id] = server;
-                        });
-                        this.renderServerList(allServers);
-                    }, (error) => {
-                        console.error(`%c[DEBUG onSnapshot Error] Error fetching member servers: ${error.code} - ${error.message}`, 'color: red; font-weight: bold;'); // Detailed error log
-                        ZappyApp.ui.displayMessage('server-list-error', `Could not load joined server groups: ${error.message}. Please check your Firebase permissions.`, true);
-                        this.renderServerList(allServers); // Still try to render whatever we have
-                    });
-                    ZappyApp.state.unsubscribeListeners.push(unsubscribeMembers);
-
-                    // Listener for servers where the current user is the owner
-                    console.log(`%c[DEBUG onSnapshot] Attaching listener for servers where user is an OWNER.`, 'color: orange;');
-                    const qOwners = query(serversCollectionRef, where('ownerId', '==', ZappyApp.state.currentUser.uid));
-                    const unsubscribeOwners = onSnapshot(qOwners, (snapshot) => {
-                        console.log(`%c[DEBUG onSnapshot owners] Snapshot received. Number of documents: ${snapshot.size}`, 'color: purple;');
-                        snapshot.forEach(doc => {
-                            const server = { id: doc.id, ...doc.data() };
-                            allServers[server.id] = server;
-                        });
-                        this.renderServerList(allServers);
-                    }, (error) => {
-                        console.error(`%c[DEBUG onSnapshot Error] Error fetching owned servers: ${error.code} - ${error.message}`, 'color: red; font-weight: bold;'); // Detailed error log
-                        ZappyApp.ui.displayMessage('server-list-error', `Could not load owned server groups: ${error.message}. Please check your Firebase permissions.`, true);
-                        this.renderServerList(allServers); // Still try to render whatever we have
-                    });
-                    ZappyApp.state.unsubscribeListeners.push(unsubscribeOwners);
-                },
-
-                renderServerList(serversMap) {
-                    const serverListEl = ZappyApp.elements.serverList;
-                    if (!serverListEl) return;
-
-                    const serversArray = Object.values(serversMap).sort((a, b) => {
-                        // Sort by creation date (newest first) or by name if creation date is missing
-                        if (a.createdAt && b.createdAt) {
-                            // Firestore Timestamp to Date object for comparison
-                            const dateA = a.createdAt.toDate ? a.createdAt.toDate() : a.createdAt;
-                            const dateB = b.createdAt.toDate ? b.createdAt.toDate() : b.createdAt;
-                            return dateB.getTime() - dateA.getTime();
+                    const unsubscribe = onSnapshot(q, (snapshot) => {
+                        console.log(`%c[DEBUG onSnapshot] Snapshot received. Number of documents: ${snapshot.size}`, 'color: lightblue;');
+                        if (snapshot.empty) {
+                            if (serverListEl) serverListEl.innerHTML = '<p class="text-slate-400">You have no Zappy server groups. Create or join one!</p>';
+                            return;
                         }
-                        return a.name.localeCompare(b.name);
+                        if (serverListEl) serverListEl.innerHTML = ''; // Clear existing content
+                        snapshot.forEach((doc) => {
+                            const server = { id: doc.id, ...doc.data() };
+                            const isOwner = server.ownerId === ZappyApp.state.currentUser.uid;
+                            if (serverListEl) serverListEl.insertAdjacentHTML('beforeend', `
+                                <div class="card flex flex-col justify-between">
+                                    <div>
+                                        <h4 class="text-lg font-bold text-white">${server.name}</h4>
+                                        <p class="text-sm text-slate-400 mb-4">${isOwner ? '👑 Owner' : '👥 Member'}</p>
+                                    </div>
+                                    <button class="btn btn-primary mt-auto select-server-btn" data-server-id="${server.id}">Open Panel</button>
+                                </div>`);
+                        });
+                    }, (error) => {
+                        console.error(`%c[DEBUG onSnapshot Error] Error fetching servers: ${error.code} - ${error.message}`, 'color: red; font-weight: bold;');
+                        ZappyApp.ui.displayMessage('server-list-error', `Could not load server groups: ${error.message}. Please check your Firebase permissions.`, true);
+                        if (serverListEl) serverListEl.innerHTML = '<p class="text-red-400">Failed to load server groups.</p>';
                     });
-
-                    if (serversArray.length === 0) {
-                        serverListEl.innerHTML = '<p class="text-slate-400">You have no Zappy server groups. Create or join one!</p>';
-                        return;
-                    }
-
-                    serverListEl.innerHTML = ''; // Clear existing content
-                    serversArray.forEach((server) => {
-                        const isOwner = server.ownerId === ZappyApp.state.currentUser.uid;
-                        serverListEl.insertAdjacentHTML('beforeend', `
-                            <div class="card flex flex-col justify-between">
-                                <div>
-                                    <h4 class="text-lg font-bold text-white">${server.name}</h4>
-                                    <p class="text-sm text-slate-400 mb-4">${isOwner ? '👑 Owner' : '👥 Member'}</p>
-                                </div>
-                                <button class="btn btn-primary mt-auto select-server-btn" data-server-id="${server.id}">Open Panel</button>
-                            </div>`);
-                    });
+                    ZappyApp.state.unsubscribeListeners.push(unsubscribe); // Store for cleanup
                 },
+
+                // renderServerList function is no longer needed as its logic is merged into fetchUserServers.
+                // Keeping it as a placeholder comment for clarity if it was explicitly defined before.
+                // renderServerList(serversMap) { /* ... logic moved to fetchUserServers ... */ },
+
 
                 async handleSelectServer(e) {
                     if (e.target.classList.contains('select-server-btn')) {
@@ -2013,7 +1979,7 @@
                                             const killer = log.Killer || 'Unknown/Environment';
                                             const killedParts = log.Killed.split(':');
                                             const killedName = killedParts[0] || 'Unknown Player';
-                                            const killerName = killer.split(':',2)[0] || killer; // Fixed SPLIT to split
+                                            const killerName = killer.split(':',2)[0] || killer; 
 
                                             killLogListEl.insertAdjacentHTML('beforeend', `<div>[${timestamp}] ${killedName} was killed by ${killerName}.</div>`);
                                         }
