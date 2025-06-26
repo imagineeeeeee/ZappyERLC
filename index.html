@@ -879,14 +879,8 @@
                         if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                     }
                 },
-
-                async handleJoinServer() {
-                    if (!ZappyApp.state.currentUser || !ZappyApp.state.currentUser.uid) {
-                        ZappyApp.ui.displayMessage('join-server-error', 'Please sign in to send a join request.', true);
-                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
-                        return;
-                    }
-                    const userId = ZappyApp.state.currentUser.uid; // This will now be guaranteed to exist and be valid for Firebase Auth
+                
+                async function handleJoinServer() {
                     if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
                     const joinCodeInput = document.getElementById('join-code-input');
                     const joinCode = joinCodeInput ? joinCodeInput.value.toUpperCase() : '';
@@ -899,6 +893,16 @@
                         return;
                     }
 
+                    // --- IMPORTANT: Client-side check for authenticated user before proceeding ---
+                    // This assumes ZappyApp.state.currentUser is correctly populated by Firebase Auth listener
+                    if (!ZappyApp.state.currentUser || !ZappyApp.state.currentUser.uid) {
+                        ZappyApp.ui.displayMessage('join-server-error', 'You must be signed in to send a join request.', true);
+                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
+                        return;
+                    }
+                    const userId = ZappyApp.state.currentUser.uid;
+                    // --- End of IMPORTANT check ---
+
                     try {
                         const serverDocRef = doc(db, `/artifacts/${appId}/public/data/servers`, joinCode);
                         const serverDoc = await getDoc(serverDocRef);
@@ -909,19 +913,22 @@
                         }
 
                         const serverData = serverDoc.data();
-                        const userId = ZappyApp.state.currentUser.uid;
 
-                        if (serverData.members.includes(userId)) {
+                        // Safely check if members/joinRequests exist and are arrays before accessing
+                        const currentMembers = serverData.members || [];
+                        const currentJoinRequests = serverData.joinRequests || [];
+
+                        if (currentMembers.includes(userId)) {
                             ZappyApp.ui.displayMessage('join-server-success', 'You are already a member of this server.', false);
                             return;
                         }
 
-                        if (serverData.joinRequests && serverData.joinRequests.includes(userId)) {
+                        if (currentJoinRequests.includes(userId)) {
                             ZappyApp.ui.displayMessage('join-server-success', 'You have already sent a join request to this server.', false);
                             return;
                         }
 
-                        // Add user to joinRequests
+                        // Add user to joinRequests array
                         await updateDoc(serverDocRef, {
                             joinRequests: arrayUnion(userId)
                         });
@@ -930,7 +937,13 @@
                         if (joinCodeInput) joinCodeInput.value = '';
                     } catch (error) {
                         console.error("Error joining server:", error);
-                        ZappyApp.ui.displayMessage('join-server-error', `Error sending join request: ${error.message}. Please check permissions.`, true);
+
+                        // More specific error handling
+                        if (error.code === 'permission-denied') {
+                            ZappyApp.ui.displayMessage('join-server-error', `Permission denied. Ensure you are signed in and have proper authorization.`, true);
+                        } else {
+                            ZappyApp.ui.displayMessage('join-server-error', `Error sending join request: ${error.message}. Please try again.`, true);
+                        }
                     } finally {
                         if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                     }
