@@ -1502,7 +1502,7 @@
                     const command = commandInput ? commandInput.value.trim() : '';
                     
                     // The serverId for fetching the API key from Firestore is "TEXASRP" as per image_9cb8e3.png
-                    const serverIdForApiKey = "TEXASRP"; 
+                    const serverIdForApiKey = ZappyApp.state.currentServer.id;
                     let erlcApiKey = null;
 
                     if (commandResponseEl) commandResponseEl.textContent = ''; // Clear previous response
@@ -1782,7 +1782,7 @@
                     if (outputEl) outputEl.innerHTML = '<p class="text-slate-400">Fetching server statistics...</p>';
 
                     // The serverId for fetching the API key from Firestore is "TEXASRP" as per image_9cb8e3.png
-                    const serverIdForApiKey = "TEXASRP"; 
+                    const serverIdForApiKey = ZappyApp.state.currentServer.id;
                     let erlcApiKey = null;
 
                     try {
@@ -1887,7 +1887,7 @@
                     if (queueCountEl) queueCountEl.textContent = '...';
 
                     // The serverId for fetching the API key from Firestore is "TEXASRP" as per image_9cb8e3.png
-                    const serverIdForApiKey = "TEXASRP"; 
+                    const serverIdForApiKey = ZappyApp.state.currentServer.id;
                     let erlcApiKey = null;
 
                     try {
@@ -2000,7 +2000,7 @@
                     if (vehiclesListEl) vehiclesListEl.innerHTML = '<p class="text-slate-400">Fetching vehicle data...</p>';
 
                     // The serverId for fetching the API key from Firestore is "TEXASRP" as per image_9cb8e3.png
-                    const serverIdForApiKey = "TEXASRP"; 
+                    const serverIdForApiKey = ZappyApp.state.currentServer.id;
                     let erlcApiKey = null;
 
                     try {
@@ -2095,7 +2095,7 @@
                     if (killLogListEl) killLogListEl.innerHTML = '<p class="text-slate-400">Fetching kill logs...</p>';
 
                     // The serverId for fetching the API key from Firestore is "TEXASRP" as per image_9cb8e3.png
-                    const serverIdForApiKey = "TEXASRP"; 
+                    const serverIdForApiKey = ZappyApp.state.currentServer.id; 
                     let erlcApiKey = null;
 
                     try {
