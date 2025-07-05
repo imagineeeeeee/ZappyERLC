@@ -1261,12 +1261,12 @@
                     // Re-add event listeners each time the list is rendered
                     // Ensure 'this' context is correctly bound if this function is a method of ZappyApp
                     // If ZappyApp.handleJoinRequestAction is a method, 'this' needs to be ZappyApp.
-                    if (typeof ZappyApp !== 'undefined' && ZappyApp.handleJoinRequestAction) {
+                    if (typeof ZappyApp !== 'undefined' && ZappyApp.elements.handleJoinRequestAction) {
                         listEl.querySelectorAll('.accept-join-btn').forEach(button => {
-                            button.addEventListener('click', ZappyApp.handleJoinRequestAction.bind(ZappyApp, 'accept'));
+                            button.addEventListener('click', ZappyApp.elements.handleJoinRequestAction.bind(ZappyApp, 'accept'));
                         });
                         listEl.querySelectorAll('.reject-join-btn').forEach(button => {
-                            button.addEventListener('click', ZappyApp.handleJoinRequestAction.bind(ZappyApp, 'reject'));
+                            button.addEventListener('click', ZappyApp.elements.handleJoinRequestAction.bind(ZappyApp, 'reject'));
                         });
                     } else {
                         console.warn("ZappyApp.handleJoinRequestAction not found. Join request buttons may not be functional.");
