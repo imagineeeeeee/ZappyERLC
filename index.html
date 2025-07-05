@@ -203,7 +203,6 @@
                     <button class="tab-button btn btn-secondary" data-tab="players">Players</button>
                     <button class="tab-button btn btn-secondary" data-tab="vehicles">Vehicles</button>
                     <button class="tab-button btn btn-secondary" data-tab="killlogs">Kill Logs</button>
-                    <button class="tab-button btn btn-secondary" data-tab="commandlogs">Command Logs</button>
                     <button class="tab-button btn btn-secondary" data-tab="commands">Execute</button>
                     <button class="tab-button btn btn-secondary" data-tab="shifts">Shifts</button>
                     <!-- Owner-only tab is added dynamically -->
@@ -216,12 +215,12 @@
                 <div id="tab-main" class="tab-content active">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="card">
-                            <h3 class="text-xl font-semibold mb-4 text-white">Server Statistics (ER:LC API)</h3>
+                            <h3 class="text-xl font-semibold mb-4 text-white">Server Statistics</h3>
                             <button id="refresh-stats-btn" class="btn btn-secondary btn-sm mb-4">Refresh Stats</button>
                             <div id="server-stats-output">Loading...</div>
                         </div>
                         <div class="card">
-                            <h3 class="text-xl font-semibold mb-4 text-white">Real-time Events (From Firebase)</h3>
+                            <h3 class="text-xl font-semibold mb-4 text-white">Real-time Events</h3>
                             <div id="log-output" class="log-box">Connecting...</div>
                         </div>
                     </div>
@@ -230,7 +229,7 @@
                 <!-- Players Tab -->
                 <div id="tab-players" class="tab-content hidden">
                     <div class="card">
-                        <h3 class="text-xl font-semibold mb-4 text-white">Players & Queue (ER:LC API)</h3>
+                        <h3 class="text-xl font-semibold mb-4 text-white">Players & Queue</h3>
                         <button id="refresh-players-btn" class="btn btn-secondary btn-sm mb-4">Refresh Players</button>
                         <p class="mb-4">Online: <span id="player-count">0</span> | Queue: <span id="queue-count">0</span></p>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -239,7 +238,11 @@
                                 <ul id="player-list" class="log-box"></ul>
                             </div>
                             <div>
-                                <h4 class="font-bold mb-2">Join Requests (From Firebase)</h4>
+                                <h4 class="font-bold mb-2">Queued Players</h4>
+                                <ul id="player-queue" class="log-box"></ul>
+                            </div>
+                            <div>
+                                <h4 class="font-bold mb-2">Join Requests</h4>
                                 <ul id="join-requests-display" class="log-box"></ul>
                             </div>
                         </div>
@@ -248,7 +251,7 @@
 
                 <!-- Vehicles Tab -->
                 <div id="tab-vehicles" class="tab-content card hidden">
-                    <h3 class="text-xl font-semibold mb-4 text-white">Vehicle Data (ER:LC API)</h3>
+                    <h3 class="text-xl font-semibold mb-4 text-white">Vehicle Data</h3>
                     <p class="text-slate-400 mb-4">Vehicle data would be displayed here.</p>
                     <button id="refresh-vehicles-btn" class="btn btn-secondary btn-sm mb-4">Refresh Vehicles</button>
                     <div id="vehicle-list" class="log-box">No vehicle data available.</div>
@@ -256,25 +259,17 @@
 
                 <!-- Kill Logs Tab -->
                 <div id="tab-killlogs" class="tab-content card hidden">
-                    <h3 class="text-xl font-semibold mb-4 text-white">Kill Logs (ER:LC API)</h3>
+                    <h3 class="text-xl font-semibold mb-4 text-white">Kill Logs</h3>
                     <p class="text-slate-400 mb-4">Kill logs would be displayed here.</p>
                     <button id="refresh-killlogs-btn" class="btn btn-secondary btn-sm mb-4">Refresh Kill Logs</button>
                     <div id="kill-log-list" class="log-box">No kill logs available.</div>
                 </div>
 
-                <!-- Command Logs Tab -->
-                <div id="tab-commandlogs" class="tab-content card hidden">
-                    <h3 class="text-xl font-semibold mb-4 text-white">Command Logs (From Firebase)</h3>
-                    <p class="text-slate-400 mb-4">Executed command logs would be displayed here.</p>
-                    <button id="refresh-commandlogs-btn" class="btn btn-secondary btn-sm mb-4">Refresh Command Logs</button>
-                    <div id="command-log-list" class="log-box">No command logs available.</div>
-                </div>
-
                 <!-- Commands Tab -->
                 <div id="tab-commands" class="tab-content hidden">
                     <div class="card">
-                        <h3 class="text-xl font-semibold mb-4 text-white">Execute Command (ER:LC API)</h3>
-                        <p class="text-slate-400 mb-4 text-sm">Enter a command to execute on the ER:LC server. (Note: This is a simulated backend integration. Real integration requires a backend to use the API Key securely.)</p>
+                        <h3 class="text-xl font-semibold mb-4 text-white">Execute Command</h3>
+                        <p class="text-slate-400 mb-4 text-sm">Enter a command to execute on the ER:LC server.</p>
                         <div class="flex gap-2">
                             <input type="text" id="command-input" placeholder="e.g., :kick PlayerName" class="form-input">
                             <button id="execute-command-button" class="btn btn-primary">Execute</button>
@@ -287,7 +282,7 @@
                 <div id="tab-shifts" class="tab-content hidden">
                     <div class="card">
                         <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-xl font-semibold text-white">Shift Leaderboard (From Firebase)</h3>
+                            <h3 class="text-xl font-semibold text-white">Shift Leaderboard</h3>
                             <div id="shift-wave-controls">
                                 <!-- Owner-only controls added here -->
                                 <button id="start-shift-wave-btn" class="btn btn-primary btn-sm hidden">Start Shift Wave</button>
@@ -302,12 +297,12 @@
                 <div id="tab-owner" class="tab-content hidden">
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div class="card">
-                            <h3 class="text-xl font-semibold text-white mb-4">Join Requests (From Firebase)</h3>
+                            <h3 class="text-xl font-semibold text-white mb-4">Join Requests</h3>
                             <div id="owner-join-requests-list" class="space-y-3">No pending requests.</div>
                              <p id="owner-join-requests-list-error" class="text-red-400 text-sm mt-2 text-center"></p>
                         </div>
                         <div class="card">
-                            <h3 class="text-xl font-semibold text-white mb-4">Manage Server Members (From Firebase)</h3>
+                            <h3 class="text-xl font-semibold text-white mb-4">Manage Server Members</h3>
                             <div id="server-members-list" class="log-box mb-4">No members to display.</div>
                              <p id="server-members-message" class="text-sm mt-2 text-center"></p>
                             <hr class="border-slate-700 my-6">
@@ -881,23 +876,25 @@
                 },
                 
                 async handleJoinServer() {
-                    if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
+                    if (typeof ZappyApp !== 'undefined' && ZappyApp.elements && ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
                     const joinCodeInput = document.getElementById('join-code-input');
                     const joinCode = joinCodeInput ? joinCodeInput.value.toUpperCase() : '';
-                    if (ZappyApp.elements.joinServerError) ZappyApp.elements.joinServerError.textContent = ''; // Clear previous errors
-                    if (ZappyApp.elements.joinServerSuccess) ZappyApp.elements.joinServerSuccess.textContent = ''; // Clear previous success messages
+                    if (typeof ZappyApp !== 'undefined' && ZappyApp.elements && ZappyApp.elements.joinServerError) ZappyApp.elements.joinServerError.textContent = ''; // Clear previous errors
+                    if (typeof ZappyApp !== 'undefined' && ZappyApp.elements && ZappyApp.elements.joinServerSuccess) ZappyApp.elements.joinServerSuccess.textContent = ''; // Clear previous success messages
 
                     if (!joinCode) {
-                        ZappyApp.ui.displayMessage('join-server-error', 'Please enter a server code.', true);
-                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
+                        if (typeof ZappyApp !== 'undefined' && ZappyApp.ui) ZappyApp.ui.displayMessage('join-server-error', 'Please enter a server code.', true);
+                        if (typeof ZappyApp !== 'undefined' && ZappyApp.elements && ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                         return;
                     }
 
                     // --- IMPORTANT: Client-side check for authenticated user before proceeding ---
                     // This assumes ZappyApp.state.currentUser is correctly populated by Firebase Auth listener
-                    if (!ZappyApp.state.currentUser || !ZappyApp.state.currentUser.uid) {
-                        ZappyApp.ui.displayMessage('join-server-error', 'You must be signed in to send a join request.', true);
-                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
+                    // Add a check to ensure ZappyApp.state.currentUser is ready
+                    if (typeof ZappyApp === 'undefined' || !ZappyApp.state || !ZappyApp.state.currentUser || !ZappyApp.state.currentUser.uid) {
+                        console.error("handleJoinServer: ZappyApp state or current user UID is not available.");
+                        if (typeof ZappyApp !== 'undefined' && ZappyApp.ui) ZappyApp.ui.displayMessage('join-server-error', 'You must be signed in to send a join request. Please wait for authentication to complete or sign in.', true);
+                        if (typeof ZappyApp !== 'undefined' && ZappyApp.elements && ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                         return;
                     }
                     const userId = ZappyApp.state.currentUser.uid;
@@ -908,7 +905,7 @@
                         const serverDoc = await getDoc(serverDocRef);
 
                         if (!serverDoc.exists()) {
-                            ZappyApp.ui.displayMessage('join-server-error', 'Server not found with that code.', true);
+                            if (typeof ZappyApp !== 'undefined' && ZappyApp.ui) ZappyApp.ui.displayMessage('join-server-error', 'Server not found with that code.', true);
                             return;
                         }
 
@@ -919,12 +916,12 @@
                         const currentJoinRequests = serverData.joinRequests || [];
 
                         if (currentMembers.includes(userId)) {
-                            ZappyApp.ui.displayMessage('join-server-success', 'You are already a member of this server.', false);
+                            if (typeof ZappyApp !== 'undefined' && ZappyApp.ui) ZappyApp.ui.displayMessage('join-server-success', 'You are already a member of this server.', false);
                             return;
                         }
 
                         if (currentJoinRequests.includes(userId)) {
-                            ZappyApp.ui.displayMessage('join-server-success', 'You have already sent a join request to this server.', false);
+                            if (typeof ZappyApp !== 'undefined' && ZappyApp.ui) ZappyApp.ui.displayMessage('join-server-success', 'You have already sent a join request to this server.', false);
                             return;
                         }
 
@@ -933,19 +930,19 @@
                             joinRequests: arrayUnion(userId)
                         });
 
-                        ZappyApp.ui.displayMessage('join-server-success', 'Join request sent! Awaiting owner approval.', false);
+                        if (typeof ZappyApp !== 'undefined' && ZappyApp.ui) ZappyApp.ui.displayMessage('join-server-success', 'Join request sent! Awaiting owner approval.', false);
                         if (joinCodeInput) joinCodeInput.value = '';
                     } catch (error) {
                         console.error("Error joining server:", error);
 
                         // More specific error handling
                         if (error.code === 'permission-denied') {
-                            ZappyApp.ui.displayMessage('join-server-error', `Permission denied. Ensure you are signed in and have proper authorization.`, true);
+                            if (typeof ZappyApp !== 'undefined' && ZappyApp.ui) ZappyApp.ui.displayMessage('join-server-error', `Permission denied. Ensure you are signed in and have proper authorization (Firestore rules).`, true);
                         } else {
-                            ZappyApp.ui.displayMessage('join-server-error', `Error sending join request: ${error.message}. Please try again.`, true);
+                            if (typeof ZappyApp !== 'undefined' && ZappyApp.ui) ZappyApp.ui.displayMessage('join-server-error', `Error sending join request: ${error.message}. Please try again.`, true);
                         }
                     } finally {
-                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
+                        if (typeof ZappyApp !== 'undefined' && ZappyApp.elements && ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                     }
                 },
 
@@ -1179,9 +1176,6 @@
                         ZappyApp.ui.displayMessage('shift-controls-message', 'Failed to load shift wave status (permission error).', true);
                     });
                     ZappyApp.state.unsubscribeListeners.push(unsubscribeShiftWaveStatus);
-
-                    // Command Logs Listener (Firebase) - This was already listening directly to Firebase.
-                    this.refreshCommandLogs(); // Initial load for command logs
                 },
 
                 async handleJoinRequestAction(action, e) {
@@ -1212,37 +1206,72 @@
                     }
                 },
 
-                displayOwnerJoinRequests(joinRequests) {
-                    const listEl = ZappyApp.elements.ownerJoinRequestsList;
-                    if (listEl) listEl.innerHTML = '';
-                    if (joinRequests.length === 0) {
-                        if (listEl) listEl.innerHTML = '<p class="text-slate-500">No pending requests.</p>';
+                async displayOwnerJoinRequests(joinRequests) {
+                    const listEl = typeof ZappyApp !== 'undefined' && ZappyApp.elements ? ZappyApp.elements.ownerJoinRequestsList : null;
+                    if (!listEl) {
+                        console.error("displayOwnerJoinRequests: ownerJoinRequestsList element not found.");
                         return;
                     }
-                    joinRequests.forEach(async (requesterId) => {
-                        // Fetch user data for requester's email
-                        const userDoc = await getDoc(doc(db, `/artifacts/${appId}/users`, requesterId)); // Corrected path
-                        const requesterEmail = userDoc.exists() ? (userDoc.data().email || requesterId) : requesterId;
-                        if (listEl) listEl.insertAdjacentHTML('beforeend', `
-                            <div class="flex justify-between items-center card p-3">
-                                <span>${requesterEmail} (${requesterId})</span>
-                                <div>
-                                    <button class="btn btn-primary btn-sm accept-join-btn" data-requester-id="${requesterId}">Accept</button>
-                                    <button class="btn btn-danger btn-sm reject-join-btn" data-requester-id="${requesterId}">Reject</button>
+
+                    listEl.innerHTML = ''; // Clear existing content
+
+                    if (joinRequests.length === 0) {
+                        listEl.innerHTML = '<p class="text-slate-500">No pending requests.</p>';
+                        return;
+                    }
+
+                    // Use a for...of loop to correctly await each user data fetch
+                    for (const requesterId of joinRequests) {
+                        try {
+                            // Fetch user data for requester's email
+                            // Ensure 'db' and 'appId' are accessible globally or passed appropriately
+                            if (!db || !appId) {
+                                console.error("Firebase 'db' or 'appId' not initialized. Cannot fetch user data for join requests.");
+                                listEl.innerHTML = '<p class="text-red-400">Error: Firebase not initialized. Cannot display requests.</p>';
+                                return;
+                            }
+                            const userDoc = await getDoc(doc(db, `/artifacts/${appId}/users`, requesterId));
+                            const requesterEmail = userDoc.exists() ? (userDoc.data().email || requesterId) : requesterId;
+
+                            // Append HTML for each request
+                            listEl.insertAdjacentHTML('beforeend', `
+                                <div class="flex justify-between items-center bg-gray-700 rounded-md p-3 mb-2 shadow-md">
+                                    <span class="text-white">${requesterEmail} (<span class="text-gray-400 text-sm">${requesterId.substring(0, 8)}...</span>)</span>
+                                    <div class="space-x-2">
+                                        <button class="btn bg-green-600 hover:bg-green-700 text-white font-bold py-1 px-3 rounded-md transition-colors duration-200 accept-join-btn" data-requester-id="${requesterId}">Accept</button>
+                                        <button class="btn bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded-md transition-colors duration-200 reject-join-btn" data-requester-id="${requesterId}">Reject</button>
+                                    </div>
                                 </div>
-                            </div>
-                        `);
-                    });
+                            `);
+                        } catch (error) {
+                            console.error(`Error fetching user data for requester ${requesterId}:`, error);
+                            // Display an error for this specific request, but continue with others
+                            listEl.insertAdjacentHTML('beforeend', `
+                                <div class="flex justify-between items-center bg-gray-700 rounded-md p-3 mb-2 shadow-md">
+                                    <span class="text-red-400">Error loading user (${requesterId})</span>
+                                    <div class="space-x-2">
+                                        <button class="btn bg-green-600 hover:bg-green-700 text-white font-bold py-1 px-3 rounded-md transition-colors duration-200 accept-join-btn" data-requester-id="${requesterId}">Accept</button>
+                                        <button class="btn bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded-md transition-colors duration-200 reject-join-btn" data-requester-id="${requesterId}">Reject</button>
+                                    </div>
+                                </div>
+                            `);
+                        }
+                    }
+
                     // Re-add event listeners each time the list is rendered
-                    if (listEl) {
+                    // Ensure 'this' context is correctly bound if this function is a method of ZappyApp
+                    // If ZappyApp.handleJoinRequestAction is a method, 'this' needs to be ZappyApp.
+                    if (typeof ZappyApp !== 'undefined' && ZappyApp.handleJoinRequestAction) {
                         listEl.querySelectorAll('.accept-join-btn').forEach(button => {
-                            button.addEventListener('click', this.handleJoinRequestAction.bind(this, 'accept'));
+                            button.addEventListener('click', ZappyApp.handleJoinRequestAction.bind(ZappyApp, 'accept'));
                         });
                         listEl.querySelectorAll('.reject-join-btn').forEach(button => {
-                            button.addEventListener('click', this.handleJoinRequestAction.bind(this, 'reject'));
+                            button.addEventListener('click', ZappyApp.handleJoinRequestAction.bind(ZappyApp, 'reject'));
                         });
+                    } else {
+                        console.warn("ZappyApp.handleJoinRequestAction not found. Join request buttons may not be functional.");
                     }
-                },
+},
 
                 async displayServerMembers(members) {
                     const listEl = ZappyApp.elements.serverMembersList;
@@ -1468,11 +1497,13 @@
                 },
 
                 async handleExecuteCommand() {
-                    const commandInput = ZappyApp.elements.commandInput;
-                    const commandResponseEl = ZappyApp.elements.commandResponse;
+                    const commandInput = typeof ZappyApp !== 'undefined' && ZappyApp.elements ? ZappyApp.elements.commandInput : null;
+                    const commandResponseEl = typeof ZappyApp !== 'undefined' && ZappyApp.elements ? ZappyApp.elements.commandResponse : null;
                     const command = commandInput ? commandInput.value.trim() : '';
-                    const serverId = ZappyApp.state.currentServer.id; // Get server ID
-                    const apiKey = ZappyApp.state.currentServer.apiKey; // Get API Key
+                    
+                    // The serverId for fetching the API key from Firestore is "TEXASRP" as per image_9cb8e3.png
+                    const serverIdForApiKey = "TEXASRP"; 
+                    let erlcApiKey = null;
 
                     if (commandResponseEl) commandResponseEl.textContent = ''; // Clear previous response
 
@@ -1485,78 +1516,154 @@
                         return;
                     }
 
-                    if (!apiKey) {
+                    // --- Fetch API Key from Firebase Firestore ---
+                    try {
+                        if (!db || !appId) {
+                            console.error("Firebase 'db' or 'appId' not initialized. Cannot fetch API key.");
+                            if (commandResponseEl) {
+                                commandResponseEl.textContent = 'Firebase not initialized. Cannot execute command.';
+                                commandResponseEl.classList.remove('text-green-400', 'text-red-400');
+                                commandResponseEl.classList.add('text-yellow-400');
+                            }
+                            return;
+                        }
+
+                        const apiKeyDocPath = `/artifacts/${appId}/public/data/servers/${serverIdForApiKey}`;
+                        const apiKeyDocRef = doc(db, apiKeyDocPath);
+                        const apiKeyDocSnap = await getDoc(apiKeyDocRef);
+
+                        if (apiKeyDocSnap.exists()) {
+                            erlcApiKey = apiKeyDocSnap.data().apiKey;
+                            if (!erlcApiKey) {
+                                console.error("ERLC API key field not found in Firebase document at:", apiKeyDocPath);
+                                if (commandResponseEl) {
+                                    commandResponseEl.textContent = 'Cannot execute command: ERLC API Key missing in Firebase.';
+                                    commandResponseEl.classList.remove('text-green-400', 'text-red-400');
+                                    commandResponseEl.classList.add('text-yellow-400');
+                                }
+                                return;
+                            }
+                        } else {
+                            console.error("ERLC API key configuration document not found at:", apiKeyDocPath);
+                            if (commandResponseEl) {
+                                commandResponseEl.textContent = 'Cannot execute command: ERLC API Key configuration not found in Firebase.';
+                                commandResponseEl.classList.remove('text-green-400', 'text-red-400');
+                                commandResponseEl.classList.add('text-yellow-400');
+                            }
+                            return;
+                        }
+                    } catch (firebaseError) {
+                        console.error("Error fetching ERLC API key from Firebase:", firebaseError);
                         if (commandResponseEl) {
-                            commandResponseEl.textContent = 'Cannot execute command: Server API Key is missing. Please set it in Admin tab.';
+                            commandResponseEl.textContent = `Failed to retrieve API key: ${firebaseError.message}`;
                             commandResponseEl.classList.remove('text-green-400', 'text-red-400');
                             commandResponseEl.classList.add('text-yellow-400');
                         }
                         return;
                     }
+                    // --- End Fetch API Key ---
 
                     if (commandResponseEl) {
                         commandResponseEl.textContent = `Sending command: "${command}" to ER:LC API...`;
-                        commandResponseEl.classList.remove('text-green-400', 'text-red-400');
+                        commandResponseEl.classList.remove('text-green-400', 'text-red-400', 'text-yellow-400');
                         commandResponseEl.classList.add('text-slate-400');
                     }
-                    if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
+                    if (typeof ZappyApp !== 'undefined' && ZappyApp.elements && ZappyApp.elements.loadingOverlay) {
+                        ZappyApp.elements.loadingOverlay.classList.remove('hidden');
+                    }
+
+                    // ERLC API endpoint for executing commands (from image_394563.png)
+                    // This API does not require a server ID in the URL.
+                    const apiUrl = `https://api.policeroleplay.community/v1/server/command`;
 
                     try {
-                        // Simulate backend API call to ER:LC using Gemini
-                        const prompt = `Simulate an ER:LC API response for executing the command "${command}" on a server with API key "${apiKey}". Provide a JSON response with 'status' (success/failure) and a 'message'. If successful, give a positive message. If failed, give a plausible error message.`;
-                        const schema = {
-                            type: "OBJECT",
-                            properties: {
-                                status: { type: "STRING", enum: ["success", "failure"] },
-                                message: { type: "STRING" }
+                        const response = await fetch(apiUrl, {
+                            method: 'POST', // It's a POST request as per the screenshot
+                            headers: {
+                                'server-key': erlcApiKey, // Use the fetched API key
+                                'Content-Type': 'application/json', // Specify content type for JSON body
+                                'Accept': 'application/json' // Expect JSON response
                             },
-                            required: ["status", "message"]
-                        };
-
-                        const apiResponse = await ZappyApp.utils._callGeminiAPI(prompt, schema);
+                            body: JSON.stringify({ command: command }) // Send command in JSON body
+                        });
 
                         let responseMessage = '';
                         let isError = false;
 
-                        if (apiResponse && apiResponse.status === 'success') {
-                            responseMessage = `Command executed successfully: ${apiResponse.message}`;
+                        if (response.ok) {
+                            // ERLC API for command execution might return 200 OK with no content or a simple message
+                            // Check for content before parsing as JSON
+                            const responseText = await response.text(); // Read as text first
+                            let apiResponse = {};
+                            try {
+                                if (responseText) {
+                                    apiResponse = JSON.parse(responseText); // Try to parse if there's content
+                                }
+                            } catch (jsonError) {
+                                console.warn("ERLC API response was not JSON:", responseText);
+                                // If it's not JSON, assume success if status is OK
+                                apiResponse = { status: 'success', message: responseText || 'Command executed successfully.' };
+                            }
+                            
+                            responseMessage = `Command executed successfully: ${apiResponse.message || 'No specific message from API.'}`;
                             if (commandResponseEl) {
-                                commandResponseEl.classList.remove('text-red-400', 'text-slate-400');
+                                commandResponseEl.classList.remove('text-red-400', 'text-slate-400', 'text-yellow-400');
                                 commandResponseEl.classList.add('text-green-400');
                             }
                             // Log successful command to Firestore for audit
-                            await addDoc(collection(db, `/artifacts/${appId}/public/data/servers/${ZappyApp.state.currentServer.id}/commandLogs`), {
+                            await addDoc(collection(db, `/artifacts/${appId}/public/data/servers/${(typeof ZappyApp !== 'undefined' && ZappyApp.state && ZappyApp.state.currentServer) ? ZappyApp.state.currentServer.id : serverIdForApiKey}/commandLogs`), {
                                 command: command,
-                                executedBy: ZappyApp.state.currentUser.uid,
+                                executedBy: (typeof ZappyApp !== 'undefined' && ZappyApp.state && ZappyApp.state.currentUser) ? ZappyApp.state.currentUser.uid : 'unknown_user',
                                 timestamp: serverTimestamp(),
                                 status: 'success'
                             });
                         } else {
-                            responseMessage = `Command failed: ${apiResponse ? apiResponse.message : 'Unknown error from API.'}`;
+                            // Handle API errors based on status code and response text
+                            const errorText = await response.text();
+                            let errorMessage = `Command failed: ${response.status} ${response.statusText}`;
+                            try {
+                                const errorJson = JSON.parse(errorText);
+                                errorMessage = `Command failed: ${errorJson.message || errorText}`;
+                            } catch (e) {
+                                errorMessage = `Command failed: ${errorText || response.statusText}`;
+                            }
+                            
+                            responseMessage = errorMessage;
                             if (commandResponseEl) {
-                                commandResponseEl.classList.remove('text-green-400', 'text-slate-400');
+                                commandResponseEl.classList.remove('text-green-400', 'text-slate-400', 'text-yellow-400');
                                 commandResponseEl.classList.add('text-red-400');
                             }
                             isError = true;
                             // Log failed command
-                            await addDoc(collection(db, `/artifacts/${appId}/public/data/servers/${ZappyApp.state.currentServer.id}/commandLogs`), {
+                            await addDoc(collection(db, `/artifacts/${appId}/public/data/servers/${(typeof ZappyApp !== 'undefined' && ZappyApp.state && ZappyApp.state.currentServer) ? ZappyApp.state.currentServer.id : serverIdForApiKey}/commandLogs`), {
                                 command: command,
-                                executedBy: ZappyApp.state.currentUser.uid,
+                                executedBy: (typeof ZappyApp !== 'undefined' && ZappyApp.state && ZappyApp.state.currentUser) ? ZappyApp.state.currentUser.uid : 'unknown_user',
                                 timestamp: serverTimestamp(),
                                 status: 'failed',
-                                errorMessage: apiResponse ? apiResponse.message : 'Unknown error'
+                                errorMessage: responseMessage
                             });
                         }
                         if (commandResponseEl) commandResponseEl.textContent = responseMessage;
                         if (commandInput) commandInput.value = ''; // Clear input
                     } catch (error) {
-                         console.error("Error executing command (API call simulation):", error);
-                         if (commandResponseEl) {
+                        console.error("Error executing command (API call):", error);
+                        if (commandResponseEl) {
                             commandResponseEl.textContent = `Error during command execution: ${error.message}`;
+                            commandResponseEl.classList.remove('text-green-400', 'text-slate-400', 'text-yellow-400');
                             commandResponseEl.classList.add('text-red-400');
-                         }
+                        }
+                        // Log general error
+                        await addDoc(collection(db, `/artifacts/${appId}/public/data/servers/${(typeof ZappyApp !== 'undefined' && ZappyApp.state && ZappyApp.state.currentServer) ? ZappyApp.state.currentServer.id : serverIdForApiKey}/commandLogs`), {
+                            command: command,
+                            executedBy: (typeof ZappyApp !== 'undefined' && ZappyApp.state && ZappyApp.state.currentUser) ? ZappyApp.state.currentUser.uid : 'unknown_user',
+                            timestamp: serverTimestamp(),
+                            status: 'error',
+                            errorMessage: error.message
+                        });
                     } finally {
-                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
+                        if (typeof ZappyApp !== 'undefined' && ZappyApp.elements && ZappyApp.elements.loadingOverlay) {
+                            ZappyApp.elements.loadingOverlay.classList.add('hidden');
+                        }
                     }
                 },
 
@@ -1669,36 +1776,98 @@
                     );
                 },
 
-                async refreshStats() {
-                    const outputEl = ZappyApp.elements.serverStatsOutput;
-                    if (outputEl) outputEl.innerHTML = '<p class="text-slate-400">Generating data...</p>';
 
-                    const prompt = `Generate realistic ER:LC server statistics (totalPlayers, maxPlayers, currentVehicles, totalGameTimeHours, serverStatus: "online" or "offline", serverRegion). Provide a JSON object.`;
-                    const schema = {
-                        type: "OBJECT",
-                        properties: {
-                            totalPlayers: { type: "INTEGER" },
-                            maxPlayers: { type: "INTEGER" },
-                            currentVehicles: { type: "INTEGER" },
-                            totalGameTimeHours: { type: "INTEGER" },
-                            serverStatus: { type: "STRING", enum: ["online", "offline"] },
-                            serverRegion: { type: "STRING" }
-                        },
-                        required: ["totalPlayers", "maxPlayers", "currentVehicles", "totalGameTimeHours", "serverStatus", "serverRegion"]
-                    };
+                async  refreshStats() {
+                    const outputEl = typeof ZappyApp !== 'undefined' && ZappyApp.elements ? ZappyApp.elements.serverStatsOutput : null;
+                    if (outputEl) outputEl.innerHTML = '<p class="text-slate-400">Fetching server statistics...</p>';
+
+                    // The serverId for fetching the API key from Firestore is "TEXASRP" as per image_9cb8e3.png
+                    const serverIdForApiKey = "TEXASRP"; 
+                    let erlcApiKey = null;
 
                     try {
-                        const data = await ZappyApp.utils._callGeminiAPI(prompt, schema);
-                        if (data && outputEl) {
+                        // Construct the Firestore document path to the API key based on image_9cb8e3.png:
+                        // /artifacts/{appId}/public/data/servers/TEXASRP
+                        const apiKeyDocPath = `/artifacts/${appId}/public/data/servers/${serverIdForApiKey}`;
+                        const apiKeyDocRef = doc(db, apiKeyDocPath);
+                        const apiKeyDocSnap = await getDoc(apiKeyDocRef);
+
+                        if (apiKeyDocSnap.exists()) {
+                            erlcApiKey = apiKeyDocSnap.data().apiKey;
+                            if (!erlcApiKey) {
+                                console.error("ERLC API key field not found in Firebase document at:", apiKeyDocPath);
+                                if (outputEl) {
+                                    outputEl.innerHTML = '<p class="text-red-400">ERLC API key missing in Firebase configuration.</p>';
+                                }
+                                return;
+                            }
+                        } else {
+                            console.error("ERLC API key configuration document not found at:", apiKeyDocPath);
+                            if (outputEl) {
+                                outputEl.innerHTML = '<p class="text-red-400">ERLC API key configuration not found in Firebase.</p>';
+                            }
+                            return;
+                        }
+                    } catch (firebaseError) {
+                        console.error("Error fetching ERLC API key from Firebase:", firebaseError);
+                        if (outputEl) {
+                            outputEl.innerHTML = '<p class="text-red-400">Failed to retrieve API key from Firebase (check console for details).</p>';
+                        }
+                        return;
+                    }
+
+                    // New ERLC API endpoint for server status (from image_9c5349.png)
+                    // This API does not require a server ID in the URL.
+                    const apiUrl = `https://api.policeroleplay.community/v1/server`;
+
+                    try {
+                        const response = await fetch(apiUrl, {
+                            method: 'GET',
+                            headers: {
+                                'server-key': erlcApiKey, // Use the fetched API key
+                                'Accept': 'application/json'
+                            }
+                        });
+
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            console.error(`ERLC API Error: ${response.status} - ${errorText}`);
+                            if (outputEl) {
+                                outputEl.innerHTML = `<p class="text-red-400">Failed to load server statistics: ${response.status} ${response.statusText}.</p>`;
+                            }
+                            return;
+                        }
+
+                        const statsData = await response.json();
+
+                        // Assuming the response structure matches the example in image_9c5349.png:
+                        // { "Name": "API Test", "OwnerId": 1, "CurrentPlayers": 1, "MaxPlayers": 1, ... }
+                        if (statsData && outputEl) {
+                            // Map ERLC API response fields to your desired display format
+                            const currentPlayers = statsData.CurrentPlayers !== undefined ? statsData.CurrentPlayers : 'N/A';
+                            const maxPlayers = statsData.MaxPlayers !== undefined ? statsData.MaxPlayers : 'N/A';
+                            const serverName = statsData.Name || 'N/A';
+                            const ownerId = statsData.OwnerId !== undefined ? statsData.OwnerId : 'N/A';
+                            // The API response doesn't directly provide currentVehicles, totalGameTimeHours, serverStatus, serverRegion.
+                            // You might need to infer or mock these if they are not available from this specific API.
+                            // For now, I'll use placeholders or infer based on player count for status.
+                            const serverStatus = (currentPlayers > 0 && currentPlayers !== 'N/A') ? 'online' : 'offline'; // Infer status
+                            const currentVehicles = 'N/A'; // Not provided by this API endpoint
+                            const totalGameTimeHours = 'N/A'; // Not provided by this API endpoint
+                            const serverRegion = 'N/A'; // Not provided by this API endpoint
+
+
                             outputEl.innerHTML = `
-                                <p><strong>Status:</strong> <span class="${data.serverStatus === 'online' ? 'text-green-400' : 'text-red-400'}">${data.serverStatus.toUpperCase()}</span></p>
-                                <p><strong>Players:</strong> ${data.totalPlayers}/${data.maxPlayers}</p>
-                                <p><strong>Active Vehicles:</strong> ${data.currentVehicles}</p>
-                                <p><strong>Region:</strong> ${data.serverRegion}</p>
-                                <p><strong>Total Uptime:</strong> ${data.totalGameTimeHours} hours</p>
+                                <p><strong>Server Name:</strong> ${serverName}</p>
+                                <p><strong>Owner ID:</strong> ${ownerId}</p>
+                                <p><strong>Status:</strong> <span class="${serverStatus === 'online' ? 'text-green-400' : 'text-red-400'}">${serverStatus.toUpperCase()}</span></p>
+                                <p><strong>Players:</strong> ${currentPlayers}/${maxPlayers}</p>
+                                <p><strong>Active Vehicles:</strong> ${currentVehicles}</p>
+                                <p><strong>Region:</strong> ${serverRegion}</p>
+                                <p><strong>Total Uptime:</strong> ${totalGameTimeHours} hours</p>
                             `;
                         } else if (outputEl) {
-                            outputEl.innerHTML = '<p class="text-red-400">Failed to load server statistics.</p>';
+                            outputEl.innerHTML = '<p class="text-red-400">Failed to load server statistics or data is empty.</p>';
                         }
                     } catch (error) {
                         console.error("Error refreshing stats:", error);
@@ -1706,56 +1875,112 @@
                     }
                 },
 
-                async refreshPlayers() {
-                    const playersListEl = ZappyApp.elements.playerList;
-                    const joinRequestsDisplayEl = ZappyApp.elements.joinRequestsDisplay;
-                    const playerCountEl = ZappyApp.elements.playerCount;
-                    const queueCountEl = ZappyApp.elements.queueCount;
+                async  refreshPlayers() {
+                    const playersListEl = typeof ZappyApp !== 'undefined' && ZappyApp.elements ? ZappyApp.elements.playerList : null;
+                    const joinRequestsDisplayEl = typeof ZappyApp !== 'undefined' && ZappyApp.elements ? ZappyApp.elements.joinRequestsDisplay : null;
+                    const playerCountEl = typeof ZappyApp !== 'undefined' && ZappyApp.elements ? ZappyApp.elements.playerCount : null;
+                    const queueCountEl = typeof ZappyApp !== 'undefined' && ZappyApp.elements ? ZappyApp.elements.queueCount : null;
 
-                    if (playersListEl) playersListEl.innerHTML = '<p class="text-slate-400">Generating data...</p>';
+                    if (playersListEl) playersListEl.innerHTML = '<p class="text-slate-400">Fetching player data...</p>';
                     if (joinRequestsDisplayEl) joinRequestsDisplayEl.innerHTML = '<p class="text-slate-400">Loading requests from Firebase...</p>';
                     if (playerCountEl) playerCountEl.textContent = '...';
                     if (queueCountEl) queueCountEl.textContent = '...';
 
-                    const prompt = `Generate a realistic list of 5-15 ER:LC online players. Each player should have a 'name' (e.g., 'PlayerXYZ'), 'ping' (number), and 'job' (e.g., 'Civilian', 'Police', 'Firefighter', 'EMT'). Also generate a 'queue' size (0-5). Provide a JSON object with 'onlinePlayers' (array of objects) and 'queueSize' (integer).`;
-                    const schema = {
-                        type: "OBJECT",
-                        properties: {
-                            onlinePlayers: {
-                                type: "ARRAY",
-                                items: {
-                                    type: "OBJECT",
-                                    properties: {
-                                        name: { type: "STRING" },
-                                        ping: { type: "INTEGER" },
-                                        job: { type: "STRING" }
-                                    },
-                                    required: ["name", "ping", "job"]
-                                }
-                            },
-                            queueSize: { type: "INTEGER" }
-                        },
-                        required: ["onlinePlayers", "queueSize"]
-                    };
+                    // The serverId for fetching the API key from Firestore is "TEXASRP" as per image_9cb8e3.png
+                    const serverIdForApiKey = "TEXASRP"; 
+                    let erlcApiKey = null;
 
                     try {
-                        const data = await ZappyApp.utils._callGeminiAPI(prompt, schema);
-                        if (data) {
-                            if (playersListEl) {
-                                playersListEl.innerHTML = '';
-                                if (data.onlinePlayers && data.onlinePlayers.length > 0) {
-                                    data.onlinePlayers.forEach(player => {
-                                        playersListEl.insertAdjacentHTML('beforeend', `<li>${player.name} - ${player.job} (Ping: ${player.ping}ms)</li>`);
-                                    });
-                                } else {
-                                    playersListEl.innerHTML = '<p class="text-slate-500">No players online.</p>';
-                                }
-                            }
-                            if (playerCountEl) playerCountEl.textContent = data.onlinePlayers ? data.onlinePlayers.length : 0;
-                            if (queueCountEl) queueCountEl.textContent = data.queueSize || 0;
+                        // Construct the Firestore document path to the API key based on image_9cb8e3.png:
+                        // /artifacts/{appId}/public/data/servers/TEXASRP
+                        const apiKeyDocPath = `/artifacts/${appId}/public/data/servers/${serverIdForApiKey}`;
+                        const apiKeyDocRef = doc(db, apiKeyDocPath);
+                        const apiKeyDocSnap = await getDoc(apiKeyDocRef);
 
+                        if (apiKeyDocSnap.exists()) {
+                            erlcApiKey = apiKeyDocSnap.data().apiKey;
+                            if (!erlcApiKey) {
+                                console.error("ERLC API key field not found in Firebase document at:", apiKeyDocPath);
+                                if (playersListEl) {
+                                    playersListEl.innerHTML = '<p class="text-red-400">ERLC API key missing in Firebase configuration.</p>';
+                                }
+                                if (playerCountEl) playerCountEl.textContent = 'Error';
+                                if (queueCountEl) queueCountEl.textContent = 'Error';
+                                return;
+                            }
                         } else {
-                            if (playersListEl) playersListEl.innerHTML = '<p class="text-red-400">Failed to load player data.</p>';
+                            console.error("ERLC API key configuration document not found at:", apiKeyDocPath);
+                            if (playersListEl) {
+                                playersListEl.innerHTML = '<p class="text-red-400">ERLC API key configuration not found in Firebase.</p>';
+                            }
+                            if (playerCountEl) playerCountEl.textContent = 'Error';
+                            if (queueCountEl) queueCountEl.textContent = 'Error';
+                            return;
+                        }
+                    } catch (firebaseError) {
+                        console.error("Error fetching ERLC API key from Firebase:", firebaseError);
+                        if (playersListEl) {
+                            playersListEl.innerHTML = '<p class="text-red-400">Failed to retrieve API key from Firebase (check console for details).</p>';
+                        }
+                        if (playerCountEl) playerCountEl.textContent = 'Error';
+                        if (queueCountEl) queueCountEl.textContent = 'Error';
+                        return;
+                    }
+
+                    // New ERLC API endpoint for players (from image_39b63d.png)
+                    // This API does not require a server ID in the URL.
+                    const apiUrl = `https://api.policeroleplay.community/v1/server/players`;
+
+                    try {
+                        const response = await fetch(apiUrl, {
+                            method: 'GET',
+                            headers: {
+                                'server-key': erlcApiKey, // Use the fetched API key
+                                'Accept': 'application/json'
+                            }
+                        });
+
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            console.error(`ERLC API Error: ${response.status} - ${errorText}`);
+                            if (playersListEl) {
+                                playersListEl.innerHTML = `<p class="text-red-400">Failed to load player data: ${response.status} ${response.statusText}.</p>`;
+                            }
+                            if (playerCountEl) playerCountEl.textContent = 'Error';
+                            if (queueCountEl) queueCountEl.textContent = 'Error';
+                            return;
+                        }
+
+                        const playersData = await response.json();
+
+                        // Assuming the response is an array of player objects as shown in image_39b63d.png
+                        // Example structure: [{ "Player": "PlayerName Id", "Permission": "Normal", "Callsign": "...", "Team": "..." }]
+                        if (playersData && Array.isArray(playersData) && playersListEl) {
+                            playersListEl.innerHTML = ''; // Clear existing players
+
+                            if (playersData.length > 0) {
+                                playersData.forEach(player => {
+                                    const playerName = player.Player || 'Unknown Player';
+                                    const playerPermission = player.Permission || 'N/A';
+                                    const playerCallsign = player.Callsign ? ` (Callsign: ${player.Callsign})` : '';
+                                    const playerTeam = player.Team ? ` (Team: ${player.Team})` : '';
+                                    
+                                    // The ERLC API for players doesn't provide 'ping' or 'job' directly in the same format
+                                    // as your original Gemini API prompt. 'Permission' might be used as 'job' equivalent.
+                                    // 'Ping' is not available from this endpoint.
+                                    playersListEl.insertAdjacentHTML('beforeend', `
+                                        <li>${playerName} - ${playerPermission}${playerCallsign}${playerTeam}</li>
+                                    `);
+                                });
+                            } else {
+                                playersListEl.innerHTML = '<p class="text-slate-500">No players online.</p>';
+                            }
+
+                            if (playerCountEl) playerCountEl.textContent = playersData.length;
+                            // The ERLC API for players doesn't provide queue size. Defaulting to 0 or 'N/A'.
+                            if (queueCountEl) queueCountEl.textContent = 'N/A'; // Or 0 if you prefer a number
+                        } else if (playersListEl) {
+                            playersListEl.innerHTML = '<p class="text-red-400">Failed to load player data or data is empty.</p>';
                             if (playerCountEl) playerCountEl.textContent = 'Error';
                             if (queueCountEl) queueCountEl.textContent = 'Error';
                         }
@@ -1765,48 +1990,99 @@
                         if (playerCountEl) playerCountEl.textContent = 'Error';
                         if (queueCountEl) queueCountEl.textContent = 'Error';
                     }
-                    // Join requests are handled by Firebase onSnapshot listener
+                    // Join requests are handled by Firebase onSnapshot listener (as per your original comment)
+                    // This part remains unchanged as it refers to Firebase data, not ERLC API.
+                    // If you need to integrate ERLC API for join requests, that would be a separate task.
                 },
 
                 async refreshVehicles() {
-                    const vehiclesListEl = ZappyApp.elements.vehicleList;
-                    if (vehiclesListEl) vehiclesListEl.innerHTML = '<p class="text-slate-400">Generating data...</p>';
+                    const vehiclesListEl = typeof ZappyApp !== 'undefined' && ZappyApp.elements ? ZappyApp.elements.vehicleList : null;
+                    if (vehiclesListEl) vehiclesListEl.innerHTML = '<p class="text-slate-400">Fetching vehicle data...</p>';
 
-                    const prompt = `Generate a realistic list of 5-10 ER:LC active vehicles. Each vehicle should have a 'type' (e.g., 'Police Cruiser', 'Fire Truck', 'Ambulance', 'Civilian Car'), 'owner' (player name), and 'location' (e.g., 'Main Street', 'Fire Station 1', 'Hospital'). Provide a JSON object with 'activeVehicles' (array of objects).`;
-                    const schema = {
-                        type: "OBJECT",
-                        properties: {
-                            activeVehicles: {
-                                type: "ARRAY",
-                                items: {
-                                    type: "OBJECT",
-                                    properties: {
-                                        type: { type: "STRING" },
-                                        owner: { type: "STRING" },
-                                        location: { type: "STRING" }
-                                    },
-                                    required: ["type", "owner", "location"]
-                                }
-                            }
-                        },
-                        required: ["activeVehicles"]
-                    };
+                    // The serverId for fetching the API key from Firestore is "TEXASRP" as per image_9cb8e3.png
+                    const serverIdForApiKey = "TEXASRP"; 
+                    let erlcApiKey = null;
 
                     try {
-                        const data = await ZappyApp.utils._callGeminiAPI(prompt, schema);
-                        if (data) {
-                            if (vehiclesListEl) {
-                                vehiclesListEl.innerHTML = '';
-                                if (data.activeVehicles && data.activeVehicles.length > 0) {
-                                    data.activeVehicles.forEach(vehicle => {
-                                        vehiclesListEl.insertAdjacentHTML('beforeend', `<li>${vehicle.type} owned by ${vehicle.owner} at ${vehicle.location}</li>`);
-                                    });
-                                } else {
-                                    vehiclesListEl.innerHTML = '<p class="text-slate-500">No active vehicles.</p>';
+                        // Construct the Firestore document path to the API key based on image_9cb8e3.png:
+                        // /artifacts/{appId}/public/data/servers/TEXASRP
+                        const apiKeyDocPath = `/artifacts/${appId}/public/data/servers/${serverIdForApiKey}`;
+                        const apiKeyDocRef = doc(db, apiKeyDocPath);
+                        const apiKeyDocSnap = await getDoc(apiKeyDocRef);
+
+                        if (apiKeyDocSnap.exists()) {
+                            erlcApiKey = apiKeyDocSnap.data().apiKey;
+                            if (!erlcApiKey) {
+                                console.error("ERLC API key field not found in Firebase document at:", apiKeyDocPath);
+                                if (vehiclesListEl) {
+                                    vehiclesListEl.innerHTML = '<p class="text-red-400">ERLC API key missing in Firebase configuration.</p>';
                                 }
+                                return;
                             }
                         } else {
-                            if (vehiclesListEl) vehiclesListEl.innerHTML = '<p class="text-red-400">Failed to load vehicle data.</p>';
+                            console.error("ERLC API key configuration document not found at:", apiKeyDocPath);
+                            if (vehiclesListEl) {
+                                vehiclesListEl.innerHTML = '<p class="text-red-400">ERLC API key configuration not found in Firebase.</p>';
+                            }
+                            return;
+                        }
+                    } catch (firebaseError) {
+                        console.error("Error fetching ERLC API key from Firebase:", firebaseError);
+                        if (vehiclesListEl) {
+                            vehiclesListEl.innerHTML = '<p class="text-red-400">Failed to retrieve API key from Firebase (check console for details).</p>';
+                        }
+                        return;
+                    }
+
+                    // New ERLC API endpoint for vehicles (from image_3949a0.png)
+                    // This API does not require a server ID in the URL.
+                    const apiUrl = `https://api.policeroleplay.community/v1/server/vehicles`;
+
+                    try {
+                        const response = await fetch(apiUrl, {
+                            method: 'GET',
+                            headers: {
+                                'server-key': erlcApiKey, // Use the fetched API key
+                                'Accept': 'application/json'
+                            }
+                        });
+
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            console.error(`ERLC API Error: ${response.status} - ${errorText}`);
+                            if (vehiclesListEl) {
+                                vehiclesListEl.innerHTML = `<p class="text-red-400">Failed to load vehicle data: ${response.status} ${response.statusText}.</p>`;
+                            }
+                            return;
+                        }
+
+                        const vehiclesData = await response.json();
+
+                        // Assuming the response is an array of vehicle objects as shown in image_3949a0.png
+                        // Example structure: [{ "Texture": "Standard", "Name": "2019 Falcon Interceptor Utility", "Owner": "flat_bird" }]
+                        if (vehiclesData && Array.isArray(vehiclesData) && vehiclesListEl) {
+                            vehiclesListEl.innerHTML = ''; // Clear existing vehicles
+
+                            if (vehiclesData.length > 0) {
+                                vehiclesData.forEach(vehicle => {
+                                    const vehicleName = vehicle.Name || 'Unknown Vehicle';
+                                    const vehicleOwner = vehicle.Owner || 'N/A';
+                                    const vehicleTexture = vehicle.Texture || 'Standard'; // Default to Standard if not provided
+                                    
+                                    // The ERLC API for vehicles doesn't provide 'location' or a direct 'type' (like Police Cruiser).
+                                    // 'Name' could be used as a more specific type.
+                                    const vehicleType = vehicleName; // Using Name as the type for display
+                                    const vehicleLocation = 'N/A'; // Not provided by this API endpoint
+
+                                    vehiclesListEl.insertAdjacentHTML('beforeend', `
+                                        <li>${vehicleType} (Texture: ${vehicleTexture}) owned by ${vehicleOwner} at ${vehicleLocation}</li>
+                                    `);
+                                });
+                            } else {
+                                vehiclesListEl.innerHTML = '<p class="text-slate-500">No active vehicles.</p>';
+                            }
+                        } else if (vehiclesListEl) {
+                            vehiclesListEl.innerHTML = '<p class="text-red-400">Failed to load vehicle data or data is empty.</p>';
                         }
                     } catch (error) {
                         console.error("Error refreshing vehicles:", error);
@@ -1815,45 +2091,94 @@
                 },
 
                 async refreshKillLogs() {
-                    const killLogListEl = ZappyApp.elements.killLogList;
-                    if (killLogListEl) killLogListEl.innerHTML = '<p class="text-slate-400">Generating data...</p>';
+                    const killLogListEl = typeof ZappyApp !== 'undefined' && ZappyApp.elements ? ZappyApp.elements.killLogList : null;
+                    if (killLogListEl) killLogListEl.innerHTML = '<p class="text-slate-400">Fetching kill logs...</p>';
 
-                    const prompt = `Generate a realistic list of 5-10 ER:LC kill log entries. Each entry should have 'killer' (player name), 'victim' (player name), 'weapon' (e.g., 'Pistol', 'Rifle', 'Vehicle Impact'), and 'timestamp' (string in 'HH:MM:SS' format). Provide a JSON object with 'killLogs' (array of objects).`;
-                    const schema = {
-                        type: "OBJECT",
-                        properties: {
-                            killLogs: {
-                                type: "ARRAY",
-                                items: {
-                                    type: "OBJECT",
-                                    properties: {
-                                        killer: { type: "STRING" },
-                                        victim: { type: "STRING" },
-                                        weapon: { type: "STRING" },
-                                        timestamp: { type: "STRING" }
-                                    },
-                                    required: ["killer", "victim", "weapon", "timestamp"]
-                                }
-                            }
-                        },
-                        required: ["killLogs"]
-                    };
+                    // The serverId for fetching the API key from Firestore is "TEXASRP" as per image_9cb8e3.png
+                    const serverIdForApiKey = "TEXASRP"; 
+                    let erlcApiKey = null;
 
                     try {
-                        const data = await ZappyApp.utils._callGeminiAPI(prompt, schema);
-                        if (data) {
-                            if (killLogListEl) {
-                                killLogListEl.innerHTML = '';
-                                if (data.killLogs && data.killLogs.length > 0) {
-                                    data.killLogs.forEach(log => {
-                                        killLogListEl.insertAdjacentHTML('beforeend', `<li>[${log.timestamp}] ${log.killer} eliminated ${log.victim} with ${log.weapon}.</li>`);
-                                    });
-                                } else {
-                                    killLogListEl.innerHTML = '<p class="text-slate-500">No kill logs available.</p>';
+                        // Construct the Firestore document path to the API key based on image_9cb8e3.png:
+                        // /artifacts/{appId}/public/data/servers/TEXASRP
+                        const apiKeyDocPath = `/artifacts/${appId}/public/data/servers/${serverIdForApiKey}`;
+                        const apiKeyDocRef = doc(db, apiKeyDocPath);
+                        const apiKeyDocSnap = await getDoc(apiKeyDocRef);
+
+                        if (apiKeyDocSnap.exists()) {
+                            erlcApiKey = apiKeyDocSnap.data().apiKey;
+                            if (!erlcApiKey) {
+                                console.error("ERLC API key field not found in Firebase document at:", apiKeyDocPath);
+                                if (killLogListEl) {
+                                    killLogListEl.innerHTML = '<p class="text-red-400">ERLC API key missing in Firebase configuration.</p>';
                                 }
+                                return;
                             }
                         } else {
-                            if (killLogListEl) killLogListEl.innerHTML = '<p class="text-red-400">Failed to load kill logs.</p>';
+                            console.error("ERLC API key configuration document not found at:", apiKeyDocPath);
+                            if (killLogListEl) {
+                                killLogListEl.innerHTML = '<p class="text-red-400">ERLC API key configuration not found in Firebase.</p>';
+                            }
+                            return;
+                        }
+                    } catch (firebaseError) {
+                        console.error("Error fetching ERLC API key from Firebase:", firebaseError);
+                        if (killLogListEl) {
+                            killLogListEl.innerHTML = '<p class="text-red-400">Failed to retrieve API key from Firebase (check console for details).</p>';
+                        }
+                        return;
+                    }
+
+                    // New ERLC API endpoint for kill logs (from image_394d41.png)
+                    // This API does not require a server ID in the URL.
+                    const apiUrl = `https://api.policeroleplay.community/v1/server/killlogs`;
+
+                    try {
+                        const response = await fetch(apiUrl, {
+                            method: 'GET',
+                            headers: {
+                                'server-key': erlcApiKey, // Use the fetched API key
+                                'Accept': 'application/json'
+                            }
+                        });
+
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            console.error(`ERLC API Error: ${response.status} - ${errorText}`);
+                            if (killLogListEl) {
+                                killLogListEl.innerHTML = `<p class="text-red-400">Failed to load kill logs: ${response.status} ${response.statusText}.</p>`;
+                            }
+                            return;
+                        }
+
+                        const killLogsData = await response.json();
+
+                        // Assuming the response is an array of kill log objects as shown in image_394d41.png
+                        // Example structure: [{ "Killed": "PlayerName:Id", "Timestamp": 1704614400, "Killer": "PlayerName:Id" }]
+                        if (killLogsData && Array.isArray(killLogsData) && killLogListEl) {
+                            killLogListEl.innerHTML = ''; // Clear existing logs
+
+                            if (killLogsData.length > 0) {
+                                // Sort logs by timestamp in descending order (newest first)
+                                killLogsData.sort((a, b) => b.Timestamp - a.Timestamp)
+                                    .forEach(log => {
+                                        const killedPlayer = log.Killed || 'Unknown Victim';
+                                        const killerPlayer = log.Killer || 'Unknown Killer';
+                                        const timestamp = log.Timestamp ? new Date(log.Timestamp * 1000).toLocaleString() : 'N/A'; // Convert Unix epoch seconds
+                                        
+                                        // The ERLC API for kill logs doesn't provide 'weapon' directly.
+                                        // You might need to infer or use a placeholder.
+                                        const weapon = 'N/A'; // Not provided by this API endpoint
+
+                                        killLogListEl.insertAdjacentHTML('beforeend', `
+                                            <li>[${timestamp}] ${killerPlayer} eliminated ${killedPlayer} (Weapon: ${weapon}).</li>
+                                        `);
+                                    });
+                            } else {
+                                killLogListEl.innerHTML = '<p class="text-slate-500">No kill logs available.</p>';
+                            }
+                        } else if (killLogListEl) {
+                            killLogListEl.innerHTML = '<p class="text-red-400">Failed to load kill logs or data is empty.</p>';
                         }
                     } catch (error) {
                         console.error("Error refreshing kill logs:", error);
@@ -1861,30 +2186,7 @@
                     }
                 },
 
-                async refreshCommandLogs() {
-                    // This data is still fetched from Firebase as it represents actions within Zappy, not ER:LC game events.
-                    const serverId = ZappyApp.state.currentServer.id;
-                    const commandLogsCollectionRef = collection(db, `/artifacts/${appId}/public/data/servers/${serverId}/commandLogs`);
-                    const q = query(commandLogsCollectionRef);
-                    onSnapshot(q, (snapshot) => {
-                        if (ZappyApp.elements.commandLogList) ZappyApp.elements.commandLogList.innerHTML = '';
-                        if (snapshot.empty) {
-                            if (ZappyApp.elements.commandLogList) ZappyApp.elements.commandLogList.innerHTML = '<p class="text-slate-500">No command logs available.</p>';
-                            return;
-                        }
-                        snapshot.docs.sort((a, b) => b.data().timestamp.toDate() - a.data().timestamp.toDate())
-                            .forEach(doc => {
-                                const log = doc.data();
-                                const timestamp = log.timestamp ? new Date(log.timestamp.toDate()).toLocaleString() : 'N/A';
-                                if (ZappyApp.elements.commandLogList) ZappyApp.elements.commandLogList.insertAdjacentHTML('beforeend', `
-                                    <p>[${timestamp}] User: ${log.executedBy.substring(0, 8)}... | Command: "${log.command}" | Status: ${log.status}</p>
-                                `);
-                            });
-                    }, (error) => {
-                        console.error("Error listening to command logs:", error);
-                        if (ZappyApp.elements.commandLogList) ZappyApp.elements.commandLogList.innerHTML = '<p class="text-red-400">Failed to load command logs (permission error).</p>';
-                    });
-                },
+                
 
                 async handleShiftWaveAction(action) {
                     if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
