@@ -1385,7 +1385,7 @@
                 
                     // Re-add event listeners each time the list is rendered
                 
-                    if (typeof ZappyApp !== 'undefined' && ZappyApp.oabek.handleJoinRequestAction && typeof ZappyApp.panel.handleJoinRequestAction === 'function') {
+                    if (typeof ZappyApp !== 'undefined' && ZappyApp.panel.handleJoinRequestAction && typeof ZappyApp.panel.handleJoinRequestAction === 'function') {
                             listEl.querySelectorAll('.accept-join-btn').forEach(button => {
                                 // Ensure no duplicate listeners are added if this function is called multiple times
                                 button.removeEventListener('click', ZappyApp.panel.handleJoinRequestAction); // Remove previous if any
