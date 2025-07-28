@@ -1385,17 +1385,17 @@
                 
                     // Re-add event listeners each time the list is rendered
                 
-                    if (typeof ZappyApp !== 'undefined' && ZappyApp.elements.handleJoinRequestAction && typeof ZappyApp.elements.handleJoinRequestAction === 'function') {
+                    if (typeof ZappyApp !== 'undefined' && ZappyApp.oabek.handleJoinRequestAction && typeof ZappyApp.panel.handleJoinRequestAction === 'function') {
                             listEl.querySelectorAll('.accept-join-btn').forEach(button => {
                                 // Ensure no duplicate listeners are added if this function is called multiple times
-                                button.removeEventListener('click', ZappyApp.elements.handleJoinRequestAction); // Remove previous if any
-                                button.addEventListener('click', ZappyApp.elements.handleJoinRequestAction.bind(ZappyApp, 'accept', ServerId));
+                                button.removeEventListener('click', ZappyApp.panel.handleJoinRequestAction); // Remove previous if any
+                                button.addEventListener('click', ZappyApp.panel.handleJoinRequestAction.bind(ZappyApp, 'accept', ServerId));
                                 // Passing currentServerId as a parameter
                             });
                 
                             listEl.querySelectorAll('.reject-join-btn').forEach(button => {
-                                button.removeEventListener('click', ZappyApp.elements.handleJoinRequestAction); // Remove previous if any
-                                button.addEventListener('click', ZappyApp.elements.handleJoinRequestAction.bind(ZappyApp, 'reject', ServerId));
+                                button.removeEventListener('click', ZappyApp.panel.handleJoinRequestAction); // Remove previous if any
+                                button.addEventListener('click', ZappyApp.panel.handleJoinRequestAction.bind(ZappyApp, 'reject', ServerId));
                                 // Passing currentServerId as a parameter
                             });
                         // }, 0); // Optional small delay
