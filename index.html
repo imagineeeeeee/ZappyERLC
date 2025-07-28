@@ -1180,7 +1180,7 @@
                 async displayOwnerJoinRequests(currentServerId) { // This parameter MUST be the server's document ID (e.g., 'DHBRP')
 
                     const listEl = typeof ZappyApp !== 'undefined' && ZappyApp.elements ? ZappyApp.elements.ownerJoinRequestsList : null;
-                
+                    const serverId = ZappyApp.state.currentServer.id;
                     if (!listEl) {
                 
                         console.error("displayOwnerJoinRequests: ownerJoinRequestsList element not found.");
@@ -1193,11 +1193,10 @@
                 
                     listEl.innerHTML = ''; // Clear existing content
                 
-                    const ServerID = ZappyApp.state.currentServer.id;
                 
                     // **CRITICAL FIX: Validate currentServerId type**
                 
-                    if (!db || !appId || !ServerId || typeof currentServerId !== 'string') {
+                    if (!db || !appId || !ServerId || typeof current.ServerId !== 'string') {
                 
                         console.error("displayOwnerJoinRequests: Firebase 'db', 'appId', or 'currentServerId' is invalid. currentServerId must be a non-empty string.");
                 
@@ -1225,7 +1224,7 @@
                 
                         if (!serverDocSnap.exists()) {
                 
-                            console.warn(`Server document ${currentServerId} not found or current user not authorized to read it. (Check server read rules!)`);
+                            console.warn(`Server document ${ServerId} not found or current user not authorized to read it. (Check server read rules!)`);
                 
                             listEl.innerHTML = '<p class="text-slate-500">Server not found or access denied. No pending requests.</p>';
                 
@@ -1243,7 +1242,7 @@
                 
                     } catch (error) {
                 
-                        console.error(`Error fetching server data for ${currentServerId}:`, error);
+                        console.error(`Error fetching server data for ${ServerId}:`, error);
                 
                         listEl.innerHTML = `<p class="text-red-400">Error fetching server requests: ${error.message}</p>`;
                 
