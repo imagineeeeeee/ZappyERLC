@@ -1332,24 +1332,22 @@
                 
                     // Re-add event listeners each time the list is rendered
                 
-                    if (typeof ZappyApp !== 'undefined' && ZappyApp.elements.handleJoinRequestAction) {
+                    if (typeof ZappyApp !== 'undefined' && ZappyApp.elements.handleJoinRequestAction && typeof ZappyApp.elements.handleJoinRequestAction === 'function') {
+                            listEl.querySelectorAll('.accept-join-btn').forEach(button => {
+                                // Ensure no duplicate listeners are added if this function is called multiple times
+                                button.removeEventListener('click', ZappyApp.elements.handleJoinRequestAction); // Remove previous if any
+                                button.addEventListener('click', ZappyApp.elements.handleJoinRequestAction.bind(ZappyApp, 'accept', currentServerId));
+                                // Passing currentServerId as a parameter
+                            });
                 
-                        listEl.querySelectorAll('.accept-join-btn').forEach(button => {
-                
-                            button.addEventListener('click', ZappyApp.elements.handleJoinRequestAction.bind(ZappyApp, 'accept'));
-                
-                        });
-                
-                        listEl.querySelectorAll('.reject-join-btn').forEach(button => {
-                
-                            button.addEventListener('click', ZappyApp.elements.handleJoinRequestAction.bind(ZappyApp, 'reject'));
-                
-                        });
-                
+                            listEl.querySelectorAll('.reject-join-btn').forEach(button => {
+                                button.removeEventListener('click', ZappyApp.elements.handleJoinRequestAction); // Remove previous if any
+                                button.addEventListener('click', ZappyApp.elements.handleJoinRequestAction.bind(ZappyApp, 'reject', currentServerId));
+                                // Passing currentServerId as a parameter
+                            });
+                        // }, 0); // Optional small delay
                     } else {
-                
-                        console.warn("ZappyApp.handleJoinRequestAction not found. Join request buttons may not be functional.");
-                
+                        console.warn("ZappyApp.handleJoinRequestAction not found or is not a function. Join request buttons may not be functional.");
                     }
 
 
