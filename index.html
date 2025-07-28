@@ -1,4 +1,4 @@
-
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -113,10 +113,6 @@
         </div>
 
         <!-- Auth Section -->
-        <div id="loading-overlay" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex items-center justify-center z-50">
-            <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-indigo-500"></div>
-        </div>
-
         <div id="auth-section" class="hidden max-w-md mx-auto">
             <div class="card">
                 <h2 id="auth-title" class="text-2xl font-bold text-center text-white mb-6">Login to Zappy</h2>
@@ -132,12 +128,6 @@
                     <p id="auth-error" class="text-red-400 text-sm mb-4 text-center"></p>
                     <button id="auth-submit-btn" type="submit" class="btn btn-primary w-full">Login</button>
                 </form>
-
-                <div class="mt-4 text-center">
-                    <button id="google-auth-btn" class="btn bg-red-600 hover:bg-red-700 text-white w-full flex items-center justify-center py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                        Sign in with Google
-                    </button>
-                </div>
                 <p class="text-center text-sm text-slate-400 mt-6">
                     <span id="auth-prompt-text">Don't have an account?</span>
                     <a href="#" id="auth-toggle-link" class="font-semibold text-indigo-400 hover:text-indigo-300">Register</a>
@@ -583,38 +573,6 @@
                     }
                 }
             },
-            async handleGoogleSignIn(auth, authErrorElement, showLoadingSpinner, hideLoadingSpinner) {
-                showLoadingSpinner();
-                authErrorElement.textContent = ''; // Clear previous errors
-
-                const provider = new GoogleAuthProvider();
-
-                try {
-                    await signInWithPopup(auth, provider);
-                    // If successful, onAuthStateChanged listener will handle UI updates/redirection.
-                    // No need to hide spinner here, onAuthStateChanged will do it after the state is resolved.
-                } catch (error) {
-                    hideLoadingSpinner(); // Hide spinner immediately on error
-                    const errorCode = error.code;
-                    const errorMessage = error.message;
-                    console.error("Google login error:", errorCode, errorMessage);
-
-                    let displayErrorMessage = `Google login failed: ${errorMessage}`;
-
-                    if (errorCode === 'auth/popup-closed-by-user') {
-                        displayErrorMessage = 'Google login popup was closed. Please try again.';
-                    } else if (errorCode === 'auth/cancelled-popup-request') {
-                        displayErrorMessage = 'A login request is already in progress. Please wait or try again.';
-                    } else if (errorCode === 'auth/account-exists-with-different-credential') {
-                        const email = error.customData ? error.customData.email : 'an unknown email';
-                        displayErrorMessage = `An account with ${email} already exists using a different sign-in method. Please login with your existing method.`;
-                    } else if (errorCode === 'auth/unauthorized-domain') {
-                        displayErrorMessage = 'This domain is not authorized to run the Google sign-in. Please add it to your Firebase authorized domains.';
-                    }
-                    authErrorElement.textContent = displayErrorMessage;
-                }
-            },
-
 
             // --- MAIN INITIALIZATION ---
             init() {
