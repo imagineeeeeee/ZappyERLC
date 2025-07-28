@@ -1229,7 +1229,6 @@
                         console.error("Error handling join request action:", error);
                         alert(`Failed to ${actionType} request: ${error.message}`);
                     }
-                },
                 async displayOwnerJoinRequests(currentServerId) { // This parameter MUST be the server's document ID (e.g., 'DHBRP')
 
                     const listEl = typeof ZappyApp !== 'undefined' && ZappyApp.elements ? ZappyApp.elements.ownerJoinRequestsList : null;
