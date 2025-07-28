@@ -658,11 +658,7 @@
                 async performInitialSignIn() {
                     try {
                         if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
-                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                            await signInWithCustomToken(auth, __initial_auth_token);
-                        } else {
-                            await signInAnonymously(auth);
-                        }
+                        await signInWithCustomToken(auth, __initial_auth_token);
                     } catch (error) {
                         console.error("Initial sign-in failed:", error);
                         ZappyApp.ui.showView('auth'); // Show manual login if token fails
