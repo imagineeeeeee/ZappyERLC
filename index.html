@@ -1177,8 +1177,7 @@
                     });
                     ZappyApp.state.unsubscribeListeners.push(unsubscribeShiftWaveStatus);
                 },
-
-                async function displayOwnerJoinRequests(currentServerId) { // Pass the *document ID* of the owner's server
+                async displayOwnerJoinRequests(currentServerId) { // Pass the *document ID* of the owner's server
                     const listEl = typeof ZappyApp !== 'undefined' && ZappyApp.elements ? ZappyApp.elements.ownerJoinRequestsList : null;
                     if (!listEl) {
                         console.error("displayOwnerJoinRequests: ownerJoinRequestsList element not found.");
