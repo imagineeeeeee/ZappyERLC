@@ -1178,61 +1178,55 @@
                     ZappyApp.state.unsubscribeListeners.push(unsubscribeShiftWaveStatus);
                 },
 
-                async handleJoinRequestAction(action, e) {
-                    const requesterId = e.target.dataset.requesterId;
-                    const serverId = ZappyApp.state.currentServer.id;
-                    const serverDocRef = doc(db, `/artifacts/${appId}/public/data/servers`, serverId);
-
-                    if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
-                    if (ZappyApp.elements.ownerJoinRequestsListError) ZappyApp.elements.ownerJoinRequestsListError.textContent = ''; // Clear previous errors
-                    try {
-                        await updateDoc(serverDocRef, {
-                            joinRequests: arrayRemove(requesterId) // Remove from requests regardless of action
-                        });
-
-                        if (action === 'accept') {
-                            await updateDoc(serverDocRef, {
-                                members: arrayUnion(requesterId)
-                            });
-                            ZappyApp.ui.displayMessage('owner-join-requests-list-error', `User ${requesterId} accepted!`, false);
-                        } else {
-                            ZappyApp.ui.displayMessage('owner-join-requests-list-error', `User ${requesterId} rejected.`, false);
-                        }
-                    } catch (error) {
-                        console.error(`Error ${action}ing join request:`, error);
-                        ZappyApp.ui.displayMessage('owner-join-requests-list-error', `Failed to ${action} user: ${error.message}`, true);
-                    } finally {
-                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
-                    }
-                },
-
-                async displayOwnerJoinRequests(joinRequests) {
+                async function displayOwnerJoinRequests(currentServerId) { // Pass the *document ID* of the owner's server
                     const listEl = typeof ZappyApp !== 'undefined' && ZappyApp.elements ? ZappyApp.elements.ownerJoinRequestsList : null;
                     if (!listEl) {
                         console.error("displayOwnerJoinRequests: ownerJoinRequestsList element not found.");
                         return;
                     }
-
+                
                     listEl.innerHTML = ''; // Clear existing content
-
+                
+                    if (!db || !appId || !currentServerId) {
+                        console.error("Firebase 'db', 'appId', or 'currentServerId' not initialized. Cannot fetch server data.");
+                        listEl.innerHTML = '<p class="text-red-400">Error: Firebase or server context not initialized. Cannot display requests.</p>';
+                        return;
+                    }
+                
+                    let joinRequests = [];
+                    try {
+                        // First, fetch the server document to get its joinRequests array
+                        const serverDocRef = doc(db, `/artifacts/${appId}/public/data/servers`, currentServerId);
+                        const serverDocSnap = await getDoc(serverDocRef);
+                
+                        if (!serverDocSnap.exists()) {
+                            console.error(`Server document ${currentServerId} not found.`);
+                            listEl.innerHTML = '<p class="text-slate-500">Server not found for current owner.</p>';
+                            return;
+                        }
+                
+                        const serverData = serverDocSnap.data();
+                        joinRequests = serverData.joinRequests || [];
+                
+                    } catch (error) {
+                        console.error(`Error fetching server data for ${currentServerId}:`, error);
+                        listEl.innerHTML = `<p class="text-red-400">Error fetching server requests: ${error.message}</p>`;
+                        return;
+                    }
+                
+                
                     if (joinRequests.length === 0) {
                         listEl.innerHTML = '<p class="text-slate-500">No pending requests.</p>';
                         return;
                     }
-
+                
                     // Use a for...of loop to correctly await each user data fetch
                     for (const requesterId of joinRequests) {
                         try {
                             // Fetch user data for requester's email
-                            // Ensure 'db' and 'appId' are accessible globally or passed appropriately
-                            if (!db || !appId) {
-                                console.error("Firebase 'db' or 'appId' not initialized. Cannot fetch user data for join requests.");
-                                listEl.innerHTML = '<p class="text-red-400">Error: Firebase not initialized. Cannot display requests.</p>';
-                                return;
-                            }
                             const userDoc = await getDoc(doc(db, `/artifacts/${appId}/users`, requesterId));
                             const requesterEmail = userDoc.exists() ? (userDoc.data().email || requesterId) : requesterId;
-
+                
                             // Append HTML for each request
                             listEl.insertAdjacentHTML('beforeend', `
                                 <div class="flex justify-between items-center bg-gray-700 rounded-md p-3 mb-2 shadow-md">
@@ -1257,10 +1251,8 @@
                             `);
                         }
                     }
-
+                
                     // Re-add event listeners each time the list is rendered
-                    // Ensure 'this' context is correctly bound if this function is a method of ZappyApp
-                    // If ZappyApp.handleJoinRequestAction is a method, 'this' needs to be ZappyApp.
                     if (typeof ZappyApp !== 'undefined' && ZappyApp.elements.handleJoinRequestAction) {
                         listEl.querySelectorAll('.accept-join-btn').forEach(button => {
                             button.addEventListener('click', ZappyApp.elements.handleJoinRequestAction.bind(ZappyApp, 'accept'));
@@ -1271,6 +1263,8 @@
                     } else {
                         console.warn("ZappyApp.handleJoinRequestAction not found. Join request buttons may not be functional.");
                     }
+                }
+
 },
 
                 async displayServerMembers(members) {
