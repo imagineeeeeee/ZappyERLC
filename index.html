@@ -1180,7 +1180,7 @@
                 async displayOwnerJoinRequests(currentServerId) { // This parameter MUST be the server's document ID (e.g., 'DHBRP')
 
                     const listEl = typeof ZappyApp !== 'undefined' && ZappyApp.elements ? ZappyApp.elements.ownerJoinRequestsList : null;
-                    const serverId = ZappyApp.state.currentServer.id;
+                    const ServerId = ZappyApp.state.currentServer.id;
                     if (!listEl) {
                 
                         console.error("displayOwnerJoinRequests: ownerJoinRequestsList element not found.");
@@ -1196,7 +1196,7 @@
                 
                     // **CRITICAL FIX: Validate currentServerId type**
                 
-                    if (!db || !appId || !serverId || typeof current.ServerId !== 'string') {
+                    if (!db || !appId || !ServerId || typeof current.ServerId !== 'string') {
                 
                         console.error("displayOwnerJoinRequests: Firebase 'db', 'appId', or 'currentServerId' is invalid. currentServerId must be a non-empty string.");
                 
