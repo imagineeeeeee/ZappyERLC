@@ -1229,6 +1229,7 @@
                         console.error("Error handling join request action:", error);
                         alert(`Failed to ${actionType} request: ${error.message}`);
                     }
+                },
                 async displayOwnerJoinRequests(currentServerId) { // This parameter MUST be the server's document ID (e.g., 'DHBRP')
 
                     const listEl = typeof ZappyApp !== 'undefined' && ZappyApp.elements ? ZappyApp.elements.ownerJoinRequestsList : null;
@@ -1388,13 +1389,13 @@
                             listEl.querySelectorAll('.accept-join-btn').forEach(button => {
                                 // Ensure no duplicate listeners are added if this function is called multiple times
                                 button.removeEventListener('click', ZappyApp.elements.handleJoinRequestAction); // Remove previous if any
-                                button.addEventListener('click', ZappyApp.elements.handleJoinRequestAction.bind(ZappyApp, 'accept', currentServerId));
+                                button.addEventListener('click', ZappyApp.elements.handleJoinRequestAction.bind(ZappyApp, 'accept', ServerId));
                                 // Passing currentServerId as a parameter
                             });
                 
                             listEl.querySelectorAll('.reject-join-btn').forEach(button => {
                                 button.removeEventListener('click', ZappyApp.elements.handleJoinRequestAction); // Remove previous if any
-                                button.addEventListener('click', ZappyApp.elements.handleJoinRequestAction.bind(ZappyApp, 'reject', currentServerId));
+                                button.addEventListener('click', ZappyApp.elements.handleJoinRequestAction.bind(ZappyApp, 'reject', ServerId));
                                 // Passing currentServerId as a parameter
                             });
                         // }, 0); // Optional small delay
