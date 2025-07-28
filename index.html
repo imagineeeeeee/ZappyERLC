@@ -1196,7 +1196,7 @@
                 
                     // **CRITICAL FIX: Validate currentServerId type**
                 
-                    if (!db || !appId || !ServerId || typeof current.ServerId !== 'string') {
+                    if (!db || !appId || !serverId || typeof current.ServerId !== 'string') {
                 
                         console.error("displayOwnerJoinRequests: Firebase 'db', 'appId', or 'currentServerId' is invalid. currentServerId must be a non-empty string.");
                 
