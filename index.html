@@ -1177,91 +1177,183 @@
                     });
                     ZappyApp.state.unsubscribeListeners.push(unsubscribeShiftWaveStatus);
                 },
-                async displayOwnerJoinRequests(currentServerId) { // Pass the *document ID* of the owner's server
+                async displayOwnerJoinRequests(currentServerId) { // This parameter MUST be the server's document ID (e.g., 'DHBRP')
+
                     const listEl = typeof ZappyApp !== 'undefined' && ZappyApp.elements ? ZappyApp.elements.ownerJoinRequestsList : null;
+                
                     if (!listEl) {
+                
                         console.error("displayOwnerJoinRequests: ownerJoinRequestsList element not found.");
+                
                         return;
+                
                     }
+                
+                
                 
                     listEl.innerHTML = ''; // Clear existing content
                 
-                    if (!db || !appId || !currentServerId) {
-                        console.error("Firebase 'db', 'appId', or 'currentServerId' not initialized. Cannot fetch server data.");
-                        listEl.innerHTML = '<p class="text-red-400">Error: Firebase or server context not initialized. Cannot display requests.</p>';
+                
+                
+                    // **CRITICAL FIX: Validate currentServerId type**
+                
+                    if (!db || !appId || !currentServerId || typeof currentServerId !== 'string') {
+                
+                        console.error("displayOwnerJoinRequests: Firebase 'db', 'appId', or 'currentServerId' is invalid. currentServerId must be a non-empty string.");
+                
+                        listEl.innerHTML = '<p class="text-red-400">Error: Server ID not provided or invalid. Cannot display requests.</p>';
+                
                         return;
+                
                     }
+                
+                
                 
                     let joinRequests = [];
+                
                     try {
+                
                         // First, fetch the server document to get its joinRequests array
+                
+                        // currentServerId MUST be a string representing the server's document ID (e.g., 'DHBRP')
+                
                         const serverDocRef = doc(db, `/artifacts/${appId}/public/data/servers`, currentServerId);
+                
                         const serverDocSnap = await getDoc(serverDocRef);
                 
+                
+                
                         if (!serverDocSnap.exists()) {
-                            console.error(`Server document ${currentServerId} not found.`);
-                            listEl.innerHTML = '<p class="text-slate-500">Server not found for current owner.</p>';
+                
+                            console.warn(`Server document ${currentServerId} not found or current user not authorized to read it. (Check server read rules!)`);
+                
+                            listEl.innerHTML = '<p class="text-slate-500">Server not found or access denied. No pending requests.</p>';
+                
                             return;
+                
                         }
                 
+                
+                
                         const serverData = serverDocSnap.data();
+                
                         joinRequests = serverData.joinRequests || [];
                 
+                
+                
                     } catch (error) {
+                
                         console.error(`Error fetching server data for ${currentServerId}:`, error);
+                
                         listEl.innerHTML = `<p class="text-red-400">Error fetching server requests: ${error.message}</p>`;
+                
                         return;
+                
                     }
+                
+                
+                
                 
                 
                     if (joinRequests.length === 0) {
+                
                         listEl.innerHTML = '<p class="text-slate-500">No pending requests.</p>';
+                
                         return;
+                
                     }
+                
+                
                 
                     // Use a for...of loop to correctly await each user data fetch
+                
                     for (const requesterId of joinRequests) {
+                
                         try {
+                
                             // Fetch user data for requester's email
+                
+                            // This relies on the security rule for /users/{userId} allowing reads by any authenticated user.
+                
                             const userDoc = await getDoc(doc(db, `/artifacts/${appId}/users`, requesterId));
+                
                             const requesterEmail = userDoc.exists() ? (userDoc.data().email || requesterId) : requesterId;
                 
+                
+                
                             // Append HTML for each request
+                
                             listEl.insertAdjacentHTML('beforeend', `
+                
                                 <div class="flex justify-between items-center bg-gray-700 rounded-md p-3 mb-2 shadow-md">
-                                    <span class="text-white">${requesterEmail} (<span class="text-gray-400 text-sm">${requesterId.substring(0, 8)}...</span>)</span>
+                
+                                    <span class="text-white">${requesterEmail} (<span class="text-gray-400 text-sm">${requesterId.substring(0, 0)}...</span>)</span>
+                
                                     <div class="space-x-2">
+                
                                         <button class="btn bg-green-600 hover:bg-green-700 text-white font-bold py-1 px-3 rounded-md transition-colors duration-200 accept-join-btn" data-requester-id="${requesterId}">Accept</button>
+                
                                         <button class="btn bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded-md transition-colors duration-200 reject-join-btn" data-requester-id="${requesterId}">Reject</button>
+                
                                     </div>
+                
                                 </div>
+                
                             `);
+                
                         } catch (error) {
+                
                             console.error(`Error fetching user data for requester ${requesterId}:`, error);
+                
                             // Display an error for this specific request, but continue with others
+                
                             listEl.insertAdjacentHTML('beforeend', `
+                
                                 <div class="flex justify-between items-center bg-gray-700 rounded-md p-3 mb-2 shadow-md">
+                
                                     <span class="text-red-400">Error loading user (${requesterId})</span>
+                
                                     <div class="space-x-2">
+                
                                         <button class="btn bg-green-600 hover:bg-green-700 text-white font-bold py-1 px-3 rounded-md transition-colors duration-200 accept-join-btn" data-requester-id="${requesterId}">Accept</button>
+                
                                         <button class="btn bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded-md transition-colors duration-200 reject-join-btn" data-requester-id="${requesterId}">Reject</button>
+                
                                     </div>
+                
                                 </div>
+                
                             `);
+                
                         }
+                
                     }
                 
+                
+                
                     // Re-add event listeners each time the list is rendered
+                
                     if (typeof ZappyApp !== 'undefined' && ZappyApp.elements.handleJoinRequestAction) {
+                
                         listEl.querySelectorAll('.accept-join-btn').forEach(button => {
+                
                             button.addEventListener('click', ZappyApp.elements.handleJoinRequestAction.bind(ZappyApp, 'accept'));
+                
                         });
+                
                         listEl.querySelectorAll('.reject-join-btn').forEach(button => {
+                
                             button.addEventListener('click', ZappyApp.elements.handleJoinRequestAction.bind(ZappyApp, 'reject'));
+                
                         });
+                
                     } else {
+                
                         console.warn("ZappyApp.handleJoinRequestAction not found. Join request buttons may not be functional.");
+                
                     }
+
+
 
 },
 
