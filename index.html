@@ -1216,7 +1216,7 @@
                 
                         // currentServerId MUST be a string representing the server's document ID (e.g., 'DHBRP')
                 
-                        const serverDocRef = doc(db, `/artifacts/${appId}/public/data/servers`, currentServerId);
+                        const serverDocRef = doc(db, `/artifacts/${appId}/public/data/servers`, ServerId);
                 
                         const serverDocSnap = await getDoc(serverDocRef);
                 
