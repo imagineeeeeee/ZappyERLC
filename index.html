@@ -1177,6 +1177,59 @@
                     });
                     ZappyApp.state.unsubscribeListeners.push(unsubscribeShiftWaveStatus);
                 },
+                async handleJoinRequestAction(actionType, serverId, event) {
+                    // 'this' will be ZappyApp due to bind
+                    const button = event.target;
+                    const requesterId = button.dataset.requesterId;
+                
+                    if (!requesterId || !serverId) {
+                        console.error("Missing requester ID or server ID for join request action.");
+                        return;
+                    }
+                
+                    console.log(`Action: ${actionType} for requester: ${requesterId} on server: ${serverId}`);
+                
+                    try {
+                        const serverRef = doc(db, 'artifacts', appId, 'public', 'data', 'servers', serverId);
+                        const serverSnap = await getDoc(serverRef);
+                
+                        if (!serverSnap.exists()) {
+                            console.error("Server not found for join request action.");
+                            return;
+                        }
+                
+                        const serverData = serverSnap.data();
+                        let newJoinRequests = [...(serverData.joinRequests || [])];
+                        let newMembers = [...(serverData.members || [])];
+                
+                        // Remove requester from joinRequests
+                        newJoinRequests = newJoinRequests.filter(id => id !== requesterId);
+                
+                        if (actionType === 'accept') {
+                            // Add requester to members if not already there
+                            if (!newMembers.includes(requesterId)) {
+                                newMembers.push(requesterId);
+                            }
+                            console.log(`Accepted ${requesterId} for server ${serverId}.`);
+                        } else if (actionType === 'reject') {
+                            console.log(`Rejected ${requesterId} for server ${serverId}.`);
+                        }
+                
+                        // Update Firestore
+                        await updateDoc(serverRef, {
+                            joinRequests: newJoinRequests,
+                            members: newMembers
+                        });
+                
+                        console.log('Server document updated successfully.');
+                
+                        // Re-display join requests to update the UI
+                        this.displayOwnerJoinRequests(serverId); // 'this' refers to ZappyApp
+                    } catch (error) {
+                        console.error("Error handling join request action:", error);
+                        alert(`Failed to ${actionType} request: ${error.message}`);
+                    }
+                },
                 async displayOwnerJoinRequests(currentServerId) { // This parameter MUST be the server's document ID (e.g., 'DHBRP')
 
                     const listEl = typeof ZappyApp !== 'undefined' && ZappyApp.elements ? ZappyApp.elements.ownerJoinRequestsList : null;
