@@ -463,7 +463,7 @@
         // Import statements - updated to 11.9.1
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-analytics.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp, onSnapshot, updateDoc, deleteDoc, writeBatch, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
         // Initialize Firebase
@@ -585,11 +585,14 @@
             },
 
             setupAuth: async function() {
-                // Check for the provided custom auth token
+                // The Canvas environment provides a custom authentication token. We will use this directly
+                // and remove the fallback to anonymous login to avoid the "admin-restricted-operation" error.
                 if (typeof __initial_auth_token !== 'undefined') {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
-                    await signInAnonymously(auth);
+                    // This case should not be reached in the Canvas environment but is a good practice to handle.
+                    // For local testing, you might need a different auth method.
+                    showCustomModal("Error", "Authentication token not found. Please try again.", "alert");
                 }
                 
                 onAuthStateChanged(auth, async (user) => {
@@ -598,6 +601,7 @@
                         this.showDashboard();
                         await this.renderServerList();
                     } else {
+                        // The user will see a custom modal for auth error instead of a login form
                         this.showAuth();
                     }
                 });
