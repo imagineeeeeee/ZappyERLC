@@ -768,7 +768,8 @@
                     showCustomModal("Success", `Server "${serverName}" created successfully!`, "alert");
                 } catch (error) {
                     console.error("Error creating server:", error);
-                    errorElement.textContent = 'Failed to create server. Please try again.';
+                    errorElement.textContent = `Failed to create server. Error: ${error.message}`;
+                    showCustomModal("Error", `Failed to create server. This is likely a security rule issue. Error: ${error.message}`, "alert");
                 } finally {
                     this.showLoading(false);
                 }
