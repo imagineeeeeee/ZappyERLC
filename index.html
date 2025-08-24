@@ -518,6 +518,7 @@
                 shiftStartTime: null,
                 shiftTimerRunning: false,
                 unsubscribeListeners: [], // To store unsubscribe functions for cleanup
+                punishmentLogs: [], // FIX: Initialize this as an empty array to prevent the filter error.
             },
 
             // --- UI ELEMENT CACHING ---
@@ -1162,6 +1163,8 @@
             renderPunishmentLogs: function(searchQuery = '') {
                 const logsContainer = this.elements.punishmentLogList;
                 logsContainer.innerHTML = '';
+                
+                // Use the initialized state variable, which is always an array
                 let logsToDisplay = this.state.punishmentLogs;
 
                 if (searchQuery) {
@@ -1190,18 +1193,23 @@
                 });
             },
 
-            renderOwnerPunishmentLogs: function(logs) {
+            renderOwnerPunishmentLogs: function(logs, searchQuery = '') {
                 const logsContainer = this.elements.ownerPunishmentLogs;
                 logsContainer.innerHTML = '';
 
-                if (logs.length === 0) {
+                let logsToDisplay = logs;
+                if (searchQuery) {
+                    logsToDisplay = logsToDisplay.filter(log => log.username.toLowerCase().includes(searchQuery.toLowerCase()));
+                }
+
+                if (logsToDisplay.length === 0) {
                     logsContainer.innerHTML = '<p class="text-center text-slate-400">No punishment logs found.</p>';
                     return;
                 }
                 
-                logs.sort((a, b) => b.createdAt.toDate() - a.createdAt.toDate());
+                logsToDisplay.sort((a, b) => b.createdAt.toDate() - a.createdAt.toDate());
 
-                logs.forEach(log => {
+                logsToDisplay.forEach(log => {
                     const logElement = document.createElement('div');
                     logElement.className = 'card p-4 space-y-2';
                     const date = log.createdAt.toDate().toLocaleDateString() + ' ' + log.createdAt.toDate().toLocaleTimeString();
