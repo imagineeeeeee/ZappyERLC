@@ -4,13 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zappy | Dashboard</title>
-    <!-- Tailwind CSS for modern styling -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Lucide Icons -->
     <style>
         /* Custom styles to complement Tailwind */
         body {
@@ -121,15 +118,12 @@
 </head>
 <body class="min-h-screen">
 
-    <!-- App Container -->
     <div id="app-container" class="p-4 md:p-8 max-w-7xl mx-auto">
 
-        <!-- Loading Spinner -->
         <div id="loading-overlay" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex items-center justify-center z-50">
             <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-indigo-500"></div>
         </div>
 
-        <!-- Custom Modal for Messages/Alerts -->
         <div id="custom-modal-overlay" class="modal-overlay hidden">
             <div id="custom-modal">
                 <h3 id="modal-title" class="text-xl font-bold text-white mb-4"></h3>
@@ -142,7 +136,6 @@
             </div>
         </div>
 
-        <!-- Auth Section -->
         <div id="auth-section" class="hidden max-w-md mx-auto">
             <div class="card">
                 <h2 id="auth-title" class="text-2xl font-bold text-center text-white mb-6">Login to Zappy</h2>
@@ -165,9 +158,7 @@
             </div>
         </div>
 
-        <!-- Main Dashboard Section (Post-Login) -->
         <div id="dashboard-section" class="hidden">
-            <!-- Header -->
             <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
                 <div>
                     <h1 class="text-3xl font-bold text-white">Your Servers</h1>
@@ -179,7 +170,6 @@
                 </div>
             </header>
 
-            <!-- Server Interaction -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div class="card">
                     <h3 class="text-xl font-semibold text-white mb-4">Create a New Server</h3>
@@ -193,24 +183,20 @@
                         <input type="text" id="join-code-input" placeholder="Enter Server Code" class="form-input">
                         <button id="join-server-btn" class="btn btn-secondary">Join</button>
                     </div>
-                     <p id="join-server-error" class="text-red-400 text-sm mt-2 text-center"></p>
-                     <p id="join-server-success" class="text-green-400 text-sm mt-2 text-center"></p>
+                    <p id="join-server-error" class="text-red-400 text-sm mt-2 text-center"></p>
+                    <p id="join-server-success" class="text-green-400 text-sm mt-2 text-center"></p>
                 </div>
             </div>
 
-            <!-- Server List -->
             <div>
                 <h2 class="text-2xl font-bold text-white mb-4">Server List</h2>
                 <div id="server-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <!-- Server cards will be injected here -->
-                </div>
-                 <p id="server-list-error" class="text-red-400 text-sm mt-2 text-center"></p>
+                    </div>
+                <p id="server-list-error" class="text-red-400 text-sm mt-2 text-center"></p>
             </div>
         </div>
 
-        <!-- Server Panel Section (Selected Server) -->
         <div id="server-panel-section" class="hidden">
-            <!-- Panel Header -->
             <header class="mb-8">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
@@ -221,12 +207,11 @@
                     <div id="shift-controls" class="card p-4 flex items-center gap-4">
                         <p class="text-slate-300">Your Shift: <span id="shift-timer" class="font-mono">00:00:00</span></p>
                         <button id="shift-toggle-btn" class="btn btn-primary">Start Shift</button>
-                         <p id="shift-controls-message" class="text-sm mt-2 text-center"></p>
+                        <p id="shift-controls-message" class="text-sm mt-2 text-center"></p>
                     </div>
                 </div>
             </header>
 
-            <!-- Tab Navigation -->
             <div class="mb-6">
                 <div id="panel-tab-buttons" class="flex flex-wrap items-center gap-2 border-b border-slate-700 pb-2">
                     <button class="tab-button btn btn-secondary active" data-tab="main">Server Info</button>
@@ -235,13 +220,10 @@
                     <button class="tab-button btn btn-secondary" data-tab="shifts">Shifts</button>
                     <button class="tab-button btn btn-secondary" data-tab="punishments">Punishments</button>
                     <button class="tab-button btn btn-secondary" data-tab="punishment-logs">Punishment Logs</button>
-                    <!-- Owner-only tab is added dynamically -->
-                </div>
+                    </div>
             </div>
 
-            <!-- Tab Content -->
             <div id="panel-tab-content">
-                <!-- Main Info Tab -->
                 <div id="tab-main" class="tab-content active">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="card">
@@ -256,7 +238,6 @@
                     </div>
                 </div>
 
-                <!-- Players Tab -->
                 <div id="tab-players" class="tab-content hidden">
                     <div class="card">
                         <h3 class="text-xl font-semibold mb-4 text-white">Players & Queue</h3>
@@ -279,7 +260,6 @@
                     </div>
                 </div>
 
-                <!-- Commands Tab -->
                 <div id="tab-commands" class="tab-content hidden">
                     <div class="card">
                         <h3 class="text-xl font-semibold mb-4 text-white">Execute Command</h3>
@@ -292,13 +272,11 @@
                     </div>
                 </div>
 
-                <!-- Shifts Tab -->
                 <div id="tab-shifts" class="tab-content hidden">
                     <div class="card">
                         <div class="flex justify-between items-center mb-4">
                             <h3 class="text-xl font-semibold text-white">Shift Leaderboard</h3>
                             <div id="shift-wave-controls">
-                                <!-- Owner-only controls added here -->
                                 <button id="start-shift-wave-btn" class="btn btn-primary btn-sm hidden">Start Shift Wave</button>
                                 <button id="end-shift-wave-btn" class="btn btn-danger btn-sm hidden">End Shift Wave</button>
                             </div>
@@ -307,7 +285,6 @@
                     </div>
                 </div>
 
-                <!-- Punishments Tab -->
                 <div id="tab-punishments" class="tab-content hidden">
                     <div class="card">
                         <h3 class="text-xl font-semibold text-white mb-4">Add New Punishment Log</h3>
@@ -338,7 +315,6 @@
                     </div>
                 </div>
 
-                <!-- Punishment Logs Tab -->
                 <div id="tab-punishment-logs" class="tab-content hidden">
                     <div class="card">
                         <div class="flex justify-between items-center mb-4">
@@ -360,26 +336,25 @@
                     </div>
                 </div>
 
-                <!-- Owner Admin Tab -->
                 <div id="tab-owner" class="tab-content hidden">
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div class="card">
                             <h3 class="text-xl font-semibold text-white mb-4">Join Requests</h3>
                             <div id="owner-join-requests-list" class="space-y-3">No pending requests.</div>
-                             <p id="owner-join-requests-list-error" class="text-red-400 text-sm mt-2 text-center"></p>
+                            <p id="owner-join-requests-list-error" class="text-red-400 text-sm mt-2 text-center"></p>
                         </div>
                         <div class="card">
                             <h3 class="text-xl font-semibold text-white mb-4">Manage Server Members</h3>
                             <div id="server-members-list" class="log-box mb-4">No members to display.</div>
-                             <p id="server-members-message" class="text-sm mt-2 text-center"></p>
+                            <p id="server-members-message" class="text-sm mt-2 text-center"></p>
                             <hr class="border-slate-700 my-6">
                             <h3 class="text-xl font-semibold text-white mb-4">Server Settings</h3>
                             <p class="text-slate-400 text-sm mb-4">Only the server name can be changed after creation. The server code is permanently linked to the server's database ID.</p>
                             <label for="edit-server-name" class="block mb-2">Server Name</label>
                             <input type="text" id="edit-server-name" class="form-input mb-4">
                             <button id="save-server-name-btn" class="btn btn-primary">Save Name</button>
-                             <p id="owner-settings-success" class="text-green-400 text-sm mt-2 text-center"></p>
-                             <p id="owner-settings-error" class="text-red-400 text-sm mt-2 text-center"></p>
+                            <p id="owner-settings-success" class="text-green-400 text-sm mt-2 text-center"></p>
+                            <p id="owner-settings-error" class="text-red-400 text-sm mt-2 text-center"></p>
 
                             <hr class="border-slate-700 my-6">
                             <label for="edit-api-key" class="block mb-2">ER:LC Server API Key</label>
@@ -405,7 +380,6 @@
         </div>
     </div>
 
-    <!-- Modals -->
     <div id="create-server-modal" class="modal-overlay hidden">
         <div class="card max-w-lg w-full">
             <h2 class="text-2xl font-bold text-white mb-4">Create Server</h2>
@@ -433,7 +407,6 @@
         </div>
     </div>
 
-    <!-- Generic Modal for Confirmations -->
     <div id="confirm-modal" class="modal-overlay hidden">
         <div class="card max-w-sm w-full text-center">
             <h3 id="confirm-modal-title" class="text-xl font-bold text-white mb-4">Are you sure?</h3>
@@ -445,9 +418,7 @@
         </div>
     </div>
 
-    <!-- Firebase SDK -->
     <script type="module">
-        // Use __firebase_config and __app_id if available, otherwise fallback to provided config
         const firebaseConfig = {
             apiKey: "AIzaSyCF5bqrinHuV81qTrcoIerlIZAnenvspsw",
             authDomain: "zappyerlc.firebaseapp.com",
@@ -458,19 +429,19 @@
             measurementId: "G-K4LDYN8L3E"
         };
         const finalFirebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'; // Use default-app-id for local testing
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
         // Import statements - updated to 11.9.1
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-analytics.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp, onSnapshot, updateDoc, deleteDoc, writeBatch, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
-
+        
         // Initialize Firebase
         const app = initializeApp(finalFirebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const analytics = getAnalytics(app); // Initialized but not used in the app logic
+        const analytics = getAnalytics(app);
 
         // Custom Modal Logic
         const showCustomModal = (title, text, type, onConfirm) => {
@@ -480,7 +451,7 @@
             const modalOkBtn = document.getElementById('modal-ok-btn');
             const modalConfirmBtn = document.getElementById('modal-confirm-btn');
             const modalCancelBtn = document.getElementById('modal-cancel-btn');
-
+            
             // Reset buttons
             modalOkBtn.classList.add('hidden');
             modalConfirmBtn.classList.add('hidden');
@@ -503,7 +474,6 @@
                 modalCancelBtn.onclick = () => modalOverlay.classList.add('hidden');
             }
         };
-
 
         /**
          * ZappyApp
@@ -586,26 +556,9 @@
             },
 
             setupAuth: async function() {
-                // The Canvas environment provides a custom authentication token. We will use this directly
-                // and remove the fallback to anonymous login to avoid the "admin-restricted-operation" error.
-                if (typeof __initial_auth_token !== 'undefined') {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    // This case should not be reached in the Canvas environment but is a good practice to handle.
-                    // For local testing, you might need a different auth method.
-                    showCustomModal("Error", "Authentication token not found. Please try again.", "alert");
-                }
-                
-                onAuthStateChanged(auth, async (user) => {
-                    this.state.currentUser = user;
-                    if (user) {
-                        this.showDashboard();
-                        await this.renderServerList();
-                    } else {
-                        // The user will see a custom modal for auth error instead of a login form
-                        this.showAuth();
-                    }
-                });
+                // Modified to remove the authentication token check
+                this.showDashboard();
+                this.renderServerList();
             },
 
             bindGlobalListeners: function() {
@@ -627,7 +580,6 @@
                         this.switchTab(tab);
                     }
                 });
-
                 // Punishment system listeners
                 this.elements.punishmentForm.addEventListener('submit', this.handleAddPunishment.bind(this));
                 this.elements.searchUsernameInput.addEventListener('input', this.handleSearchPunishmentLogs.bind(this));
@@ -655,7 +607,8 @@
                     this.state.unsubscribeListeners = [];
                 }
                 this.state.currentServer = null;
-                this.elements.userEmailSpan.textContent = this.state.currentUser.email || 'Guest User';
+                // This line is now a placeholder since there is no user authentication.
+                this.elements.userEmailSpan.textContent = 'Guest User';
                 this.renderServerList(); // Re-render server list when returning to dashboard
             },
 
@@ -696,9 +649,7 @@
                     errorElement.textContent = 'Please fill out all fields.';
                     return;
                 }
-
                 this.showLoading(true);
-
                 try {
                     // Check if server code already exists
                     const serversRef = collection(db, `artifacts/${appId}/public/data/servers`);
@@ -718,10 +669,7 @@
                         ownerId: this.state.currentUser.uid,
                         members: [this.state.currentUser.uid],
                         apiKey: apiKey,
-                        stats: {
-                            onlinePlayers: 0,
-                            totalServers: 0
-                        },
+                        stats: { onlinePlayers: 0, totalServers: 0 },
                         logs: [],
                         createdAt: serverTimestamp()
                     });
@@ -731,7 +679,6 @@
                     await updateDoc(userDocRef, {
                         servers: arrayUnion({ id: newServerRef.id, code: serverCode, role: 'owner' })
                     }, { merge: true });
-
                     this.elements.createServerModal.classList.add('hidden');
                     e.target.reset();
                     showCustomModal("Success", "Server created successfully!", "alert");
@@ -750,6 +697,7 @@
                 const successElement = this.elements.joinServerSuccess;
                 errorElement.textContent = '';
                 successElement.textContent = '';
+
                 if (!joinCode) {
                     errorElement.textContent = 'Please enter a server code.';
                     return;
@@ -760,12 +708,10 @@
                     const serversRef = collection(db, `artifacts/${appId}/public/data/servers`);
                     const q = query(serversRef, where("code", "==", joinCode));
                     const querySnapshot = await getDocs(q);
-
                     if (querySnapshot.empty) {
                         errorElement.textContent = 'Server not found.';
                         return;
                     }
-
                     const serverDoc = querySnapshot.docs[0];
                     const serverData = serverDoc.data();
 
@@ -778,7 +724,6 @@
                     const joinRequestsRef = collection(db, `artifacts/${appId}/public/data/servers/${serverDoc.id}/joinRequests`);
                     const joinReqQuery = query(joinRequestsRef, where("userId", "==", this.state.currentUser.uid));
                     const joinReqSnapshot = await getDocs(joinReqQuery);
-
                     if (!joinReqSnapshot.empty) {
                         errorElement.textContent = 'Your request to join this server is already pending.';
                         return;
@@ -790,7 +735,6 @@
                         userEmail: this.state.currentUser.email || 'Guest User',
                         createdAt: serverTimestamp()
                     });
-
                     successElement.textContent = 'Join request sent! The server owner must approve your request.';
                 } catch (error) {
                     console.error("Error joining server:", error);
@@ -803,7 +747,6 @@
             renderServerList: async function() {
                 this.elements.serverList.innerHTML = '<p class="text-slate-400">Loading your servers...</p>';
                 this.elements.serverListError.textContent = '';
-
                 try {
                     const userDocRef = doc(db, `artifacts/${appId}/users/${this.state.currentUser.uid}/profile/${this.state.currentUser.uid}`);
                     const userDoc = await getDoc(userDocRef);
@@ -814,7 +757,6 @@
 
                     const userServers = userDoc.data().servers;
                     const serverCardsHtml = [];
-
                     for (const server of userServers) {
                         const serverDoc = await getDoc(doc(db, `artifacts/${appId}/public/data/servers/${server.id}`));
                         if (serverDoc.exists()) {
@@ -829,7 +771,6 @@
                             `);
                         }
                     }
-
                     this.elements.serverList.innerHTML = serverCardsHtml.join('');
                     document.querySelectorAll('#server-list .card').forEach(card => {
                         card.addEventListener('click', (e) => this.handleServerSelect(e.currentTarget.dataset.serverId));
@@ -875,389 +816,525 @@
                 // Clear and re-add the owner tab button based on status
                 const existingOwnerBtn = document.querySelector('[data-tab="owner"]');
                 if (existingOwnerBtn) existingOwnerBtn.remove();
+                
                 if (isOwner) {
                     this.elements.panelTabButtons.appendChild(ownerTabBtn);
                     document.getElementById('edit-server-name').value = this.state.currentServer.name;
                     document.getElementById('command-input').disabled = false;
-                    document.getElementById('execute-command-button').disabled = false;
-                    document.getElementById('command-permission-text').textContent = 'Enter a command to execute on the ER:LC server.';
-                } else {
-                    document.getElementById('command-input').disabled = true;
-                    document.getElementById('execute-command-button').disabled = true;
-                    document.getElementById('command-permission-text').textContent = 'This functionality is restricted to the server owner.';
+                    document.getElementById('start-shift-wave-btn').classList.remove('hidden');
+                    document.getElementById('end-shift-wave-btn').classList.remove('hidden');
+                    this.fetchJoinRequests();
+                    this.fetchServerMembers();
+                    this.fetchOwnerPunishmentLogs();
+                    document.getElementById('save-server-name-btn').onclick = this.handleSaveServerName.bind(this);
+                    document.getElementById('save-api-key-btn').onclick = this.handleSaveApiKey.bind(this);
+                    document.getElementById('delete-server-btn').onclick = this.handleDeleteServer.bind(this);
                 }
+            },
+
+            handleSaveServerName: async function() {
+                const newName = this.elements.editServerNameInput.value;
+                const successElement = document.getElementById('owner-settings-success');
+                const errorElement = document.getElementById('owner-settings-error');
+                successElement.textContent = '';
+                errorElement.textContent = '';
+
+                if (!newName) {
+                    errorElement.textContent = 'Server name cannot be empty.';
+                    return;
+                }
+                if (newName === this.state.currentServer.name) {
+                    errorElement.textContent = 'Server name is the same.';
+                    return;
+                }
+
+                this.showLoading(true);
+                try {
+                    const serverDocRef = doc(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}`);
+                    await updateDoc(serverDocRef, { name: newName });
+                    this.state.currentServer.name = newName;
+                    this.elements.panelServerName.textContent = newName;
+                    successElement.textContent = 'Server name updated successfully!';
+                } catch (error) {
+                    console.error("Error saving server name:", error);
+                    errorElement.textContent = 'Failed to save server name.';
+                } finally {
+                    this.showLoading(false);
+                }
+            },
+
+            handleSaveApiKey: async function() {
+                const newKey = document.getElementById('edit-api-key').value;
+                const successElement = document.getElementById('owner-api-key-success');
+                const errorElement = document.getElementById('owner-api-key-error');
+                successElement.textContent = '';
+                errorElement.textContent = '';
+
+                if (!newKey) {
+                    errorElement.textContent = 'API key cannot be empty.';
+                    return;
+                }
+
+                this.showLoading(true);
+                try {
+                    const serverDocRef = doc(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}`);
+                    await updateDoc(serverDocRef, { apiKey: newKey });
+                    successElement.textContent = 'API key updated successfully!';
+                } catch (error) {
+                    console.error("Error saving API key:", error);
+                    errorElement.textContent = 'Failed to save API key.';
+                } finally {
+                    this.showLoading(false);
+                }
+            },
+
+            handleDeleteServer: function() {
+                showCustomModal("Confirm Delete", "Are you sure you want to delete this server? This action is permanent and cannot be undone.", "confirm", async () => {
+                    this.showLoading(true);
+                    try {
+                        const batch = writeBatch(db);
+                        const serverId = this.state.currentServer.id;
+                        
+                        // Delete all join requests
+                        const joinRequestsRef = collection(db, `artifacts/${appId}/public/data/servers/${serverId}/joinRequests`);
+                        const joinRequestsSnapshot = await getDocs(joinRequestsRef);
+                        joinRequestsSnapshot.docs.forEach(doc => batch.delete(doc.ref));
+
+                        // Delete all punishment logs
+                        const punishmentLogsRef = collection(db, `artifacts/${appId}/public/data/servers/${serverId}/punishmentLogs`);
+                        const punishmentLogsSnapshot = await getDocs(punishmentLogsRef);
+                        punishmentLogsSnapshot.docs.forEach(doc => batch.delete(doc.ref));
+
+                        // Remove server from all members' user profiles
+                        const members = this.state.currentServer.members;
+                        for (const memberId of members) {
+                            const userDocRef = doc(db, `artifacts/${appId}/users/${memberId}/profile/${memberId}`);
+                            batch.update(userDocRef, { servers: arrayRemove({ id: serverId, code: this.state.currentServer.code, role: 'owner' }) });
+                            batch.update(userDocRef, { servers: arrayRemove({ id: serverId, code: this.state.currentServer.code, role: 'member' }) });
+                        }
+                        
+                        // Delete the server document
+                        const serverDocRef = doc(db, `artifacts/${appId}/public/data/servers/${serverId}`);
+                        batch.delete(serverDocRef);
+
+                        await batch.commit();
+                        this.showDashboard();
+                        showCustomModal("Success", "Server deleted successfully.", "alert");
+                    } catch (error) {
+                        console.error("Error deleting server:", error);
+                        showCustomModal("Error", "Failed to delete the server. Please try again.", "alert");
+                    } finally {
+                        this.showLoading(false);
+                    }
+                });
+            },
+
+            fetchJoinRequests: async function() {
+                const requestsList = this.elements.ownerJoinRequestsList;
+                const errorElement = this.elements.ownerJoinRequestsListError;
+                requestsList.innerHTML = '<p class="text-center text-slate-400">Loading requests...</p>';
+                errorElement.textContent = '';
+                try {
+                    const joinRequestsRef = collection(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}/joinRequests`);
+                    const q = query(joinRequestsRef);
+                    const querySnapshot = await getDocs(q);
+                    
+                    if (querySnapshot.empty) {
+                        requestsList.innerHTML = '<p class="space-y-3">No pending requests.</p>';
+                        return;
+                    }
+
+                    const requestsHtml = querySnapshot.docs.map(doc => {
+                        const data = doc.data();
+                        return `
+                            <div class="flex items-center justify-between card p-3">
+                                <span class="text-sm font-medium text-white">${data.userEmail}</span>
+                                <div class="flex gap-2">
+                                    <button class="btn btn-primary btn-sm accept-request" data-request-id="${doc.id}" data-user-id="${data.userId}">Approve</button>
+                                    <button class="btn btn-danger btn-sm reject-request" data-request-id="${doc.id}">Reject</button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                    requestsList.innerHTML = requestsHtml;
+                    document.querySelectorAll('.accept-request').forEach(btn => {
+                        btn.onclick = (e) => this.handleJoinRequestAction(e, 'approve');
+                    });
+                    document.querySelectorAll('.reject-request').forEach(btn => {
+                        btn.onclick = (e) => this.handleJoinRequestAction(e, 'reject');
+                    });
+
+                } catch (error) {
+                    console.error("Error fetching join requests:", error);
+                    requestsList.innerHTML = '';
+                    errorElement.textContent = 'Failed to load join requests.';
+                }
+            },
+
+            handleJoinRequestAction: async function(e, action) {
+                const requestId = e.target.dataset.requestId;
+                const userId = e.target.dataset.userId;
+
+                this.showLoading(true);
+                try {
+                    const requestDocRef = doc(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}/joinRequests`, requestId);
+                    await deleteDoc(requestDocRef);
+
+                    if (action === 'approve') {
+                        const userProfileRef = doc(db, `artifacts/${appId}/users/${userId}/profile/${userId}`);
+                        await updateDoc(userProfileRef, {
+                            servers: arrayUnion({ id: this.state.currentServer.id, code: this.state.currentServer.code, role: 'member' })
+                        }, { merge: true });
+
+                        const serverDocRef = doc(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}`);
+                        await updateDoc(serverDocRef, {
+                            members: arrayUnion(userId)
+                        });
+
+                        showCustomModal("Success", "Join request approved!", "alert");
+                    } else {
+                        showCustomModal("Success", "Join request rejected.", "alert");
+                    }
+
+                    this.fetchJoinRequests(); // Refresh the list
+                } catch (error) {
+                    console.error(`Error handling join request (${action}):`, error);
+                    showCustomModal("Error", `Failed to ${action} the request.`, "alert");
+                } finally {
+                    this.showLoading(false);
+                }
+            },
+
+            fetchServerMembers: async function() {
+                const membersList = document.getElementById('server-members-list');
+                const messageElement = document.getElementById('server-members-message');
+                membersList.innerHTML = '<p class="text-center text-slate-400">Loading members...</p>';
+                messageElement.textContent = '';
+                
+                try {
+                    const serverDocRef = doc(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}`);
+                    const serverDoc = await getDoc(serverDocRef);
+                    const serverData = serverDoc.data();
+                    const memberIds = serverData.members;
+                    
+                    if (memberIds.length === 0) {
+                        membersList.innerHTML = '<p class="text-center text-slate-400">No members in this server.</p>';
+                        return;
+                    }
+
+                    const memberPromises = memberIds.map(async (memberId) => {
+                        const userDocRef = doc(db, `artifacts/${appId}/users/${memberId}/profile/${memberId}`);
+                        const userDoc = await getDoc(userDocRef);
+                        return userDoc.exists() ? { id: memberId, email: userDoc.data().email || 'Guest User' } : null;
+                    });
+
+                    const members = (await Promise.all(memberPromises)).filter(Boolean);
+                    
+                    const membersHtml = members.map(member => `
+                        <div class="flex items-center justify-between p-2">
+                            <span class="text-sm text-slate-300">${member.email}</span>
+                            <button class="btn btn-danger btn-sm remove-member-btn" data-member-id="${member.id}">Remove</button>
+                        </div>
+                    `).join('');
+                    
+                    membersList.innerHTML = membersHtml;
+
+                    document.querySelectorAll('.remove-member-btn').forEach(btn => {
+                        btn.onclick = (e) => this.handleRemoveMember(e.target.dataset.memberId);
+                    });
+
+                } catch (error) {
+                    console.error("Error fetching server members:", error);
+                    membersList.innerHTML = '<p class="text-red-400 text-center">Failed to load members.</p>';
+                }
+            },
+
+            handleRemoveMember: function(memberId) {
+                showCustomModal("Confirm Removal", "Are you sure you want to remove this member? This action is permanent.", "confirm", async () => {
+                    this.showLoading(true);
+                    try {
+                        const batch = writeBatch(db);
+                        const serverId = this.state.currentServer.id;
+
+                        // Remove member from server's member list
+                        const serverDocRef = doc(db, `artifacts/${appId}/public/data/servers/${serverId}`);
+                        batch.update(serverDocRef, { members: arrayRemove(memberId) });
+
+                        // Remove server from member's server list
+                        const userDocRef = doc(db, `artifacts/${appId}/users/${memberId}/profile/${memberId}`);
+                        batch.update(userDocRef, {
+                            servers: arrayRemove({ id: serverId, code: this.state.currentServer.code, role: 'member' })
+                        });
+                        
+                        await batch.commit();
+
+                        showCustomModal("Success", "Member removed successfully.", "alert");
+                        this.fetchServerMembers(); // Refresh the list
+                    } catch (error) {
+                        console.error("Error removing member:", error);
+                        showCustomModal("Error", "Failed to remove member.", "alert");
+                    } finally {
+                        this.showLoading(false);
+                    }
+                });
             },
 
             attachFirestoreListeners: function() {
-                const serverId = this.state.currentServer.id;
+                // Clear any old listeners
                 this.state.unsubscribeListeners.forEach(unsub => unsub());
                 this.state.unsubscribeListeners = [];
+                
+                // Real-time server log listener
+                const logsRef = collection(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}/logs`);
+                const unsubscribeLogs = onSnapshot(query(logsRef, where("type", "==", "log")), (querySnapshot) => {
+                    const logs = querySnapshot.docs.map(doc => doc.data());
+                    this.renderLogs(logs);
+                });
+                this.state.unsubscribeListeners.push(unsubscribeLogs);
 
-                // Listen to Server Stats
-                const statsRef = doc(db, `artifacts/${appId}/public/data/servers/${serverId}`);
-                this.state.unsubscribeListeners.push(onSnapshot(statsRef, (doc) => {
-                    if (doc.exists()) {
-                        const data = doc.data();
-                        this.elements.serverStatsOutput.innerHTML = `
-                            <p>Online Players: ${data.stats?.onlinePlayers || 0}</p>
-                            <p>Total Servers: ${data.stats?.totalServers || 0}</p>
-                            <p>Members: ${data.members.length}</p>
-                        `;
+                // Real-time player stats listener
+                const statsRef = doc(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}/stats/stats`);
+                const unsubscribeStats = onSnapshot(statsRef, (docSnapshot) => {
+                    if (docSnapshot.exists()) {
+                        this.renderStats(docSnapshot.data());
+                    } else {
+                        this.elements.serverStatsOutput.textContent = 'No stats available.';
                     }
-                }, (error) => {
-                    console.error("Error listening to stats:", error);
-                    this.elements.serverStatsOutput.textContent = 'Failed to load stats.';
-                }));
+                });
+                this.state.unsubscribeListeners.push(unsubscribeStats);
 
-                // Listen to Log
-                const logRef = collection(db, `artifacts/${appId}/public/data/servers/${serverId}/logs`);
-                this.state.unsubscribeListeners.push(onSnapshot(query(logRef, where("type", "==", "realtime_event")), (snapshot) => {
-                    this.elements.logOutput.innerHTML = '';
-                    snapshot.docChanges().forEach((change) => {
-                        if (change.type === "added") {
-                            const newLog = change.doc.data();
-                            const logEntry = document.createElement('div');
-                            logEntry.textContent = newLog.message;
-                            this.elements.logOutput.prepend(logEntry); // Prepend for new logs at the top
+                // Real-time player and queue listener
+                const playersRef = collection(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}/players`);
+                const unsubscribePlayers = onSnapshot(playersRef, (querySnapshot) => {
+                    const players = [];
+                    const queue = [];
+                    querySnapshot.docs.forEach(doc => {
+                        const data = doc.data();
+                        if (data.status === 'online') {
+                            players.push(data);
+                        } else if (data.status === 'queued') {
+                            queue.push(data);
                         }
                     });
-                }, (error) => {
-                    console.error("Error listening to logs:", error);
-                    this.elements.logOutput.textContent = 'Failed to load logs.';
-                }));
-
-                // Listen to Players & Queue
-                const playerListRef = collection(db, `artifacts/${appId}/public/data/servers/${serverId}/players`);
-                this.state.unsubscribeListeners.push(onSnapshot(playerListRef, (snapshot) => {
-                    this.elements.playerList.innerHTML = '';
-                    this.elements.playerQueue.innerHTML = '';
-                    let onlineCount = 0;
-                    let queueCount = 0;
-                    snapshot.forEach(doc => {
-                        const playerData = doc.data();
-                        const playerItem = document.createElement('li');
-                        playerItem.textContent = `${playerData.username} (${playerData.status})`;
-                        if (playerData.status === 'online') {
-                            this.elements.playerList.appendChild(playerItem);
-                            onlineCount++;
-                        } else if (playerData.status === 'queue') {
-                            this.elements.playerQueue.appendChild(playerItem);
-                            queueCount++;
-                        }
-                    });
-                    this.elements.playerCount.textContent = onlineCount;
-                    this.elements.queueCount.textContent = queueCount;
-                }, (error) => {
-                    console.error("Error listening to players:", error);
-                }));
-
-                // Listen to Join Requests (Owner only)
-                const isOwner = this.state.currentServer.ownerId === this.state.currentUser.uid;
-                if (isOwner) {
-                    const joinRequestsRef = collection(db, `artifacts/${appId}/public/data/servers/${serverId}/joinRequests`);
-                    this.state.unsubscribeListeners.push(onSnapshot(joinRequestsRef, (snapshot) => {
-                        this.elements.ownerJoinRequestsList.innerHTML = '';
-                        if (snapshot.empty) {
-                            this.elements.ownerJoinRequestsList.innerHTML = '<p class="text-slate-400">No pending requests.</p>';
-                            return;
-                        }
-                        snapshot.forEach(doc => {
-                            const request = doc.data();
-                            const requestEl = document.createElement('div');
-                            requestEl.className = 'card p-3 flex justify-between items-center';
-                            requestEl.innerHTML = `
-                                <div>
-                                    <p class="font-semibold text-white">${request.userEmail}</p>
-                                </div>
-                                <div>
-                                    <button class="btn btn-primary btn-sm accept-btn" data-id="${doc.id}">Accept</button>
-                                    <button class="btn btn-danger btn-sm deny-btn" data-id="${doc.id}">Deny</button>
-                                </div>
-                            `;
-                            this.elements.ownerJoinRequestsList.appendChild(requestEl);
-                        });
-                        this.elements.ownerJoinRequestsList.querySelectorAll('.accept-btn').forEach(btn => {
-                            btn.addEventListener('click', (e) => this.handleAcceptJoinRequest(e.currentTarget.dataset.id));
-                        });
-                        this.elements.ownerJoinRequestsList.querySelectorAll('.deny-btn').forEach(btn => {
-                            btn.addEventListener('click', (e) => this.handleDenyJoinRequest(e.currentTarget.dataset.id));
-                        });
-                    }, (error) => {
-                        console.error("Error listening to join requests:", error);
-                        this.elements.ownerJoinRequestsListError.textContent = 'Failed to load join requests.';
-                    }));
-                }
-
-                // Listen to Shifts
-                const shiftsRef = collection(db, `artifacts/${appId}/public/data/servers/${serverId}/shifts`);
-                this.state.unsubscribeListeners.push(onSnapshot(shiftsRef, (snapshot) => {
-                    const shifts = [];
-                    snapshot.forEach(doc => shifts.push(doc.data()));
-                    this.renderShiftLeaderboard(shifts);
-                }, (error) => {
-                    console.error("Error listening to shifts:", error);
-                }));
-
-                // Listen to Punishment Logs
-                this.state.unsubscribeListeners.push(onSnapshot(collection(db, `artifacts/${appId}/public/data/servers/${serverId}/punishmentLogs`), (snapshot) => {
-                    const logs = [];
-                    snapshot.forEach(doc => logs.push({ id: doc.id, ...doc.data() }));
+                    this.renderPlayers(players);
+                    this.renderQueue(queue);
+                });
+                this.state.unsubscribeListeners.push(unsubscribePlayers);
+                
+                // Real-time punishment logs listener
+                const punishmentLogsRef = collection(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}/punishmentLogs`);
+                const unsubscribePunishmentLogs = onSnapshot(punishmentLogsRef, (querySnapshot) => {
+                    const logs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     this.state.punishmentLogs = logs;
-                    this.renderPunishmentLogs();
-                    if (isOwner) {
+                    this.renderPunishmentLogs(logs);
+                    if (this.state.currentServer.ownerId === this.state.currentUser.uid) {
                         this.renderOwnerPunishmentLogs(logs);
                     }
-                }, (error) => {
-                    console.error("Error listening to punishment logs:", error);
-                    this.elements.punishmentLogList.innerHTML = '<p class="text-center text-red-400">Failed to load punishment logs.</p>';
-                    if (isOwner) {
-                        this.elements.ownerPunishmentLogs.innerHTML = '<p class="text-center text-red-400">Failed to load logs for editing.</p>';
-                    }
-                }));
+                });
+                this.state.unsubscribeListeners.push(unsubscribePunishmentLogs);
+
+                // Real-time shift leaderboard listener
+                const shiftsRef = collection(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}/shifts`);
+                const unsubscribeShifts = onSnapshot(shiftsRef, (querySnapshot) => {
+                    const shifts = querySnapshot.docs.map(doc => doc.data());
+                    this.renderShiftLeaderboard(shifts);
+                });
+                this.state.unsubscribeListeners.push(unsubscribeShifts);
+            },
+            
+            // --- PANEL RENDERERS ---
+            renderLogs: function(logs) {
+                const logBox = this.elements.logOutput;
+                const logsHtml = logs.map(log => {
+                    const timestamp = new Date(log.timestamp.seconds * 1000).toLocaleTimeString('en-US', { hour12: false });
+                    return `
+                        <p class="text-sm">${timestamp} | <span class="text-slate-400">${log.message}</span></p>
+                    `;
+                }).join('');
+                logBox.innerHTML = logsHtml;
+                logBox.scrollTop = logBox.scrollHeight;
+            },
+
+            renderStats: function(stats) {
+                this.elements.serverStatsOutput.innerHTML = `
+                    <p>Total Servers: ${stats.totalServers}</p>
+                    <p>Online Players: ${stats.onlinePlayers}</p>
+                `;
+            },
+            
+            renderPlayers: function(players) {
+                this.elements.playerCount.textContent = players.length;
+                const playersHtml = players.map(player => `
+                    <li><span class="font-bold text-white">${player.username}</span> | <span class="text-slate-400">Level: ${player.level || 'N/A'}</span></li>
+                `).join('');
+                this.elements.playerList.innerHTML = playersHtml || '<li class="text-slate-400">No players online.</li>';
+            },
+
+            renderQueue: function(queue) {
+                this.elements.queueCount.textContent = queue.length;
+                const queueHtml = queue.map(player => `
+                    <li><span class="font-bold text-white">${player.username}</span></li>
+                `).join('');
+                this.elements.playerQueue.innerHTML = queueHtml || '<li class="text-slate-400">Queue is empty.</li>';
             },
 
             renderShiftLeaderboard: function(shifts) {
-                this.elements.shiftLeaderboard.innerHTML = '';
+                const leaderboard = this.elements.shiftLeaderboard;
                 if (shifts.length === 0) {
-                    this.elements.shiftLeaderboard.innerHTML = '<p class="text-center text-slate-400">No shifts recorded yet.</p>';
+                    leaderboard.innerHTML = '<p class="text-center text-slate-400">No shifts recorded yet.</p>';
                     return;
                 }
-                const sortedShifts = shifts.sort((a, b) => (b.endTime - b.startTime) - (a.endTime - a.startTime));
-                let html = '';
-                sortedShifts.forEach((shift, index) => {
-                    const duration = shift.endTime - shift.startTime;
-                    const hours = Math.floor(duration / (1000 * 60 * 60));
-                    const minutes = Math.floor((duration % (1000 * 60 * 60)) / (1000 * 60));
-                    const seconds = Math.floor((duration % (1000 * 60)) / 1000);
-                    const formattedDuration = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-                    html += `
-                        <div class="card p-4 flex justify-between items-center">
-                            <span class="font-semibold text-white">#${index + 1} ${shift.userEmail}</span>
-                            <span class="font-mono text-indigo-300">${formattedDuration}</span>
+                const sortedShifts = shifts.sort((a, b) => b.totalTime - a.totalTime);
+                const leaderboardHtml = sortedShifts.map((shift, index) => {
+                    const totalTimeInSeconds = Math.floor(shift.totalTime / 1000);
+                    const hours = Math.floor(totalTimeInSeconds / 3600);
+                    const minutes = Math.floor((totalTimeInSeconds % 3600) / 60);
+                    const seconds = totalTimeInSeconds % 60;
+                    const formattedTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                    return `
+                        <div class="flex items-center justify-between p-2 bg-slate-800 rounded">
+                            <span class="font-bold text-white">${index + 1}. ${shift.userEmail}</span>
+                            <span class="font-mono text-indigo-400">${formattedTime}</span>
                         </div>
                     `;
+                }).join('');
+                leaderboard.innerHTML = leaderboardHtml;
+            },
+
+            renderPunishmentLogs: function(logs) {
+                const logsList = this.elements.punishmentLogList;
+                if (logs.length === 0) {
+                    logsList.innerHTML = '<p class="text-center text-slate-400">No punishment logs found.</p>';
+                    return;
+                }
+
+                const filteredLogs = logs.filter(log => {
+                    const searchTerm = this.elements.searchUsernameInput.value.toLowerCase();
+                    return log.punishedUsername.toLowerCase().includes(searchTerm);
                 });
-                this.elements.shiftLeaderboard.innerHTML = html;
+
+                const logsHtml = filteredLogs.map(log => {
+                    const timestamp = new Date(log.timestamp.seconds * 1000).toLocaleString();
+                    return `
+                        <div class="card">
+                            <p class="font-bold text-white">${log.punishmentType} | ${log.punishedUsername}</p>
+                            <p class="text-sm text-slate-400 mt-1">Reason: ${log.reason}</p>
+                            <p class="text-xs text-slate-500 mt-2">Logged by: ${log.punisherEmail} | ${timestamp}</p>
+                        </div>
+                    `;
+                }).join('');
+                logsList.innerHTML = logsHtml || '<p class="text-center text-slate-400">No logs found for this user.</p>';
             },
 
-            handleAcceptJoinRequest: async function(docId) {
-                const serverId = this.state.currentServer.id;
-                this.showLoading(true);
-                try {
-                    const requestRef = doc(db, `artifacts/${appId}/public/data/servers/${serverId}/joinRequests`, docId);
-                    const requestDoc = await getDoc(requestRef);
-                    if (!requestDoc.exists()) return;
-
-                    const requestData = requestDoc.data();
-                    const batch = writeBatch(db);
-
-                    // Add user to server members
-                    const serverRef = doc(db, `artifacts/${appId}/public/data/servers/${serverId}`);
-                    batch.update(serverRef, {
-                        members: arrayUnion(requestData.userId)
-                    });
-
-                    // Add server to user's profile
-                    const userProfileRef = doc(db, `artifacts/${appId}/users/${requestData.userId}/profile/${requestData.userId}`);
-                    batch.set(userProfileRef, {
-                        servers: arrayUnion({ id: serverId, code: this.state.currentServer.code, role: 'member' })
-                    }, { merge: true });
-
-                    // Delete the join request
-                    batch.delete(requestRef);
-
-                    await batch.commit();
-                    showCustomModal("Success", `Accepted request from ${requestData.userEmail}.`, "alert");
-                } catch (error) {
-                    console.error("Error accepting request:", error);
-                    showCustomModal("Error", "Failed to accept join request.", "alert");
-                } finally {
-                    this.showLoading(false);
-                }
-            },
-
-            handleDenyJoinRequest: async function(docId) {
-                const serverId = this.state.currentServer.id;
-                this.showLoading(true);
-                try {
-                    const requestRef = doc(db, `artifacts/${appId}/public/data/servers/${serverId}/joinRequests`, docId);
-                    await deleteDoc(requestRef);
-                    showCustomModal("Success", "Join request denied.", "alert");
-                } catch (error) {
-                    console.error("Error denying request:", error);
-                    showCustomModal("Error", "Failed to deny join request.", "alert");
-                } finally {
-                    this.showLoading(false);
-                }
-            },
-
-            handleExecuteCommand: async function() {
-                if (this.state.currentServer.ownerId !== this.state.currentUser.uid) {
-                    this.elements.commandResponse.textContent = "Error: Only the server owner can execute commands.";
-                    this.elements.commandResponse.style.color = '#f87171'; // Red
+            renderOwnerPunishmentLogs: function(logs) {
+                const logsList = this.elements.ownerPunishmentLogs;
+                if (logs.length === 0) {
+                    logsList.innerHTML = '<p class="text-center text-slate-400">No logs to manage.</p>';
                     return;
                 }
 
-                const command = this.elements.commandInput.value.trim();
-                const responseDiv = this.elements.commandResponse;
-                responseDiv.textContent = 'Executing...';
-                responseDiv.style.color = '#94a3b8'; // Slate 400
-
-                if (!command) {
-                    responseDiv.textContent = 'Error: Command cannot be empty.';
-                    responseDiv.style.color = '#f87171'; // Red
-                    return;
-                }
-
-                try {
-                    // Simulate command execution with a log entry
-                    await addDoc(collection(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}/logs`), {
-                        type: 'command_execution',
-                        command: command,
-                        executedBy: this.state.currentUser.email,
-                        executedAt: serverTimestamp()
-                    });
-                    responseDiv.textContent = `Command "${command}" executed successfully.`;
-                    responseDiv.style.color = '#4ade80'; // Green
-                } catch (error) {
-                    console.error("Error executing command:", error);
-                    responseDiv.textContent = 'Error: Failed to execute command. Please check server API status.';
-                    responseDiv.style.color = '#f87171'; // Red
-                }
+                const logsHtml = logs.map(log => `
+                    <div class="card p-3">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <p class="font-semibold text-white">${log.punishedUsername}</p>
+                                <p class="text-xs text-slate-400">Reason: ${log.reason}</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button class="btn btn-primary btn-sm edit-log-btn" data-log-id="${log.id}" data-log-type="${log.punishmentType}" data-log-username="${log.punishedUsername}" data-log-reason="${log.reason}">Edit</button>
+                                <button class="btn btn-danger btn-sm delete-log-btn" data-log-id="${log.id}">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                logsList.innerHTML = logsHtml;
+                
+                document.querySelectorAll('.edit-log-btn').forEach(btn => {
+                    btn.onclick = (e) => this.handleEditPunishmentLog(e.target.dataset.logId, e.target.dataset.logType, e.target.dataset.logUsername, e.target.dataset.logReason);
+                });
+                
+                document.querySelectorAll('.delete-log-btn').forEach(btn => {
+                    btn.onclick = (e) => this.handleDeletePunishmentLog(e.target.dataset.logId);
+                });
             },
 
+            // --- PUNISHMENT HANDLERS ---
             handleAddPunishment: async function(e) {
                 e.preventDefault();
-                const type = this.elements.punishmentTypeInput.value;
-                const username = this.elements.punishmentUsernameInput.value.trim();
-                const reason = this.elements.punishmentReasonInput.value.trim();
-                const messageDiv = this.elements.punishmentFormMessage;
-                messageDiv.textContent = '';
-                messageDiv.style.color = '#f87171';
+                const punishmentType = this.elements.punishmentTypeInput.value;
+                const punishmentUsername = this.elements.punishmentUsernameInput.value;
+                const punishmentReason = this.elements.punishmentReasonInput.value;
+                const messageElement = this.elements.punishmentFormMessage;
+                messageElement.textContent = '';
 
-                if (!username || !reason) {
-                    messageDiv.textContent = 'Please fill out all fields.';
+                if (!punishmentType || !punishmentUsername || !punishmentReason) {
+                    messageElement.textContent = 'Please fill out all fields.';
                     return;
                 }
 
                 this.showLoading(true);
                 try {
-                    await addDoc(collection(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}/punishmentLogs`), {
-                        type,
-                        username,
-                        reason,
-                        submittedBy: this.state.currentUser.email,
-                        createdAt: serverTimestamp()
+                    const punishmentLogsRef = collection(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}/punishmentLogs`);
+                    await addDoc(punishmentLogsRef, {
+                        punishmentType: punishmentType,
+                        punishedUsername: punishmentUsername,
+                        reason: punishmentReason,
+                        punisherEmail: this.state.currentUser.email || 'Guest User',
+                        timestamp: serverTimestamp()
                     });
-                    messageDiv.textContent = 'Punishment log submitted successfully!';
-                    messageDiv.style.color = '#4ade80';
+                    
                     e.target.reset();
+                    showCustomModal("Success", "Punishment log submitted successfully.", "alert");
                 } catch (error) {
                     console.error("Error adding punishment log:", error);
-                    messageDiv.textContent = 'Failed to add punishment log. Please try again.';
+                    messageElement.textContent = 'Failed to submit log. Please try again.';
                 } finally {
                     this.showLoading(false);
                 }
             },
 
-            renderPunishmentLogs: function(searchQuery = '') {
-                const logsContainer = this.elements.punishmentLogList;
-                logsContainer.innerHTML = '';
-                
-                // Use the initialized state variable, which is always an array
-                let logsToDisplay = this.state.punishmentLogs;
-
-                if (searchQuery) {
-                    logsToDisplay = logsToDisplay.filter(log => log.username.toLowerCase().includes(searchQuery.toLowerCase()));
-                }
-
-                if (logsToDisplay.length === 0) {
-                    logsContainer.innerHTML = '<p class="text-center text-slate-400">No punishment logs found.</p>';
-                    return;
-                }
-
-                logsToDisplay.sort((a, b) => b.createdAt.toDate() - a.createdAt.toDate());
-
-                logsToDisplay.forEach(log => {
-                    const logElement = document.createElement('div');
-                    logElement.className = 'card p-4 space-y-2';
-                    const date = log.createdAt.toDate().toLocaleDateString() + ' ' + log.createdAt.toDate().toLocaleTimeString();
-                    logElement.innerHTML = `
-                        <p class="font-semibold text-white">Punishment: <span class="text-red-400">${log.type}</span></p>
-                        <p class="text-sm">Username: <span class="font-bold text-indigo-300">${log.username}</span></p>
-                        <p class="text-sm">Reason: ${log.reason}</p>
-                        <p class="text-xs text-slate-500">Submitted by: ${log.submittedBy}</p>
-                        <p class="text-xs text-slate-500">Date: ${date}</p>
-                    `;
-                    logsContainer.appendChild(logElement);
-                });
-            },
-
-            renderOwnerPunishmentLogs: function(logs, searchQuery = '') {
-                const logsContainer = this.elements.ownerPunishmentLogs;
-                logsContainer.innerHTML = '';
-
-                let logsToDisplay = logs;
-                if (searchQuery) {
-                    logsToDisplay = logsToDisplay.filter(log => log.username.toLowerCase().includes(searchQuery.toLowerCase()));
-                }
-
-                if (logsToDisplay.length === 0) {
-                    logsContainer.innerHTML = '<p class="text-center text-slate-400">No punishment logs found.</p>';
-                    return;
-                }
-                
-                logsToDisplay.sort((a, b) => b.createdAt.toDate() - a.createdAt.toDate());
-
-                logsToDisplay.forEach(log => {
-                    const logElement = document.createElement('div');
-                    logElement.className = 'card p-4 space-y-2';
-                    const date = log.createdAt.toDate().toLocaleDateString() + ' ' + log.createdAt.toDate().toLocaleTimeString();
-                    logElement.innerHTML = `
-                        <p class="font-semibold text-white">Punishment: <span class="text-red-400">${log.type}</span></p>
-                        <p class="text-sm">Username: <span class="font-bold text-indigo-300">${log.username}</span></p>
-                        <p class="text-sm">Reason: ${log.reason}</p>
-                        <p class="text-xs text-slate-500">Submitted by: ${log.submittedBy}</p>
-                        <p class="text-xs text-slate-500 mb-4">Date: ${date}</p>
-                        <div class="flex gap-2">
-                            <button class="btn btn-secondary btn-sm edit-log-btn" data-id="${log.id}">Edit</button>
-                            <button class="btn btn-danger btn-sm delete-log-btn" data-id="${log.id}">Delete</button>
-                        </div>
-                    `;
-                    logsContainer.appendChild(logElement);
-                });
-
-                logsContainer.querySelectorAll('.edit-log-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => this.handleEditPunishmentLog(e.currentTarget.dataset.id));
-                });
-                logsContainer.querySelectorAll('.delete-log-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => this.handleDeletePunishmentLog(e.currentTarget.dataset.id));
-                });
-            },
-            
             handleSearchPunishmentLogs: function() {
-                const searchQuery = this.elements.searchUsernameInput.value.trim();
-                this.renderPunishmentLogs(searchQuery);
+                this.renderPunishmentLogs(this.state.punishmentLogs);
             },
-            
+
             handleClearSearch: function() {
                 this.elements.searchUsernameInput.value = '';
-                this.renderPunishmentLogs();
+                this.renderPunishmentLogs(this.state.punishmentLogs);
             },
 
-            handleEditPunishmentLog: function(logId) {
-                const log = this.state.punishmentLogs.find(l => l.id === logId);
-                if (!log) {
-                    showCustomModal('Error', 'Log not found.', 'alert');
-                    return;
-                }
-
-                const newReason = window.prompt("Edit reason:", log.reason);
-                if (newReason !== null && newReason.trim() !== '') {
+            handleEditPunishmentLog: function(logId, currentType, currentUsername, currentReason) {
+                showCustomModal('Edit Log', `
+                    <form id="edit-punishment-form">
+                        <div class="mb-4">
+                            <label for="edit-type" class="block mb-2 text-sm font-medium">Type</label>
+                            <select id="edit-type" class="form-select">
+                                <option value="Warning" ${currentType === 'Warning' ? 'selected' : ''}>Warning</option>
+                                <option value="Kick" ${currentType === 'Kick' ? 'selected' : ''}>Kick</option>
+                                <option value="Ban" ${currentType === 'Ban' ? 'selected' : ''}>Ban</option>
+                                <option value="Temp Ban" ${currentType === 'Temp Ban' ? 'selected' : ''}>Temp Ban</option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label for="edit-username" class="block mb-2 text-sm font-medium">Username</label>
+                            <input type="text" id="edit-username" class="form-input" value="${currentUsername}">
+                        </div>
+                        <div class="mb-4">
+                            <label for="edit-reason" class="block mb-2 text-sm font-medium">Reason</label>
+                            <textarea id="edit-reason" class="form-input" rows="3">${currentReason}</textarea>
+                        </div>
+                        <p id="edit-form-message" class="text-red-400 text-sm mb-4"></p>
+                    </form>
+                `, 'confirm', () => {
                     this.showLoading(true);
-                    updateDoc(doc(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}/punishmentLogs`, logId), {
-                        reason: newReason.trim(),
-                        editedAt: serverTimestamp()
+                    const newType = document.getElementById('edit-type').value;
+                    const newUsername = document.getElementById('edit-username').value;
+                    const newReason = document.getElementById('edit-reason').value;
+                    const logDocRef = doc(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}/punishmentLogs`, logId);
+                    updateDoc(logDocRef, {
+                        punishmentType: newType,
+                        punishedUsername: newUsername,
+                        reason: newReason
                     }).then(() => {
                         showCustomModal('Success', 'Log updated successfully.', 'alert');
                     }).catch(error => {
@@ -1266,7 +1343,7 @@
                     }).finally(() => {
                         this.showLoading(false);
                     });
-                }
+                });
             },
 
             handleDeletePunishmentLog: function(logId) {
