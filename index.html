@@ -4,10 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zappy | Dashboard</title>
+    <!-- Tailwind CSS for modern styling -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
     <style>
         /* Custom styles to complement Tailwind */
         body {
@@ -118,12 +121,15 @@
 </head>
 <body class="min-h-screen">
 
+    <!-- App Container -->
     <div id="app-container" class="p-4 md:p-8 max-w-7xl mx-auto">
 
+        <!-- Loading Spinner -->
         <div id="loading-overlay" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex items-center justify-center z-50">
             <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-indigo-500"></div>
         </div>
 
+        <!-- Custom Modal for Messages/Alerts -->
         <div id="custom-modal-overlay" class="modal-overlay hidden">
             <div id="custom-modal">
                 <h3 id="modal-title" class="text-xl font-bold text-white mb-4"></h3>
@@ -136,8 +142,9 @@
             </div>
         </div>
 
-        <div id="auth-section" class="hidden max-w-md mx-auto">
-            <div class="card">
+        <!-- Auth Section -->
+        <div id="auth-section" class="flex items-center justify-center min-h-screen">
+            <div class="card max-w-md mx-auto w-full">
                 <h2 id="auth-title" class="text-2xl font-bold text-center text-white mb-6">Login to Zappy</h2>
                 <form id="auth-form">
                     <div class="mb-4">
@@ -158,7 +165,9 @@
             </div>
         </div>
 
+        <!-- Main Dashboard Section (Post-Login) -->
         <div id="dashboard-section" class="hidden">
+            <!-- Header -->
             <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
                 <div>
                     <h1 class="text-3xl font-bold text-white">Your Servers</h1>
@@ -170,6 +179,7 @@
                 </div>
             </header>
 
+            <!-- Server Interaction -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div class="card">
                     <h3 class="text-xl font-semibold text-white mb-4">Create a New Server</h3>
@@ -188,15 +198,19 @@
                 </div>
             </div>
 
+            <!-- Server List -->
             <div>
                 <h2 class="text-2xl font-bold text-white mb-4">Server List</h2>
                 <div id="server-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    </div>
+                    <!-- Server cards will be injected here -->
+                </div>
                 <p id="server-list-error" class="text-red-400 text-sm mt-2 text-center"></p>
             </div>
         </div>
 
+        <!-- Server Panel Section (Selected Server) -->
         <div id="server-panel-section" class="hidden">
+            <!-- Panel Header -->
             <header class="mb-8">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
@@ -212,6 +226,7 @@
                 </div>
             </header>
 
+            <!-- Tab Navigation -->
             <div class="mb-6">
                 <div id="panel-tab-buttons" class="flex flex-wrap items-center gap-2 border-b border-slate-700 pb-2">
                     <button class="tab-button btn btn-secondary active" data-tab="main">Server Info</button>
@@ -220,10 +235,13 @@
                     <button class="tab-button btn btn-secondary" data-tab="shifts">Shifts</button>
                     <button class="tab-button btn btn-secondary" data-tab="punishments">Punishments</button>
                     <button class="tab-button btn btn-secondary" data-tab="punishment-logs">Punishment Logs</button>
-                    </div>
+                    <!-- Owner-only tab is added dynamically -->
+                </div>
             </div>
 
+            <!-- Tab Content -->
             <div id="panel-tab-content">
+                <!-- Main Info Tab -->
                 <div id="tab-main" class="tab-content active">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="card">
@@ -238,6 +256,7 @@
                     </div>
                 </div>
 
+                <!-- Players Tab -->
                 <div id="tab-players" class="tab-content hidden">
                     <div class="card">
                         <h3 class="text-xl font-semibold mb-4 text-white">Players & Queue</h3>
@@ -260,6 +279,7 @@
                     </div>
                 </div>
 
+                <!-- Commands Tab -->
                 <div id="tab-commands" class="tab-content hidden">
                     <div class="card">
                         <h3 class="text-xl font-semibold mb-4 text-white">Execute Command</h3>
@@ -272,11 +292,13 @@
                     </div>
                 </div>
 
+                <!-- Shifts Tab -->
                 <div id="tab-shifts" class="tab-content hidden">
                     <div class="card">
                         <div class="flex justify-between items-center mb-4">
                             <h3 class="text-xl font-semibold text-white">Shift Leaderboard</h3>
                             <div id="shift-wave-controls">
+                                <!-- Owner-only controls added here -->
                                 <button id="start-shift-wave-btn" class="btn btn-primary btn-sm hidden">Start Shift Wave</button>
                                 <button id="end-shift-wave-btn" class="btn btn-danger btn-sm hidden">End Shift Wave</button>
                             </div>
@@ -285,6 +307,7 @@
                     </div>
                 </div>
 
+                <!-- Punishments Tab -->
                 <div id="tab-punishments" class="tab-content hidden">
                     <div class="card">
                         <h3 class="text-xl font-semibold text-white mb-4">Add New Punishment Log</h3>
@@ -315,6 +338,7 @@
                     </div>
                 </div>
 
+                <!-- Punishment Logs Tab -->
                 <div id="tab-punishment-logs" class="tab-content hidden">
                     <div class="card">
                         <div class="flex justify-between items-center mb-4">
@@ -336,6 +360,7 @@
                     </div>
                 </div>
 
+                <!-- Owner Admin Tab -->
                 <div id="tab-owner" class="tab-content hidden">
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div class="card">
@@ -380,6 +405,7 @@
         </div>
     </div>
 
+    <!-- Modals -->
     <div id="create-server-modal" class="modal-overlay hidden">
         <div class="card max-w-lg w-full">
             <h2 class="text-2xl font-bold text-white mb-4">Create Server</h2>
@@ -407,6 +433,7 @@
         </div>
     </div>
 
+    <!-- Generic Modal for Confirmations -->
     <div id="confirm-modal" class="modal-overlay hidden">
         <div class="card max-w-sm w-full text-center">
             <h3 id="confirm-modal-title" class="text-xl font-bold text-white mb-4">Are you sure?</h3>
@@ -418,6 +445,7 @@
         </div>
     </div>
 
+    <!-- Firebase SDK -->
     <script type="module">
         const firebaseConfig = {
             apiKey: "AIzaSyCF5bqrinHuV81qTrcoIerlIZAnenvspsw",
@@ -487,8 +515,9 @@
                 shiftInterval: null,
                 shiftStartTime: null,
                 shiftTimerRunning: false,
+                isRegisterMode: false,
                 unsubscribeListeners: [], // To store unsubscribe functions for cleanup
-                punishmentLogs: [], // FIX: Initialize this as an empty array to prevent the filter error.
+                punishmentLogs: [],
             },
 
             // --- UI ELEMENT CACHING ---
@@ -499,6 +528,16 @@
                 serverPanelSection: document.getElementById('server-panel-section'),
                 createServerModal: document.getElementById('create-server-modal'),
                 confirmModal: document.getElementById('confirm-modal'),
+
+                // Auth Elements
+                authForm: document.getElementById('auth-form'),
+                authTitle: document.getElementById('auth-title'),
+                emailInput: document.getElementById('email'),
+                passwordInput: document.getElementById('password'),
+                authError: document.getElementById('auth-error'),
+                authSubmitBtn: document.getElementById('auth-submit-btn'),
+                authPromptText: document.getElementById('auth-prompt-text'),
+                authToggleLink: document.getElementById('auth-toggle-link'),
 
                 // Dashboard Elements
                 serverList: document.getElementById('server-list'),
@@ -545,34 +584,51 @@
 
             // --- INIT & SETUP ---
             init: async function() {
-                try {
-                    await this.setupAuth();
-                    this.bindGlobalListeners();
-                    this.showLoading(false);
-                } catch (error) {
-                    console.error("Initialization failed:", error);
-                    showCustomModal("Error", "Failed to initialize the app. Please try again.", "alert");
-                }
+                this.showLoading(true);
+                await this.setupAuth();
+                this.bindGlobalListeners();
             },
 
             setupAuth: async function() {
-                // Modified to remove the authentication token check
-                this.showDashboard();
-                this.renderServerList();
+                // Initial sign-in with custom token if available
+                if (typeof __initial_auth_token !== 'undefined') {
+                    try {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } catch (error) {
+                        console.error("Custom token sign-in failed:", error);
+                        // Fallback to anonymous or show login page
+                        try {
+                            await signInAnonymously(auth);
+                        } catch (anonError) {
+                             console.error("Anonymous sign-in failed:", anonError);
+                        }
+                    }
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    this.state.currentUser = user;
+                    if (user) {
+                        this.showDashboard();
+                    } else {
+                        this.showAuth();
+                    }
+                    this.showLoading(false);
+                });
             },
 
             bindGlobalListeners: function() {
+                // Auth form listeners
+                this.elements.authForm.addEventListener('submit', this.handleAuthSubmit.bind(this));
+                this.elements.authToggleLink.addEventListener('click', this.toggleAuthMode.bind(this));
+
+                // Dashboard and Panel listeners
                 document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
                 document.getElementById('back-to-dashboard-btn').addEventListener('click', () => this.showDashboard());
-                document.getElementById('show-create-server-modal-btn').addEventListener('click', () => {
-                    this.elements.createServerModal.classList.remove('hidden');
-                });
-                document.getElementById('cancel-create-server-btn').addEventListener('click', () => {
-                    this.elements.createServerModal.classList.add('hidden');
-                });
+                document.getElementById('show-create-server-modal-btn').addEventListener('click', () => this.elements.createServerModal.classList.remove('hidden'));
+                document.getElementById('cancel-create-server-btn').addEventListener('click', () => this.elements.createServerModal.classList.add('hidden'));
                 document.getElementById('create-server-form').addEventListener('submit', this.handleCreateServer.bind(this));
                 document.getElementById('join-server-btn').addEventListener('click', this.handleJoinServer.bind(this));
-
+                
                 // Tabs
                 this.elements.panelTabButtons.addEventListener('click', (e) => {
                     if (e.target.classList.contains('tab-button')) {
@@ -580,10 +636,55 @@
                         this.switchTab(tab);
                     }
                 });
+                
                 // Punishment system listeners
                 this.elements.punishmentForm.addEventListener('submit', this.handleAddPunishment.bind(this));
                 this.elements.searchUsernameInput.addEventListener('input', this.handleSearchPunishmentLogs.bind(this));
                 this.elements.clearSearchBtn.addEventListener('click', this.handleClearSearch.bind(this));
+            },
+
+            // --- AUTHENTICATION LOGIC ---
+            toggleAuthMode: function(e) {
+                e.preventDefault();
+                this.state.isRegisterMode = !this.state.isRegisterMode;
+                if (this.state.isRegisterMode) {
+                    this.elements.authTitle.textContent = "Register for Zappy";
+                    this.elements.authSubmitBtn.textContent = "Register";
+                    this.elements.authPromptText.textContent = "Already have an account?";
+                    this.elements.authToggleLink.textContent = "Login";
+                } else {
+                    this.elements.authTitle.textContent = "Login to Zappy";
+                    this.elements.authSubmitBtn.textContent = "Login";
+                    this.elements.authPromptText.textContent = "Don't have an account?";
+                    this.elements.authToggleLink.textContent = "Register";
+                }
+            },
+
+            handleAuthSubmit: async function(e) {
+                e.preventDefault();
+                this.showLoading(true);
+                const email = this.elements.emailInput.value;
+                const password = this.elements.passwordInput.value;
+                this.elements.authError.textContent = '';
+                try {
+                    if (this.state.isRegisterMode) {
+                        await createUserWithEmailAndPassword(auth, email, password);
+                    } else {
+                        await signInWithEmailAndPassword(auth, email, password);
+                    }
+                } catch (error) {
+                    let errorMessage = 'An unknown error occurred.';
+                    if (error.code === 'auth/email-already-in-use') {
+                        errorMessage = 'This email is already in use.';
+                    } else if (error.code === 'auth/invalid-email' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+                        errorMessage = 'Invalid email or password.';
+                    } else if (error.code === 'auth/weak-password') {
+                        errorMessage = 'Password should be at least 6 characters.';
+                    }
+                    this.elements.authError.textContent = errorMessage;
+                } finally {
+                    this.showLoading(false);
+                }
             },
 
             // --- DISPLAY & UI HELPERS ---
@@ -595,7 +696,6 @@
                 this.elements.authSection.classList.remove('hidden');
                 this.elements.dashboardSection.classList.add('hidden');
                 this.elements.serverPanelSection.classList.add('hidden');
-                this.elements.punishmentLogList.innerHTML = '<p class="text-center text-slate-400">Loading punishment logs...</p>';
             },
 
             showDashboard: function() {
@@ -607,8 +707,7 @@
                     this.state.unsubscribeListeners = [];
                 }
                 this.state.currentServer = null;
-                // This line is now a placeholder since there is no user authentication.
-                this.elements.userEmailSpan.textContent = 'Guest User';
+                this.elements.userEmailSpan.textContent = this.state.currentUser.email;
                 this.renderServerList(); // Re-render server list when returning to dashboard
             },
 
@@ -639,50 +738,34 @@
             // --- FIREBASE INTERACTIONS ---
             handleCreateServer: async function(e) {
                 e.preventDefault();
+                this.showLoading(true);
                 const serverName = document.getElementById('server-name').value;
-                const serverCode = document.getElementById('server-code').value.toLowerCase().replace(/\s/g, ''); // Ensure no spaces
+                const serverCode = document.getElementById('server-code').value;
                 const apiKey = document.getElementById('api-key').value;
                 const errorElement = document.getElementById('create-server-error');
                 errorElement.textContent = '';
-
-                if (!serverName || !serverCode || !apiKey) {
-                    errorElement.textContent = 'Please fill out all fields.';
-                    return;
-                }
-                this.showLoading(true);
                 try {
                     // Check if server code already exists
                     const serversRef = collection(db, `artifacts/${appId}/public/data/servers`);
                     const q = query(serversRef, where("code", "==", serverCode));
                     const querySnapshot = await getDocs(q);
                     if (!querySnapshot.empty) {
-                        errorElement.textContent = 'Server code already in use. Please choose another.';
-                        this.showLoading(false);
+                        errorElement.textContent = 'Server code already exists. Please choose another one.';
                         return;
                     }
-
-                    // Create server document
+                    
                     const newServerRef = doc(serversRef);
                     await setDoc(newServerRef, {
                         name: serverName,
                         code: serverCode,
                         ownerId: this.state.currentUser.uid,
-                        members: [this.state.currentUser.uid],
                         apiKey: apiKey,
-                        stats: { onlinePlayers: 0, totalServers: 0 },
-                        logs: [],
-                        createdAt: serverTimestamp()
+                        members: { [this.state.currentUser.uid]: { email: this.state.currentUser.email, role: 'owner', joinedAt: serverTimestamp() } },
+                        stats: { onlinePlayers: 0, totalServers: 1 }
                     });
-
-                    // Add the server to the user's list
-                    const userDocRef = doc(db, `artifacts/${appId}/users/${this.state.currentUser.uid}/profile/${this.state.currentUser.uid}`);
-                    await updateDoc(userDocRef, {
-                        servers: arrayUnion({ id: newServerRef.id, code: serverCode, role: 'owner' })
-                    }, { merge: true });
+                    
                     this.elements.createServerModal.classList.add('hidden');
-                    e.target.reset();
-                    showCustomModal("Success", "Server created successfully!", "alert");
-                    this.renderServerList();
+                    showCustomModal("Success", `Server "${serverName}" created successfully!`, "alert");
                 } catch (error) {
                     console.error("Error creating server:", error);
                     errorElement.textContent = 'Failed to create server. Please try again.';
@@ -692,53 +775,62 @@
             },
 
             handleJoinServer: async function() {
-                const joinCode = document.getElementById('join-code-input').value.toLowerCase().replace(/\s/g, '');
-                const errorElement = this.elements.joinServerError;
-                const successElement = this.elements.joinServerSuccess;
-                errorElement.textContent = '';
-                successElement.textContent = '';
-
+                this.showLoading(true);
+                const joinCode = document.getElementById('join-code-input').value;
+                this.elements.joinServerError.textContent = '';
+                this.elements.joinServerSuccess.textContent = '';
+                
                 if (!joinCode) {
-                    errorElement.textContent = 'Please enter a server code.';
+                    this.elements.joinServerError.textContent = 'Please enter a server code.';
+                    this.showLoading(false);
                     return;
                 }
-                this.showLoading(true);
+                
                 try {
-                    // Find the server with the given code
+                    // Find the server with the matching code
                     const serversRef = collection(db, `artifacts/${appId}/public/data/servers`);
                     const q = query(serversRef, where("code", "==", joinCode));
                     const querySnapshot = await getDocs(q);
+                    
                     if (querySnapshot.empty) {
-                        errorElement.textContent = 'Server not found.';
+                        this.elements.joinServerError.textContent = 'No server found with that code.';
                         return;
                     }
+                    
                     const serverDoc = querySnapshot.docs[0];
+                    const serverId = serverDoc.id;
                     const serverData = serverDoc.data();
-
-                    if (serverData.ownerId === this.state.currentUser.uid || serverData.members.includes(this.state.currentUser.uid)) {
-                        errorElement.textContent = 'You are already a member of this server.';
+                    
+                    // Check if user is already a member or has a pending request
+                    const userUid = this.state.currentUser.uid;
+                    if (serverData.members && serverData.members[userUid]) {
+                        this.elements.joinServerError.textContent = 'You are already a member of this server.';
                         return;
                     }
 
-                    // Check if a join request already exists
-                    const joinRequestsRef = collection(db, `artifacts/${appId}/public/data/servers/${serverDoc.id}/joinRequests`);
-                    const joinReqQuery = query(joinRequestsRef, where("userId", "==", this.state.currentUser.uid));
-                    const joinReqSnapshot = await getDocs(joinReqQuery);
-                    if (!joinReqSnapshot.empty) {
-                        errorElement.textContent = 'Your request to join this server is already pending.';
+                    // Check if a request has already been sent
+                    const requestsRef = collection(db, `artifacts/${appId}/public/data/servers/${serverId}/joinRequests`);
+                    const requestQ = query(requestsRef, where("requesterId", "==", userUid));
+                    const requestSnapshot = await getDocs(requestQ);
+                    if (!requestSnapshot.empty) {
+                        this.elements.joinServerError.textContent = 'You have already sent a join request to this server.';
                         return;
                     }
 
-                    // Add a new join request
-                    await addDoc(joinRequestsRef, {
-                        userId: this.state.currentUser.uid,
-                        userEmail: this.state.currentUser.email || 'Guest User',
-                        createdAt: serverTimestamp()
+                    // Add join request
+                    await addDoc(requestsRef, {
+                        requesterId: userUid,
+                        requesterEmail: this.state.currentUser.email,
+                        status: 'pending',
+                        requestedAt: serverTimestamp()
                     });
-                    successElement.textContent = 'Join request sent! The server owner must approve your request.';
+
+                    this.elements.joinServerSuccess.textContent = 'Join request sent successfully!';
+                    document.getElementById('join-code-input').value = '';
+
                 } catch (error) {
                     console.error("Error joining server:", error);
-                    errorElement.textContent = 'Failed to send join request. Please try again.';
+                    this.elements.joinServerError.textContent = 'Failed to send join request. Please try again.';
                 } finally {
                     this.showLoading(false);
                 }
@@ -748,36 +840,35 @@
                 this.elements.serverList.innerHTML = '<p class="text-slate-400">Loading your servers...</p>';
                 this.elements.serverListError.textContent = '';
                 try {
-                    const userDocRef = doc(db, `artifacts/${appId}/users/${this.state.currentUser.uid}/profile/${this.state.currentUser.uid}`);
-                    const userDoc = await getDoc(userDocRef);
-                    if (!userDoc.exists() || !userDoc.data().servers || userDoc.data().servers.length === 0) {
-                        this.elements.serverList.innerHTML = '<p class="text-slate-400">You are not a member of any servers yet. Create or join one above!</p>';
+                    const userUid = this.state.currentUser.uid;
+                    const serversRef = collection(db, `artifacts/${appId}/public/data/servers`);
+                    const serversQuery = query(serversRef, where(`members.${userUid}.role`, 'in', ['owner', 'member']));
+                    const querySnapshot = await getDocs(serversQuery);
+                    
+                    if (querySnapshot.empty) {
+                        this.elements.serverList.innerHTML = '<p class="text-slate-400">You are not a member of any servers. Create one or join one!</p>';
                         return;
                     }
 
-                    const userServers = userDoc.data().servers;
-                    const serverCardsHtml = [];
-                    for (const server of userServers) {
-                        const serverDoc = await getDoc(doc(db, `artifacts/${appId}/public/data/servers/${server.id}`));
-                        if (serverDoc.exists()) {
-                            const serverData = serverDoc.data();
-                            serverCardsHtml.push(`
-                                <div class="card cursor-pointer hover:bg-slate-700 transition" data-server-id="${server.id}">
-                                    <h3 class="text-xl font-semibold text-white mb-2">${serverData.name}</h3>
-                                    <p class="text-slate-400 text-sm mb-2">Code: ${serverData.code}</p>
-                                    <p class="text-sm">Role: <span class="font-semibold text-indigo-400">${server.role}</span></p>
-                                    <p class="text-xs text-slate-500 mt-2">Server ID: ${server.id}</p>
-                                </div>
-                            `);
-                        }
-                    }
-                    this.elements.serverList.innerHTML = serverCardsHtml.join('');
+                    const serverCardsHtml = querySnapshot.docs.map(serverDoc => {
+                        const serverData = serverDoc.data();
+                        const userRole = serverData.members[userUid].role;
+                        return `
+                            <div class="card cursor-pointer hover:bg-slate-700 transition" data-server-id="${serverDoc.id}">
+                                <h3 class="text-xl font-semibold text-white mb-2">${serverData.name}</h3>
+                                <p class="text-slate-400 text-sm mb-2">Code: ${serverData.code}</p>
+                                <p class="text-sm">Role: <span class="font-semibold text-indigo-400">${userRole}</span></p>
+                            </div>
+                        `;
+                    }).join('');
+                    
+                    this.elements.serverList.innerHTML = serverCardsHtml;
                     document.querySelectorAll('#server-list .card').forEach(card => {
                         card.addEventListener('click', (e) => this.handleServerSelect(e.currentTarget.dataset.serverId));
                     });
                 } catch (error) {
                     console.error("Error rendering server list:", error);
-                    this.elements.serverListError.textContent = 'Failed to load server list. Please refresh the page.';
+                    this.elements.serverListError.textContent = 'Failed to load your server list. Please refresh the page.';
                 }
             },
 
@@ -808,56 +899,61 @@
             updateOwnerControls: function() {
                 const isOwner = this.state.currentServer.ownerId === this.state.currentUser.uid;
                 const ownerTab = document.getElementById('tab-owner');
-                const ownerTabBtn = document.createElement('button');
-                ownerTabBtn.className = 'tab-button btn btn-secondary';
-                ownerTabBtn.dataset.tab = 'owner';
-                ownerTabBtn.textContent = 'Admin';
                 
-                // Clear and re-add the owner tab button based on status
+                // Remove existing owner tab button if it exists
                 const existingOwnerBtn = document.querySelector('[data-tab="owner"]');
                 if (existingOwnerBtn) existingOwnerBtn.remove();
                 
+                // Check if the user is the owner to show the admin tab
                 if (isOwner) {
+                    const ownerTabBtn = document.createElement('button');
+                    ownerTabBtn.className = 'tab-button btn btn-secondary';
+                    ownerTabBtn.dataset.tab = 'owner';
+                    ownerTabBtn.textContent = 'Admin';
                     this.elements.panelTabButtons.appendChild(ownerTabBtn);
+
                     document.getElementById('edit-server-name').value = this.state.currentServer.name;
                     document.getElementById('command-input').disabled = false;
+                    document.getElementById('execute-command-button').disabled = false;
+                    document.getElementById('command-permission-text').textContent = 'You have permission to execute commands as the server owner.';
                     document.getElementById('start-shift-wave-btn').classList.remove('hidden');
                     document.getElementById('end-shift-wave-btn').classList.remove('hidden');
+                    
                     this.fetchJoinRequests();
                     this.fetchServerMembers();
                     this.fetchOwnerPunishmentLogs();
+
                     document.getElementById('save-server-name-btn').onclick = this.handleSaveServerName.bind(this);
                     document.getElementById('save-api-key-btn').onclick = this.handleSaveApiKey.bind(this);
                     document.getElementById('delete-server-btn').onclick = this.handleDeleteServer.bind(this);
+
+                } else {
+                    // Hide owner-only elements
+                    document.getElementById('command-input').disabled = true;
+                    document.getElementById('execute-command-button').disabled = true;
+                    document.getElementById('command-permission-text').textContent = 'This functionality is restricted to the server owner.';
+                    document.getElementById('start-shift-wave-btn').classList.add('hidden');
+                    document.getElementById('end-shift-wave-btn').classList.add('hidden');
                 }
             },
 
             handleSaveServerName: async function() {
                 const newName = this.elements.editServerNameInput.value;
-                const successElement = document.getElementById('owner-settings-success');
-                const errorElement = document.getElementById('owner-settings-error');
-                successElement.textContent = '';
-                errorElement.textContent = '';
-
                 if (!newName) {
-                    errorElement.textContent = 'Server name cannot be empty.';
+                    document.getElementById('owner-settings-error').textContent = 'Server name cannot be empty.';
                     return;
                 }
-                if (newName === this.state.currentServer.name) {
-                    errorElement.textContent = 'Server name is the same.';
-                    return;
-                }
-
+                
                 this.showLoading(true);
                 try {
-                    const serverDocRef = doc(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}`);
-                    await updateDoc(serverDocRef, { name: newName });
-                    this.state.currentServer.name = newName;
-                    this.elements.panelServerName.textContent = newName;
-                    successElement.textContent = 'Server name updated successfully!';
+                    await updateDoc(doc(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}`), {
+                        name: newName
+                    });
+                    document.getElementById('owner-settings-success').textContent = 'Server name updated successfully!';
+                    document.getElementById('owner-settings-error').textContent = '';
                 } catch (error) {
-                    console.error("Error saving server name:", error);
-                    errorElement.textContent = 'Failed to save server name.';
+                    console.error('Error updating server name:', error);
+                    document.getElementById('owner-settings-error').textContent = 'Failed to update server name.';
                 } finally {
                     this.showLoading(false);
                 }
@@ -865,64 +961,55 @@
 
             handleSaveApiKey: async function() {
                 const newKey = document.getElementById('edit-api-key').value;
-                const successElement = document.getElementById('owner-api-key-success');
-                const errorElement = document.getElementById('owner-api-key-error');
-                successElement.textContent = '';
-                errorElement.textContent = '';
-
                 if (!newKey) {
-                    errorElement.textContent = 'API key cannot be empty.';
+                    document.getElementById('owner-api-key-error').textContent = 'API key cannot be empty.';
                     return;
                 }
-
+                
                 this.showLoading(true);
                 try {
-                    const serverDocRef = doc(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}`);
-                    await updateDoc(serverDocRef, { apiKey: newKey });
-                    successElement.textContent = 'API key updated successfully!';
+                    await updateDoc(doc(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}`), {
+                        apiKey: newKey
+                    });
+                    document.getElementById('owner-api-key-success').textContent = 'API key updated successfully!';
+                    document.getElementById('owner-api-key-error').textContent = '';
                 } catch (error) {
-                    console.error("Error saving API key:", error);
-                    errorElement.textContent = 'Failed to save API key.';
+                    console.error('Error updating API key:', error);
+                    document.getElementById('owner-api-key-error').textContent = 'Failed to update API key.';
                 } finally {
                     this.showLoading(false);
                 }
             },
 
             handleDeleteServer: function() {
-                showCustomModal("Confirm Delete", "Are you sure you want to delete this server? This action is permanent and cannot be undone.", "confirm", async () => {
+                showCustomModal('Confirm Delete', 'Are you sure you want to delete this server? This action is permanent and will delete all data.', 'confirm', async () => {
                     this.showLoading(true);
                     try {
                         const batch = writeBatch(db);
-                        const serverId = this.state.currentServer.id;
+                        const serverDocRef = doc(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}`);
+                        const punishmentLogsRef = collection(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}/punishmentLogs`);
+                        const playersRef = collection(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}/players`);
+                        const shiftsRef = collection(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}/shifts`);
                         
-                        // Delete all join requests
-                        const joinRequestsRef = collection(db, `artifacts/${appId}/public/data/servers/${serverId}/joinRequests`);
-                        const joinRequestsSnapshot = await getDocs(joinRequestsRef);
-                        joinRequestsSnapshot.docs.forEach(doc => batch.delete(doc.ref));
+                        const [punishmentDocs, playerDocs, shiftDocs] = await Promise.all([
+                            getDocs(punishmentLogsRef),
+                            getDocs(playersRef),
+                            getDocs(shiftsRef)
+                        ]);
 
-                        // Delete all punishment logs
-                        const punishmentLogsRef = collection(db, `artifacts/${appId}/public/data/servers/${serverId}/punishmentLogs`);
-                        const punishmentLogsSnapshot = await getDocs(punishmentLogsRef);
-                        punishmentLogsSnapshot.docs.forEach(doc => batch.delete(doc.ref));
-
-                        // Remove server from all members' user profiles
-                        const members = this.state.currentServer.members;
-                        for (const memberId of members) {
-                            const userDocRef = doc(db, `artifacts/${appId}/users/${memberId}/profile/${memberId}`);
-                            batch.update(userDocRef, { servers: arrayRemove({ id: serverId, code: this.state.currentServer.code, role: 'owner' }) });
-                            batch.update(userDocRef, { servers: arrayRemove({ id: serverId, code: this.state.currentServer.code, role: 'member' }) });
-                        }
-                        
-                        // Delete the server document
-                        const serverDocRef = doc(db, `artifacts/${appId}/public/data/servers/${serverId}`);
+                        punishmentDocs.forEach(d => batch.delete(d.ref));
+                        playerDocs.forEach(d => batch.delete(d.ref));
+                        shiftDocs.forEach(d => batch.delete(d.ref));
                         batch.delete(serverDocRef);
-
+                        
                         await batch.commit();
-                        this.showDashboard();
-                        showCustomModal("Success", "Server deleted successfully.", "alert");
+
+                        showCustomModal('Success', 'Server deleted successfully.', 'alert', () => {
+                            this.showDashboard();
+                        });
                     } catch (error) {
-                        console.error("Error deleting server:", error);
-                        showCustomModal("Error", "Failed to delete the server. Please try again.", "alert");
+                        console.error('Error deleting server:', error);
+                        showCustomModal('Error', 'Failed to delete server.', 'alert');
                     } finally {
                         this.showLoading(false);
                     }
@@ -930,77 +1017,64 @@
             },
 
             fetchJoinRequests: async function() {
-                const requestsList = this.elements.ownerJoinRequestsList;
-                const errorElement = this.elements.ownerJoinRequestsListError;
-                requestsList.innerHTML = '<p class="text-center text-slate-400">Loading requests...</p>';
-                errorElement.textContent = '';
-                try {
-                    const joinRequestsRef = collection(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}/joinRequests`);
-                    const q = query(joinRequestsRef);
-                    const querySnapshot = await getDocs(q);
-                    
-                    if (querySnapshot.empty) {
-                        requestsList.innerHTML = '<p class="space-y-3">No pending requests.</p>';
-                        return;
-                    }
-
-                    const requestsHtml = querySnapshot.docs.map(doc => {
-                        const data = doc.data();
-                        return `
-                            <div class="flex items-center justify-between card p-3">
-                                <span class="text-sm font-medium text-white">${data.userEmail}</span>
-                                <div class="flex gap-2">
-                                    <button class="btn btn-primary btn-sm accept-request" data-request-id="${doc.id}" data-user-id="${data.userId}">Approve</button>
-                                    <button class="btn btn-danger btn-sm reject-request" data-request-id="${doc.id}">Reject</button>
-                                </div>
-                            </div>
-                        `;
-                    }).join('');
-
-                    requestsList.innerHTML = requestsHtml;
-                    document.querySelectorAll('.accept-request').forEach(btn => {
-                        btn.onclick = (e) => this.handleJoinRequestAction(e, 'approve');
-                    });
-                    document.querySelectorAll('.reject-request').forEach(btn => {
-                        btn.onclick = (e) => this.handleJoinRequestAction(e, 'reject');
-                    });
-
-                } catch (error) {
+                const requestsRef = collection(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}/joinRequests`);
+                const unsubscribe = onSnapshot(requestsRef, (querySnapshot) => {
+                    const requests = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    this.renderJoinRequests(requests);
+                }, (error) => {
                     console.error("Error fetching join requests:", error);
-                    requestsList.innerHTML = '';
-                    errorElement.textContent = 'Failed to load join requests.';
+                    document.getElementById('owner-join-requests-list-error').textContent = 'Failed to load join requests.';
+                });
+                this.state.unsubscribeListeners.push(unsubscribe);
+            },
+
+            renderJoinRequests: function(requests) {
+                const list = this.elements.ownerJoinRequestsList;
+                if (requests.length === 0) {
+                    list.innerHTML = '<p class="text-slate-400">No pending requests.</p>';
+                    return;
                 }
+                list.innerHTML = requests.map(req => `
+                    <div class="card p-3 flex justify-between items-center">
+                        <p class="text-white">${req.requesterEmail}</p>
+                        <div class="flex gap-2">
+                            <button class="btn btn-primary btn-sm" onclick="ZappyApp.handleJoinRequestAction(event, 'accept')">Accept</button>
+                            <button class="btn btn-danger btn-sm" onclick="ZappyApp.handleJoinRequestAction(event, 'deny')">Deny</button>
+                        </div>
+                    </div>
+                `).join('');
+                document.querySelectorAll('#owner-join-requests-list .btn').forEach(btn => {
+                    btn.dataset.requestId = requests.find(r => r.requesterEmail === btn.parentElement.previousElementSibling.textContent).id;
+                    btn.dataset.requesterId = requests.find(r => r.requesterEmail === btn.parentElement.previousElementSibling.textContent).requesterId;
+                    btn.dataset.requesterEmail = requests.find(r => r.requesterEmail === btn.parentElement.previousElementSibling.textContent).requesterEmail;
+                });
             },
 
             handleJoinRequestAction: async function(e, action) {
                 const requestId = e.target.dataset.requestId;
-                const userId = e.target.dataset.userId;
-
+                const requesterId = e.target.dataset.requesterId;
+                const requesterEmail = e.target.dataset.requesterEmail;
                 this.showLoading(true);
                 try {
-                    const requestDocRef = doc(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}/joinRequests`, requestId);
-                    await deleteDoc(requestDocRef);
+                    const batch = writeBatch(db);
+                    const serverRef = doc(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}`);
+                    const requestRef = doc(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}/joinRequests/${requestId}`);
 
-                    if (action === 'approve') {
-                        const userProfileRef = doc(db, `artifacts/${appId}/users/${userId}/profile/${userId}`);
-                        await updateDoc(userProfileRef, {
-                            servers: arrayUnion({ id: this.state.currentServer.id, code: this.state.currentServer.code, role: 'member' })
-                        }, { merge: true });
-
-                        const serverDocRef = doc(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}`);
-                        await updateDoc(serverDocRef, {
-                            members: arrayUnion(userId)
+                    if (action === 'accept') {
+                        batch.update(serverRef, {
+                            [`members.${requesterId}`]: { email: requesterEmail, role: 'member', joinedAt: serverTimestamp() }
                         });
-
-                        showCustomModal("Success", "Join request approved!", "alert");
-                    } else {
-                        showCustomModal("Success", "Join request rejected.", "alert");
+                        batch.delete(requestRef);
+                        await batch.commit();
+                        showCustomModal('Success', `Accepted request from ${requesterEmail}.`, 'alert');
+                    } else if (action === 'deny') {
+                        batch.delete(requestRef);
+                        await batch.commit();
+                        showCustomModal('Success', `Denied request from ${requesterEmail}.`, 'alert');
                     }
-
-                    this.fetchJoinRequests(); // Refresh the list
                 } catch (error) {
-                    console.error(`Error handling join request (${action}):`, error);
-                    showCustomModal("Error", `Failed to ${action} the request.`, "alert");
+                    console.error(`Error ${action}ing join request:`, error);
+                    showCustomModal('Error', `Failed to ${action} request.`, 'alert');
                 } finally {
                     this.showLoading(false);
                 }
@@ -1008,72 +1082,32 @@
 
             fetchServerMembers: async function() {
                 const membersList = document.getElementById('server-members-list');
-                const messageElement = document.getElementById('server-members-message');
-                membersList.innerHTML = '<p class="text-center text-slate-400">Loading members...</p>';
-                messageElement.textContent = '';
-                
-                try {
-                    const serverDocRef = doc(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}`);
-                    const serverDoc = await getDoc(serverDocRef);
-                    const serverData = serverDoc.data();
-                    const memberIds = serverData.members;
-                    
-                    if (memberIds.length === 0) {
-                        membersList.innerHTML = '<p class="text-center text-slate-400">No members in this server.</p>';
-                        return;
-                    }
-
-                    const memberPromises = memberIds.map(async (memberId) => {
-                        const userDocRef = doc(db, `artifacts/${appId}/users/${memberId}/profile/${memberId}`);
-                        const userDoc = await getDoc(userDocRef);
-                        return userDoc.exists() ? { id: memberId, email: userDoc.data().email || 'Guest User' } : null;
-                    });
-
-                    const members = (await Promise.all(memberPromises)).filter(Boolean);
-                    
-                    const membersHtml = members.map(member => `
-                        <div class="flex items-center justify-between p-2">
-                            <span class="text-sm text-slate-300">${member.email}</span>
-                            <button class="btn btn-danger btn-sm remove-member-btn" data-member-id="${member.id}">Remove</button>
+                const members = this.state.currentServer.members;
+                const memberListHtml = Object.entries(members).map(([uid, member]) => {
+                    const isOwner = uid === this.state.currentServer.ownerId;
+                    return `
+                        <div class="p-2 border-b border-slate-700 flex justify-between items-center">
+                            <span>${member.email} <span class="text-sm text-indigo-400">(${member.role})</span></span>
+                            ${!isOwner ? `<button class="btn btn-danger btn-sm" onclick="ZappyApp.handleRemoveMember('${uid}')">Remove</button>` : ''}
                         </div>
-                    `).join('');
-                    
-                    membersList.innerHTML = membersHtml;
-
-                    document.querySelectorAll('.remove-member-btn').forEach(btn => {
-                        btn.onclick = (e) => this.handleRemoveMember(e.target.dataset.memberId);
-                    });
-
-                } catch (error) {
-                    console.error("Error fetching server members:", error);
-                    membersList.innerHTML = '<p class="text-red-400 text-center">Failed to load members.</p>';
-                }
+                    `;
+                }).join('');
+                membersList.innerHTML = memberListHtml || '<p class="text-center text-slate-400">No members to display.</p>';
             },
 
-            handleRemoveMember: function(memberId) {
-                showCustomModal("Confirm Removal", "Are you sure you want to remove this member? This action is permanent.", "confirm", async () => {
+            handleRemoveMember: async function(memberId) {
+                showCustomModal('Confirm', 'Are you sure you want to remove this member?', 'confirm', async () => {
                     this.showLoading(true);
                     try {
-                        const batch = writeBatch(db);
-                        const serverId = this.state.currentServer.id;
-
-                        // Remove member from server's member list
-                        const serverDocRef = doc(db, `artifacts/${appId}/public/data/servers/${serverId}`);
-                        batch.update(serverDocRef, { members: arrayRemove(memberId) });
-
-                        // Remove server from member's server list
-                        const userDocRef = doc(db, `artifacts/${appId}/users/${memberId}/profile/${memberId}`);
-                        batch.update(userDocRef, {
-                            servers: arrayRemove({ id: serverId, code: this.state.currentServer.code, role: 'member' })
+                        const serverRef = doc(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}`);
+                        await updateDoc(serverRef, {
+                            [`members.${memberId}`]: arrayRemove({ id: memberId })
                         });
-                        
-                        await batch.commit();
-
-                        showCustomModal("Success", "Member removed successfully.", "alert");
-                        this.fetchServerMembers(); // Refresh the list
+                        // The onSnapshot listener will automatically update the UI
+                        showCustomModal('Success', 'Member removed.', 'alert');
                     } catch (error) {
-                        console.error("Error removing member:", error);
-                        showCustomModal("Error", "Failed to remove member.", "alert");
+                        console.error('Error removing member:', error);
+                        showCustomModal('Error', 'Failed to remove member.', 'alert');
                     } finally {
                         this.showLoading(false);
                     }
@@ -1228,6 +1262,8 @@
             },
 
             renderOwnerPunishmentLogs: function(logs) {
+                if (this.state.currentUser.uid !== this.state.currentServer.ownerId) return;
+
                 const logsList = this.elements.ownerPunishmentLogs;
                 if (logs.length === 0) {
                     logsList.innerHTML = '<p class="text-center text-slate-400">No logs to manage.</p>';
@@ -1262,33 +1298,33 @@
             // --- PUNISHMENT HANDLERS ---
             handleAddPunishment: async function(e) {
                 e.preventDefault();
-                const punishmentType = this.elements.punishmentTypeInput.value;
-                const punishmentUsername = this.elements.punishmentUsernameInput.value;
-                const punishmentReason = this.elements.punishmentReasonInput.value;
-                const messageElement = this.elements.punishmentFormMessage;
-                messageElement.textContent = '';
-
-                if (!punishmentType || !punishmentUsername || !punishmentReason) {
-                    messageElement.textContent = 'Please fill out all fields.';
+                this.showLoading(true);
+                const type = this.elements.punishmentTypeInput.value;
+                const username = this.elements.punishmentUsernameInput.value;
+                const reason = this.elements.punishmentReasonInput.value;
+                
+                if (!username || !reason) {
+                    this.elements.punishmentFormMessage.textContent = 'Please fill out all fields.';
+                    this.showLoading(false);
                     return;
                 }
-
-                this.showLoading(true);
+                
                 try {
-                    const punishmentLogsRef = collection(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}/punishmentLogs`);
-                    await addDoc(punishmentLogsRef, {
-                        punishmentType: punishmentType,
-                        punishedUsername: punishmentUsername,
-                        reason: punishmentReason,
-                        punisherEmail: this.state.currentUser.email || 'Guest User',
+                    const logsRef = collection(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}/punishmentLogs`);
+                    await addDoc(logsRef, {
+                        punishmentType: type,
+                        punishedUsername: username,
+                        reason: reason,
+                        punisherId: this.state.currentUser.uid,
+                        punisherEmail: this.state.currentUser.email,
                         timestamp: serverTimestamp()
                     });
-                    
-                    e.target.reset();
-                    showCustomModal("Success", "Punishment log submitted successfully.", "alert");
+                    this.elements.punishmentForm.reset();
+                    showCustomModal("Success", "Punishment logged successfully!", "alert");
+                    this.elements.punishmentFormMessage.textContent = '';
                 } catch (error) {
-                    console.error("Error adding punishment log:", error);
-                    messageElement.textContent = 'Failed to submit log. Please try again.';
+                    console.error('Error adding punishment log:', error);
+                    this.elements.punishmentFormMessage.textContent = 'Failed to submit log. Please try again.';
                 } finally {
                     this.showLoading(false);
                 }
@@ -1304,46 +1340,59 @@
             },
 
             handleEditPunishmentLog: function(logId, currentType, currentUsername, currentReason) {
+                const userRole = this.state.currentServer.members[this.state.currentUser.uid].role;
+                if (userRole !== 'owner') {
+                    showCustomModal("Permission Denied", "Only the server owner can edit logs.", "alert");
+                    return;
+                }
+
                 showCustomModal('Edit Log', `
-                    <form id="edit-punishment-form">
+                    <form id="edit-log-form">
                         <div class="mb-4">
-                            <label for="edit-type" class="block mb-2 text-sm font-medium">Type</label>
-                            <select id="edit-type" class="form-select">
-                                <option value="Warning" ${currentType === 'Warning' ? 'selected' : ''}>Warning</option>
-                                <option value="Kick" ${currentType === 'Kick' ? 'selected' : ''}>Kick</option>
-                                <option value="Ban" ${currentType === 'Ban' ? 'selected' : ''}>Ban</option>
-                                <option value="Temp Ban" ${currentType === 'Temp Ban' ? 'selected' : ''}>Temp Ban</option>
+                            <label for="edit-type" class="block mb-2 text-sm font-medium text-left">Type</label>
+                            <select id="edit-type" class="form-select w-full">
+                                <option value="Warning">Warning</option>
+                                <option value="Kick">Kick</option>
+                                <option value="Ban">Ban</option>
+                                <option value="Temp Ban">Temp Ban</option>
                             </select>
                         </div>
                         <div class="mb-4">
-                            <label for="edit-username" class="block mb-2 text-sm font-medium">Username</label>
-                            <input type="text" id="edit-username" class="form-input" value="${currentUsername}">
+                            <label for="edit-username" class="block mb-2 text-sm font-medium text-left">Username</label>
+                            <input type="text" id="edit-username" class="form-input w-full" value="${currentUsername}" required>
                         </div>
                         <div class="mb-4">
-                            <label for="edit-reason" class="block mb-2 text-sm font-medium">Reason</label>
-                            <textarea id="edit-reason" class="form-input" rows="3">${currentReason}</textarea>
+                            <label for="edit-reason" class="block mb-2 text-sm font-medium text-left">Reason</label>
+                            <textarea id="edit-reason" class="form-input w-full" rows="3" required>${currentReason}</textarea>
                         </div>
-                        <p id="edit-form-message" class="text-red-400 text-sm mb-4"></p>
                     </form>
-                `, 'confirm', () => {
-                    this.showLoading(true);
+                `, 'confirm', async () => {
                     const newType = document.getElementById('edit-type').value;
                     const newUsername = document.getElementById('edit-username').value;
                     const newReason = document.getElementById('edit-reason').value;
-                    const logDocRef = doc(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}/punishmentLogs`, logId);
-                    updateDoc(logDocRef, {
-                        punishmentType: newType,
-                        punishedUsername: newUsername,
-                        reason: newReason
-                    }).then(() => {
+
+                    if (!newUsername || !newReason) {
+                        showCustomModal("Error", "All fields are required.", "alert");
+                        return;
+                    }
+
+                    this.showLoading(true);
+                    try {
+                        await updateDoc(doc(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}/punishmentLogs`, logId), {
+                            punishmentType: newType,
+                            punishedUsername: newUsername,
+                            reason: newReason
+                        });
                         showCustomModal('Success', 'Log updated successfully.', 'alert');
-                    }).catch(error => {
+                    } catch (error) {
                         console.error('Error updating log:', error);
                         showCustomModal('Error', 'Failed to update log.', 'alert');
-                    }).finally(() => {
+                    } finally {
                         this.showLoading(false);
-                    });
+                    }
                 });
+
+                document.getElementById('edit-type').value = currentType;
             },
 
             handleDeletePunishmentLog: function(logId) {
@@ -1364,6 +1413,9 @@
             },
 
             // Other existing functions (shift handling, etc.) can go here...
+            handleExecuteCommand: function() {
+                showCustomModal("Access Denied", "This feature is for the server owner.", "alert");
+            },
         };
 
         // Initialize the app when the DOM is fully loaded
