@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Lucide Icons - Although the original was lucide-react, we'll use inline SVGs or simpler icons for plain HTML/JS -->
+    <!-- Lucide Icons -->
     <style>
         /* Custom styles to complement Tailwind */
         body {
@@ -56,7 +56,7 @@
         .btn-danger:hover {
             background-color: #b91c1c; /* Red 700 */
         }
-        .form-input {
+        .form-input, .form-select {
             width: 100%;
             background-color: #334155; /* Slate 700 */
             border: 1px solid #475569; /* Slate 600 */
@@ -65,7 +65,7 @@
             padding: 0.75rem;
             transition: border-color 0.2s, box-shadow 0.2s;
         }
-        .form-input:focus {
+        .form-input:focus, .form-select:focus {
             outline: none;
             border-color: #4f46e5; /* Indigo 600 */
             box-shadow: 0 0 0 2px #312e81; /* Indigo 800 */
@@ -100,6 +100,23 @@
             justify-content: center;
             z-index: 50;
         }
+        /* Style for the custom modal */
+        #custom-modal {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            z-index: 60;
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
     </style>
 </head>
 <body class="min-h-screen">
@@ -110,6 +127,19 @@
         <!-- Loading Spinner -->
         <div id="loading-overlay" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex items-center justify-center z-50">
             <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-indigo-500"></div>
+        </div>
+
+        <!-- Custom Modal for Messages/Alerts -->
+        <div id="custom-modal-overlay" class="modal-overlay hidden">
+            <div id="custom-modal">
+                <h3 id="modal-title" class="text-xl font-bold text-white mb-4"></h3>
+                <p id="modal-text" class="text-slate-300 mb-6"></p>
+                <div id="modal-buttons" class="modal-buttons">
+                    <button id="modal-confirm-btn" class="btn btn-primary hidden">Confirm</button>
+                    <button id="modal-cancel-btn" class="btn btn-secondary hidden">Cancel</button>
+                    <button id="modal-ok-btn" class="btn btn-primary hidden">OK</button>
+                </div>
+            </div>
         </div>
 
         <!-- Auth Section -->
@@ -203,6 +233,8 @@
                     <button class="tab-button btn btn-secondary" data-tab="players">Players</button>
                     <button class="tab-button btn btn-secondary" data-tab="commands">Execute</button>
                     <button class="tab-button btn btn-secondary" data-tab="shifts">Shifts</button>
+                    <button class="tab-button btn btn-secondary" data-tab="punishments">Punishments</button>
+                    <button class="tab-button btn btn-secondary" data-tab="punishment-logs">Punishment Logs</button>
                     <!-- Owner-only tab is added dynamically -->
                 </div>
             </div>
@@ -247,30 +279,14 @@
                     </div>
                 </div>
 
-                <!-- Vehicles Tab -->
-                <div id="tab-vehicles" class="tab-content card hidden">
-                    <h3 class="text-xl font-semibold mb-4 text-white">Vehicle Data</h3>
-                    <p class="text-slate-400 mb-4">Vehicle data would be displayed here.</p>
-                    <button id="refresh-vehicles-btn" class="btn btn-secondary btn-sm mb-4">Refresh Vehicles</button>
-                    <div id="vehicle-list" class="log-box">No vehicle data available.</div>
-                </div>
-
-                <!-- Kill Logs Tab -->
-                <div id="tab-killlogs" class="tab-content card hidden">
-                    <h3 class="text-xl font-semibold mb-4 text-white">Kill Logs</h3>
-                    <p class="text-slate-400 mb-4">Kill logs would be displayed here.</p>
-                    <button id="refresh-killlogs-btn" class="btn btn-secondary btn-sm mb-4">Refresh Kill Logs</button>
-                    <div id="kill-log-list" class="log-box">No kill logs available.</div>
-                </div>
-
                 <!-- Commands Tab -->
                 <div id="tab-commands" class="tab-content hidden">
                     <div class="card">
                         <h3 class="text-xl font-semibold mb-4 text-white">Execute Command</h3>
-                        <p class="text-slate-400 mb-4 text-sm">Enter a command to execute on the ER:LC server.</p>
+                        <p id="command-permission-text" class="text-yellow-400 text-sm mb-4">This functionality is restricted to the server owner.</p>
                         <div class="flex gap-2">
-                            <input type="text" id="command-input" placeholder="e.g., :kick PlayerName" class="form-input">
-                            <button id="execute-command-button" class="btn btn-primary">Execute</button>
+                            <input type="text" id="command-input" placeholder="e.g., :kick PlayerName" class="form-input" disabled>
+                            <button id="execute-command-button" class="btn btn-primary" disabled>Execute</button>
                         </div>
                         <div id="command-response" class="mt-4 p-3 rounded-md bg-slate-900 text-sm"></div>
                     </div>
@@ -288,6 +304,59 @@
                             </div>
                         </div>
                         <div id="shift-leaderboard" class="space-y-2">Loading...</div>
+                    </div>
+                </div>
+
+                <!-- Punishments Tab -->
+                <div id="tab-punishments" class="tab-content hidden">
+                    <div class="card">
+                        <h3 class="text-xl font-semibold text-white mb-4">Add New Punishment Log</h3>
+                        <p class="text-slate-400 text-sm mb-4">Submit a new punishment entry for a player. This will be visible to all members.</p>
+                        <form id="punishment-form">
+                            <div class="mb-4">
+                                <label for="punishment-type" class="block mb-2 text-sm font-medium">Punishment Type</label>
+                                <select id="punishment-type" class="form-select" required>
+                                    <option value="Warning">Warning</option>
+                                    <option value="Kick">Kick</option>
+                                    <option value="Ban">Ban</option>
+                                    <option value="Temp Ban">Temp Ban</option>
+                                </select>
+                            </div>
+                            <div class="mb-4">
+                                <label for="punishment-username" class="block mb-2 text-sm font-medium">Roblox Username</label>
+                                <input type="text" id="punishment-username" class="form-input" required placeholder="Roblox username of the punished user">
+                            </div>
+                            <div class="mb-4">
+                                <label for="punishment-reason" class="block mb-2 text-sm font-medium">Reason</label>
+                                <textarea id="punishment-reason" class="form-input" rows="3" required placeholder="Reason for the punishment"></textarea>
+                            </div>
+                            <p id="punishment-form-message" class="text-red-400 text-sm mb-4"></p>
+                            <div class="flex justify-end">
+                                <button type="submit" class="btn btn-primary">Submit Punishment</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Punishment Logs Tab -->
+                <div id="tab-punishment-logs" class="tab-content hidden">
+                    <div class="card">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-semibold text-white">Punishment Logs</h3>
+                            <div class="relative">
+                                <input type="text" id="search-username-input" class="form-input w-48 text-sm" placeholder="Search by Roblox Username">
+                                <button id="clear-search-btn" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white" title="Clear Search">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-circle">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <path d="m15 9-6 6"/>
+                                        <path d="m9 9 6 6"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="punishment-log-list" class="space-y-4">
+                            <p class="text-center text-slate-400">Loading punishment logs...</p>
+                        </div>
                     </div>
                 </div>
 
@@ -322,6 +391,13 @@
                             <hr class="border-slate-700 my-6">
                             <h4 class="font-semibold text-red-400 mb-2">Danger Zone</h4>
                             <button id="delete-server-btn" class="btn btn-danger">Delete Server</button>
+                        </div>
+                        <div class="card">
+                            <h3 class="text-xl font-semibold text-white mb-4">Manage Punishment Logs</h3>
+                            <p class="text-slate-400 text-sm mb-4">Edit or delete any punishment log entry.</p>
+                            <div id="owner-punishment-logs" class="space-y-4">
+                                <p class="text-center text-slate-400">Loading logs for editing...</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -369,7 +445,6 @@
         </div>
     </div>
 
-
     <!-- Firebase SDK -->
     <script type="module">
         // Use __firebase_config and __app_id if available, otherwise fallback to provided config
@@ -382,46 +457,53 @@
             appId: "1:133579238168:web:00ff14f7c2014ae2164c6d",
             measurementId: "G-K4LDYN8L3E"
         };
-
         const finalFirebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'; // Use default-app-id for local testing
 
         // Import statements - updated to 11.9.1
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-analytics.js";
-        import {
-            getAuth,
-            createUserWithEmailAndPassword,
-            signInWithEmailAndPassword,
-            onAuthStateChanged,
-            signOut,
-            signInWithCustomToken,
-            signInAnonymously
-        } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
-        import {
-            getFirestore,
-            doc,
-            setDoc,
-            getDoc,
-            collection,
-            query,
-            where,
-            getDocs,
-            addDoc,
-            serverTimestamp,
-            onSnapshot,
-            updateDoc,
-            deleteDoc,
-            writeBatch,
-            arrayUnion,
-            arrayRemove
-        } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp, onSnapshot, updateDoc, deleteDoc, writeBatch, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
         // Initialize Firebase
         const app = initializeApp(finalFirebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
         const analytics = getAnalytics(app); // Initialized but not used in the app logic
+
+        // Custom Modal Logic
+        const showCustomModal = (title, text, type, onConfirm) => {
+            const modalOverlay = document.getElementById('custom-modal-overlay');
+            const modalTitle = document.getElementById('modal-title');
+            const modalText = document.getElementById('modal-text');
+            const modalOkBtn = document.getElementById('modal-ok-btn');
+            const modalConfirmBtn = document.getElementById('modal-confirm-btn');
+            const modalCancelBtn = document.getElementById('modal-cancel-btn');
+
+            // Reset buttons
+            modalOkBtn.classList.add('hidden');
+            modalConfirmBtn.classList.add('hidden');
+            modalCancelBtn.classList.add('hidden');
+
+            modalTitle.textContent = title;
+            modalText.textContent = text;
+            modalOverlay.classList.remove('hidden');
+
+            if (type === 'alert') {
+                modalOkBtn.classList.remove('hidden');
+                modalOkBtn.onclick = () => modalOverlay.classList.add('hidden');
+            } else if (type === 'confirm') {
+                modalConfirmBtn.classList.remove('hidden');
+                modalCancelBtn.classList.remove('hidden');
+                modalConfirmBtn.onclick = () => {
+                    modalOverlay.classList.add('hidden');
+                    if (onConfirm) onConfirm();
+                };
+                modalCancelBtn.onclick = () => modalOverlay.classList.add('hidden');
+            }
+        };
+
 
         /**
          * ZappyApp
@@ -446,12 +528,14 @@
                 serverPanelSection: document.getElementById('server-panel-section'),
                 createServerModal: document.getElementById('create-server-modal'),
                 confirmModal: document.getElementById('confirm-modal'),
+
                 // Dashboard Elements
                 serverList: document.getElementById('server-list'),
                 userEmailSpan: document.getElementById('user-email'),
-                joinServerError: document.getElementById('join-server-error'), // Added
-                joinServerSuccess: document.getElementById('join-server-success'), // Added
-                serverListError: document.getElementById('server-list-error'), // Added
+                joinServerError: document.getElementById('join-server-error'),
+                joinServerSuccess: document.getElementById('join-server-success'),
+                serverListError: document.getElementById('server-list-error'),
+
                 // Panel Elements
                 panelServerName: document.getElementById('panel-server-name'),
                 panelServerCode: document.getElementById('panel-server-code'),
@@ -472,1929 +556,725 @@
                 editServerNameInput: document.getElementById('edit-server-name'),
                 startShiftWaveBtn: document.getElementById('start-shift-wave-btn'),
                 endShiftWaveBtn: document.getElementById('end-shift-wave-btn'),
-                ownerJoinRequestsListError: document.getElementById('owner-join-requests-list-error'), // Added
-                ownerSettingsSuccess: document.getElementById('owner-settings-success'), // Added
-                ownerSettingsError: document.getElementById('owner-settings-error'), // Added
-                serverMembersList: document.getElementById('server-members-list'), // Added
-                serverMembersMessage: document.getElementById('server-members-message'), // Added
-                shiftControlsMessage: document.getElementById('shift-controls-message'), // Added
-                editApiKeyInput: document.getElementById('edit-api-key'), // Added
-                saveApiKeyBtn: document.getElementById('save-api-key-btn'), // Added
-                ownerApiKeySuccess: document.getElementById('owner-api-key-success'), // Added
-                ownerApiKeyError: document.getElementById('owner-api-key-error'), // Added
+                ownerJoinRequestsListError: document.getElementById('owner-join-requests-list-error'),
+                
+                // Punishment Tab
+                punishmentForm: document.getElementById('punishment-form'),
+                punishmentTypeInput: document.getElementById('punishment-type'),
+                punishmentUsernameInput: document.getElementById('punishment-username'),
+                punishmentReasonInput: document.getElementById('punishment-reason'),
+                punishmentFormMessage: document.getElementById('punishment-form-message'),
+
+                // Punishment Logs Tab
+                punishmentLogList: document.getElementById('punishment-log-list'),
+                searchUsernameInput: document.getElementById('search-username-input'),
+                clearSearchBtn: document.getElementById('clear-search-btn'),
+                ownerPunishmentLogs: document.getElementById('owner-punishment-logs'),
             },
 
-            // --- UTILITIES ---
-            utils: {
-                formatDuration(seconds) {
-                    const h = String(Math.floor(seconds / 3600)).padStart(2, '0');
-                    const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
-                    const s = String(seconds % 60).padStart(2, '0');
-                    return `${h}:${m}:${s}`;
-                },
-                generateRandomCode(length) {
-                    let result = '';
-                    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-                    const charactersLength = characters.length;
-                    for (let i = 0; i < length; i++) {
-                        result += characters.charAt(Math.floor(Math.random() * charactersLength));
-                    }
-                    return result;
-                },
-                // Custom modal for confirmation (replaces alert/confirm)
-                showConfirmModal(title, text, onConfirm) {
-                    const confirmModal = ZappyApp.elements.confirmModal;
-                    if (confirmModal) {
-                        confirmModal.querySelector('#confirm-modal-title').textContent = title;
-                        confirmModal.querySelector('#confirm-modal-text').textContent = text;
-                        confirmModal.classList.remove('hidden');
-
-                        const confirmBtn = confirmModal.querySelector('#confirm-modal-confirm-btn');
-                        const cancelBtn = confirmModal.querySelector('#confirm-modal-cancel-btn');
-
-                        const handleConfirm = () => {
-                            onConfirm();
-                            confirmBtn.removeEventListener('click', handleConfirm);
-                            cancelBtn.removeEventListener('click', handleCancel);
-                            confirmModal.classList.add('hidden');
-                        };
-
-                        const handleCancel = () => {
-                            confirmBtn.removeEventListener('click', handleConfirm);
-                            cancelBtn.removeEventListener('click', handleCancel);
-                            confirmModal.classList.add('hidden');
-                        };
-
-                        confirmBtn.addEventListener('click', handleConfirm);
-                        cancelBtn.addEventListener('click', handleCancel);
-                    }
-                },
-
-                /**
-                 * Simulates a backend API call to Gemini for structured JSON data.
-                 * @param {string} prompt - The prompt to send to Gemini.
-                 * @param {object} schema - The JSON schema for the desired response.
-                 * @returns {Promise<object|null>} The parsed JSON response or null on error.
-                 */
-                async _callGeminiAPI(prompt, schema) {
-                    let chatHistory = [];
-                    chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-                    const payload = {
-                        contents: chatHistory,
-                        generationConfig: {
-                            responseMimeType: "application/json",
-                            responseSchema: schema
-                        }
-                    };
-                    const apiKey = ""; // Canvas will automatically provide this in runtime
-                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-                    try {
-                        const response = await fetch(apiUrl, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload)
-                        });
-                        const result = await response.json();
-                        if (result.candidates && result.candidates.length > 0 &&
-                            result.candidates[0].content && result.candidates[0].content.parts &&
-                            result.candidates[0].content.parts.length > 0) {
-                            const json = result.candidates[0].content.parts[0].text;
-                            return JSON.parse(json);
-                        } else {
-                            console.error("Gemini API returned an unexpected structure:", result);
-                            return null;
-                        }
-                    } catch (error) {
-                        console.error("Error calling Gemini API:", error);
-                        return null;
-                    }
+            // --- INIT & SETUP ---
+            init: async function() {
+                try {
+                    await this.setupAuth();
+                    this.bindGlobalListeners();
+                    this.showLoading(false);
+                } catch (error) {
+                    console.error("Initialization failed:", error);
+                    showCustomModal("Error", "Failed to initialize the app. Please try again.", "alert");
                 }
             },
 
-            // --- MAIN INITIALIZATION ---
-            init() {
-                // Centralized event listener setup
-                this.auth.bindEvents();
-                this.dashboard.bindEvents();
-                this.panel.bindEvents();
-
-                // The primary auth state listener that drives the app
+            setupAuth: async function() {
+                // Check for the provided custom auth token
+                if (typeof __initial_auth_token !== 'undefined') {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                
                 onAuthStateChanged(auth, async (user) => {
+                    this.state.currentUser = user;
                     if (user) {
-                        ZappyApp.state.currentUser = user;
-                        ZappyApp.ui.updateUserInfo(user);
-                        ZappyApp.ui.showView('dashboard');
-                        await ZappyApp.dashboard.fetchUserServers();
+                        this.showDashboard();
+                        await this.renderServerList();
                     } else {
-                        ZappyApp.state.currentUser = null;
-                        ZappyApp.state.currentServer = null;
-                        ZappyApp.ui.showView('auth');
-                        // Clear any ongoing listeners when logging out
-                        ZappyApp.panel.cleanup();
+                        this.showAuth();
                     }
-                    if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
+                });
+            },
+
+            bindGlobalListeners: function() {
+                document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
+                document.getElementById('back-to-dashboard-btn').addEventListener('click', () => this.showDashboard());
+                document.getElementById('show-create-server-modal-btn').addEventListener('click', () => {
+                    this.elements.createServerModal.classList.remove('hidden');
+                });
+                document.getElementById('cancel-create-server-btn').addEventListener('click', () => {
+                    this.elements.createServerModal.classList.add('hidden');
+                });
+                document.getElementById('create-server-form').addEventListener('submit', this.handleCreateServer.bind(this));
+                document.getElementById('join-server-btn').addEventListener('click', this.handleJoinServer.bind(this));
+
+                // Tabs
+                this.elements.panelTabButtons.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('tab-button')) {
+                        const tab = e.target.dataset.tab;
+                        this.switchTab(tab);
+                    }
                 });
 
-                // Attempt initial sign-in via custom token (from environment) or anonymously
-                this.auth.performInitialSignIn();
+                // Punishment system listeners
+                this.elements.punishmentForm.addEventListener('submit', this.handleAddPunishment.bind(this));
+                this.elements.searchUsernameInput.addEventListener('input', this.handleSearchPunishmentLogs.bind(this));
+                this.elements.clearSearchBtn.addEventListener('click', this.handleClearSearch.bind(this));
             },
 
-            // --- UI MANAGEMENT ---
-            ui: {
-                showView(viewName) {
-                    // Defensive checks before adding 'hidden' class
-                    if (ZappyApp.elements.authSection) ZappyApp.elements.authSection.classList.add('hidden');
-                    if (ZappyApp.elements.dashboardSection) ZappyApp.elements.dashboardSection.classList.add('hidden');
-                    if (ZappyApp.elements.serverPanelSection) ZappyApp.elements.serverPanelSection.classList.add('hidden');
+            // --- DISPLAY & UI HELPERS ---
+            showLoading: function(show) {
+                this.elements.loadingOverlay.classList.toggle('hidden', !show);
+            },
 
-                    if (viewName === 'auth') {
-                        if (ZappyApp.elements.authSection) ZappyApp.elements.authSection.classList.remove('hidden');
-                    } else if (viewName === 'dashboard') {
-                        if (ZappyApp.elements.dashboardSection) ZappyApp.elements.dashboardSection.classList.remove('hidden');
-                        ZappyApp.panel.cleanup(); // Clean up panel state when going back
-                    } else if (viewName === 'panel') {
-                        if (ZappyApp.elements.serverPanelSection) ZappyApp.elements.serverPanelSection.classList.remove('hidden');
+            showAuth: function() {
+                this.elements.authSection.classList.remove('hidden');
+                this.elements.dashboardSection.classList.add('hidden');
+                this.elements.serverPanelSection.classList.add('hidden');
+                this.elements.punishmentLogList.innerHTML = '<p class="text-center text-slate-400">Loading punishment logs...</p>';
+            },
+
+            showDashboard: function() {
+                this.elements.authSection.classList.add('hidden');
+                this.elements.dashboardSection.classList.remove('hidden');
+                this.elements.serverPanelSection.classList.add('hidden');
+                if (this.state.unsubscribeListeners.length > 0) {
+                    this.state.unsubscribeListeners.forEach(unsub => unsub());
+                    this.state.unsubscribeListeners = [];
+                }
+                this.state.currentServer = null;
+                this.elements.userEmailSpan.textContent = this.state.currentUser.email || 'Guest User';
+                this.renderServerList(); // Re-render server list when returning to dashboard
+            },
+
+            showServerPanel: function(serverDoc) {
+                this.state.currentServer = serverDoc.data();
+                this.state.currentServer.id = serverDoc.id; // Store server ID
+                this.elements.dashboardSection.classList.add('hidden');
+                this.elements.serverPanelSection.classList.remove('hidden');
+                this.elements.panelServerName.textContent = this.state.currentServer.name;
+                this.elements.panelServerCode.textContent = `Code: ${this.state.currentServer.code}`;
+                this.switchTab('main'); // Default to main tab
+                this.setupServerPanelListeners();
+                this.attachFirestoreListeners();
+                this.updateOwnerControls();
+            },
+
+            switchTab: function(tabName) {
+                // Update active tab button
+                document.querySelectorAll('.tab-button').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.tab === tabName);
+                });
+                // Update active tab content
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.toggle('hidden', content.id !== `tab-${tabName}`);
+                });
+            },
+
+            // --- FIREBASE INTERACTIONS ---
+            handleCreateServer: async function(e) {
+                e.preventDefault();
+                const serverName = document.getElementById('server-name').value;
+                const serverCode = document.getElementById('server-code').value.toLowerCase().replace(/\s/g, ''); // Ensure no spaces
+                const apiKey = document.getElementById('api-key').value;
+                const errorElement = document.getElementById('create-server-error');
+                errorElement.textContent = '';
+
+                if (!serverName || !serverCode || !apiKey) {
+                    errorElement.textContent = 'Please fill out all fields.';
+                    return;
+                }
+
+                this.showLoading(true);
+
+                try {
+                    // Check if server code already exists
+                    const serversRef = collection(db, `artifacts/${appId}/public/data/servers`);
+                    const q = query(serversRef, where("code", "==", serverCode));
+                    const querySnapshot = await getDocs(q);
+                    if (!querySnapshot.empty) {
+                        errorElement.textContent = 'Server code already in use. Please choose another.';
+                        this.showLoading(false);
+                        return;
                     }
-                },
 
-                updateUserInfo(user) {
-                    if (user && ZappyApp.elements.userEmailSpan) {
-                        ZappyApp.elements.userEmailSpan.textContent = user.email || (user.isAnonymous ? "Anonymous User" : "Logged In");
-                    }
-                },
+                    // Create server document
+                    const newServerRef = doc(serversRef);
+                    await setDoc(newServerRef, {
+                        name: serverName,
+                        code: serverCode,
+                        ownerId: this.state.currentUser.uid,
+                        members: [this.state.currentUser.uid],
+                        apiKey: apiKey,
+                        stats: {
+                            onlinePlayers: 0,
+                            totalServers: 0
+                        },
+                        logs: [],
+                        createdAt: serverTimestamp()
+                    });
 
-                displayMessage(elementId, message, isError = false) {
-                    const el = document.getElementById(elementId);
-                    if (el) {
-                        el.textContent = message;
-                        el.className = isError ? 'text-red-400 text-sm mt-2 text-center' : 'text-green-400 text-sm mt-2 text-center';
-                        // Clear message after a few seconds
-                        setTimeout(() => {
-                            el.textContent = '';
-                            el.className = ''; // Reset class
-                        }, 5000);
-                    }
-                },
+                    // Add the server to the user's list
+                    const userDocRef = doc(db, `artifacts/${appId}/users/${this.state.currentUser.uid}/profile/${this.state.currentUser.uid}`);
+                    await updateDoc(userDocRef, {
+                        servers: arrayUnion({ id: newServerRef.id, code: serverCode, role: 'owner' })
+                    }, { merge: true });
 
-                showTab(tabName) {
-                    // Deactivate all tab buttons and content
-                    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-                    document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
-
-                    // Activate the selected tab button and content
-                    const selectedButton = ZappyApp.elements.panelTabButtons ? ZappyApp.elements.panelTabButtons.querySelector(`[data-tab="${tabName}"]`) : null;
-                    const selectedContent = document.getElementById(`tab-${tabName}`);
-
-                    if (selectedButton) selectedButton.classList.add('active');
-                    if (selectedContent) selectedContent.classList.remove('hidden');
+                    this.elements.createServerModal.classList.add('hidden');
+                    e.target.reset();
+                    showCustomModal("Success", "Server created successfully!", "alert");
+                    this.renderServerList();
+                } catch (error) {
+                    console.error("Error creating server:", error);
+                    errorElement.textContent = 'Failed to create server. Please try again.';
+                } finally {
+                    this.showLoading(false);
                 }
             },
 
-            // --- AUTHENTICATION MODULE ---
-            auth: {
-                async performInitialSignIn() {
-                    try {
-                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } catch (error) {
-                        console.error("Initial sign-in failed:", error);
-                        ZappyApp.ui.showView('auth'); // Show manual login if token fails
-                    } finally {
-                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
+            handleJoinServer: async function() {
+                const joinCode = document.getElementById('join-code-input').value.toLowerCase().replace(/\s/g, '');
+                const errorElement = this.elements.joinServerError;
+                const successElement = this.elements.joinServerSuccess;
+                errorElement.textContent = '';
+                successElement.textContent = '';
+                if (!joinCode) {
+                    errorElement.textContent = 'Please enter a server code.';
+                    return;
+                }
+                this.showLoading(true);
+                try {
+                    // Find the server with the given code
+                    const serversRef = collection(db, `artifacts/${appId}/public/data/servers`);
+                    const q = query(serversRef, where("code", "==", joinCode));
+                    const querySnapshot = await getDocs(q);
+
+                    if (querySnapshot.empty) {
+                        errorElement.textContent = 'Server not found.';
+                        return;
                     }
-                },
 
-                async handleAuthForm(e) {
-                    e.preventDefault();
-                    const email = document.getElementById('email')?.value;
-                    const pass = document.getElementById('password')?.value;
-                    const authTitle = document.getElementById('auth-title');
-                    const isRegister = authTitle ? authTitle.textContent.includes('Register') : false;
-                    
-                    if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
+                    const serverDoc = querySnapshot.docs[0];
+                    const serverData = serverDoc.data();
 
-                    try {
-                        if (isRegister) {
-                            await createUserWithEmailAndPassword(auth, email, pass);
-                        } else {
-                            await signInWithEmailAndPassword(auth, email, pass);
-                        }
-                        // Auth state listener handles view change on success
-                    } catch (error) {
-                        ZappyApp.ui.displayMessage('auth-error', error.message, true);
-                        console.error("Authentication Error:", error);
-                    } finally {
-                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
+                    if (serverData.ownerId === this.state.currentUser.uid || serverData.members.includes(this.state.currentUser.uid)) {
+                        errorElement.textContent = 'You are already a member of this server.';
+                        return;
                     }
-                },
 
-                toggleView(e) {
-                    e.preventDefault();
-                    const title = document.getElementById('auth-title');
-                    const button = document.getElementById('auth-submit-btn');
-                    const prompt = document.getElementById('auth-prompt-text');
-                    const link = document.getElementById('auth-toggle-link');
-                    const emailInput = document.getElementById('email');
-                    const passwordInput = document.getElementById('password');
-                    const authError = document.getElementById('auth-error');
+                    // Check if a join request already exists
+                    const joinRequestsRef = collection(db, `artifacts/${appId}/public/data/servers/${serverDoc.id}/joinRequests`);
+                    const joinReqQuery = query(joinRequestsRef, where("userId", "==", this.state.currentUser.uid));
+                    const joinReqSnapshot = await getDocs(joinReqQuery);
 
-                    // Clear inputs and previous error message on toggle
-                    if (emailInput) emailInput.value = '';
-                    if (passwordInput) passwordInput.value = '';
-                    if (authError) authError.textContent = '';
-
-
-                    if (title && button && prompt && link) {
-                        if (title.textContent.includes('Login')) {
-                            title.textContent = 'Register for Zappy';
-                            button.textContent = 'Register';
-                            prompt.textContent = 'Already have an account?';
-                            link.textContent = 'Login';
-                        } else {
-                            title.textContent = 'Login to Zappy';
-                            button.textContent = 'Login';
-                            prompt.textContent = "Don't have an account?";
-                            link.textContent = 'Register';
-                        }
+                    if (!joinReqSnapshot.empty) {
+                        errorElement.textContent = 'Your request to join this server is already pending.';
+                        return;
                     }
-                },
 
-                bindEvents() {
-                    const authForm = document.getElementById('auth-form');
-                    const authToggleLink = document.getElementById('auth-toggle-link');
-                    const logoutBtn = document.getElementById('logout-btn');
-
-                    if (authForm) authForm.addEventListener('submit', this.handleAuthForm);
-                    if (authToggleLink) authToggleLink.addEventListener('click', this.toggleView);
-                    if (logoutBtn) logoutBtn.addEventListener('click', async () => {
-                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
-                        try {
-                            await signOut(auth);
-                            // Auth state listener handles view change
-                        } catch (error) {
-                            console.error("Logout failed:", error);
-                            // Optionally display a message
-                        } finally {
-                            if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
-                        }
+                    // Add a new join request
+                    await addDoc(joinRequestsRef, {
+                        userId: this.state.currentUser.uid,
+                        userEmail: this.state.currentUser.email || 'Guest User',
+                        createdAt: serverTimestamp()
                     });
+
+                    successElement.textContent = 'Join request sent! The server owner must approve your request.';
+                } catch (error) {
+                    console.error("Error joining server:", error);
+                    errorElement.textContent = 'Failed to send join request. Please try again.';
+                } finally {
+                    this.showLoading(false);
                 }
             },
 
-            // --- DASHBOARD MODULE ---
-            dashboard: {
-                async fetchUserServers() {
-                    if (!ZappyApp.state.currentUser) {
-                        if (ZappyApp.elements.serverList) ZappyApp.elements.serverList.innerHTML = '<p class="text-slate-400">You are not logged in.</p>';
+            renderServerList: async function() {
+                this.elements.serverList.innerHTML = '<p class="text-slate-400">Loading your servers...</p>';
+                this.elements.serverListError.textContent = '';
+
+                try {
+                    const userDocRef = doc(db, `artifacts/${appId}/users/${this.state.currentUser.uid}/profile/${this.state.currentUser.uid}`);
+                    const userDoc = await getDoc(userDocRef);
+                    if (!userDoc.exists() || !userDoc.data().servers || userDoc.data().servers.length === 0) {
+                        this.elements.serverList.innerHTML = '<p class="text-slate-400">You are not a member of any servers yet. Create or join one above!</p>';
                         return;
                     }
 
-                    const serverListEl = ZappyApp.elements.serverList;
-                    if (serverListEl) serverListEl.innerHTML = '<p class="text-slate-400">Loading your servers...</p>';
-                    if (ZappyApp.elements.serverListError) ZappyApp.elements.serverListError.textContent = ''; // Clear previous errors
+                    const userServers = userDoc.data().servers;
+                    const serverCardsHtml = [];
 
-                    // Clear previous listeners for this section
-                    ZappyApp.state.unsubscribeListeners.forEach(unsub => unsub());
-                    ZappyApp.state.unsubscribeListeners = [];
-
-                    const q = query(collection(db, `/artifacts/${appId}/public/data/servers`),
-                                    where('members', 'array-contains', ZappyApp.state.currentUser.uid));
-
-                    const unsubscribe = onSnapshot(q, (snapshot) => {
-                        if (snapshot.empty) {
-                            if (serverListEl) serverListEl.innerHTML = '<p class="text-slate-400">You have no servers. Create or join one!</p>';
-                            return;
+                    for (const server of userServers) {
+                        const serverDoc = await getDoc(doc(db, `artifacts/${appId}/public/data/servers/${server.id}`));
+                        if (serverDoc.exists()) {
+                            const serverData = serverDoc.data();
+                            serverCardsHtml.push(`
+                                <div class="card cursor-pointer hover:bg-slate-700 transition" data-server-id="${server.id}">
+                                    <h3 class="text-xl font-semibold text-white mb-2">${serverData.name}</h3>
+                                    <p class="text-slate-400 text-sm mb-2">Code: ${serverData.code}</p>
+                                    <p class="text-sm">Role: <span class="font-semibold text-indigo-400">${server.role}</span></p>
+                                    <p class="text-xs text-slate-500 mt-2">Server ID: ${server.id}</p>
+                                </div>
+                            `);
                         }
-                        if (serverListEl) serverListEl.innerHTML = ''; // Clear existing content
-                        snapshot.forEach((doc) => {
-                            const server = { id: doc.id, ...doc.data() };
-                            const isOwner = server.ownerId === ZappyApp.state.currentUser.uid;
-                            if (serverListEl) serverListEl.insertAdjacentHTML('beforeend', `
-                                <div class="card flex flex-col justify-between">
-                                    <div>
-                                        <h4 class="text-lg font-bold text-white">${server.name}</h4>
-                                        <p class="text-sm text-slate-400 mb-4">${isOwner ? '👑 Owner' : '👥 Member'}</p>
-                                    </div>
-                                    <button class="btn btn-primary mt-auto select-server-btn" data-server-id="${server.id}">Open Panel</button>
-                                </div>`);
-                        });
-                    }, (error) => {
-                        console.error("Error fetching servers:", error);
-                        ZappyApp.ui.displayMessage('server-list-error', 'Could not load servers due to a permission error or network issue.', true);
-                        if (serverListEl) serverListEl.innerHTML = '<p class="text-red-400">Failed to load servers.</p>';
+                    }
+
+                    this.elements.serverList.innerHTML = serverCardsHtml.join('');
+                    document.querySelectorAll('#server-list .card').forEach(card => {
+                        card.addEventListener('click', (e) => this.handleServerSelect(e.currentTarget.dataset.serverId));
                     });
-                    ZappyApp.state.unsubscribeListeners.push(unsubscribe); // Store for cleanup
-                },
-
-                async handleSelectServer(e) {
-                    if (e.target.classList.contains('select-server-btn')) {
-                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
-                        const serverId = e.target.dataset.serverId;
-                        try {
-                            const serverDoc = await getDoc(doc(db, `/artifacts/${appId}/public/data/servers`, serverId));
-                            if (serverDoc.exists()) {
-                                ZappyApp.state.currentServer = { id: serverDoc.id, ...serverDoc.data() };
-                                ZappyApp.panel.init();
-                            } else {
-                                ZappyApp.ui.displayMessage('server-list-error', 'Server not found.', true);
-                            }
-                        } catch (error) {
-                            console.error("Error selecting server:", error);
-                            ZappyApp.ui.displayMessage('server-list-error', 'Failed to open server due to a permission error or network issue.', true);
-                        } finally {
-                            if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
-                        }
-                    }
-                },
-
-                async handleCreateServer(e) {
-                    e.preventDefault();
-                    if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
-                    const serverName = document.getElementById('server-name')?.value;
-                    const serverCode = document.getElementById('server-code')?.value.toUpperCase(); // Ensure uppercase for codes
-                    const apiKey = document.getElementById('api-key')?.value;
-                    const createServerErrorEl = document.getElementById('create-server-error');
-
-                    if (createServerErrorEl) createServerErrorEl.textContent = ''; // Clear previous errors
-
-                    if (!serverName || !serverCode || !apiKey) {
-                        ZappyApp.ui.displayMessage('create-server-error', 'All fields are required.', true);
-                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
-                        return;
-                    }
-
-                    if (serverCode.length < 4 || serverCode.length > 10) {
-                        ZappyApp.ui.displayMessage('create-server-error', 'Server code must be 4-10 characters.', true);
-                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
-                        return;
-                    }
-                    if (!/^[A-Z0-9]+$/.test(serverCode)) {
-                        ZappyApp.ui.displayMessage('create-server-error', 'Server code can only contain uppercase letters and numbers.', true);
-                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
-                        return;
-                    }
-
-                    try {
-                        // Check if server code is unique
-                        const q = query(collection(db, `/artifacts/${appId}/public/data/servers`), where('code', '==', serverCode));
-                        const querySnapshot = await getDocs(q);
-                        if (!querySnapshot.empty) {
-                            ZappyApp.ui.displayMessage('create-server-error', 'Server code already exists. Please choose another.', true);
-                            return;
-                        }
-
-                        // Create the server document
-                        await setDoc(doc(db, `/artifacts/${appId}/public/data/servers`, serverCode), {
-                            name: serverName,
-                            code: serverCode,
-                            apiKey: apiKey, // In a real app, this should be encrypted or stored securely on a backend.
-                            ownerId: ZappyApp.state.currentUser.uid,
-                            members: [ZappyApp.state.currentUser.uid], // Owner is automatically a member
-                            joinRequests: [],
-                            createdAt: serverTimestamp(),
-                            lastActivity: serverTimestamp()
-                        });
-
-                        ZappyApp.ui.displayMessage('create-server-error', 'Server created successfully!', false);
-                        if (ZappyApp.elements.createServerModal) ZappyApp.elements.createServerModal.classList.add('hidden');
-                        const createServerForm = document.getElementById('create-server-form');
-                        if (createServerForm) createServerForm.reset(); // Clear form
-                        // No need to fetch servers again, onSnapshot listener will update
-                    } catch (error) {
-                        console.error("Error creating server:", error);
-                        ZappyApp.ui.displayMessage('create-server-error', `Error creating server: ${error.message}. Please check permissions.`, true);
-                    } finally {
-                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
-                    }
-                },
-                
-                async handleJoinServer() {
-                    if (typeof ZappyApp !== 'undefined' && ZappyApp.elements && ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
-                    const joinCodeInput = document.getElementById('join-code-input');
-                    const joinCode = joinCodeInput ? joinCodeInput.value.toUpperCase() : '';
-                    if (typeof ZappyApp !== 'undefined' && ZappyApp.elements && ZappyApp.elements.joinServerError) ZappyApp.elements.joinServerError.textContent = ''; // Clear previous errors
-                    if (typeof ZappyApp !== 'undefined' && ZappyApp.elements && ZappyApp.elements.joinServerSuccess) ZappyApp.elements.joinServerSuccess.textContent = ''; // Clear previous success messages
-
-                    if (!joinCode) {
-                        if (typeof ZappyApp !== 'undefined' && ZappyApp.ui) ZappyApp.ui.displayMessage('join-server-error', 'Please enter a server code.', true);
-                        if (typeof ZappyApp !== 'undefined' && ZappyApp.elements && ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
-                        return;
-                    }
-
-                    // --- IMPORTANT: Client-side check for authenticated user before proceeding ---
-                    // This assumes ZappyApp.state.currentUser is correctly populated by Firebase Auth listener
-                    // Add a check to ensure ZappyApp.state.currentUser is ready
-                    if (typeof ZappyApp === 'undefined' || !ZappyApp.state || !ZappyApp.state.currentUser || !ZappyApp.state.currentUser.uid) {
-                        console.error("handleJoinServer: ZappyApp state or current user UID is not available.");
-                        if (typeof ZappyApp !== 'undefined' && ZappyApp.ui) ZappyApp.ui.displayMessage('join-server-error', 'You must be signed in to send a join request. Please wait for authentication to complete or sign in.', true);
-                        if (typeof ZappyApp !== 'undefined' && ZappyApp.elements && ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
-                        return;
-                    }
-                    const userId = ZappyApp.state.currentUser.uid;
-                    // --- End of IMPORTANT check ---
-
-                    try {
-                        const serverDocRef = doc(db, `/artifacts/${appId}/public/data/servers`, joinCode);
-                        const serverDoc = await getDoc(serverDocRef);
-
-                        if (!serverDoc.exists()) {
-                            if (typeof ZappyApp !== 'undefined' && ZappyApp.ui) ZappyApp.ui.displayMessage('join-server-error', 'Server not found with that code.', true);
-                            return;
-                        }
-
-                        const serverData = serverDoc.data();
-
-                        // Safely check if members/joinRequests exist and are arrays before accessing
-                        const currentMembers = serverData.members || [];
-                        const currentJoinRequests = serverData.joinRequests || [];
-
-                        if (currentMembers.includes(userId)) {
-                            if (typeof ZappyApp !== 'undefined' && ZappyApp.ui) ZappyApp.ui.displayMessage('join-server-success', 'You are already a member of this server.', false);
-                            return;
-                        }
-
-                        if (currentJoinRequests.includes(userId)) {
-                            if (typeof ZappyApp !== 'undefined' && ZappyApp.ui) ZappyApp.ui.displayMessage('join-server-success', 'You have already sent a join request to this server.', false);
-                            return;
-                        }
-
-                        // Add user to joinRequests array
-                        await updateDoc(serverDocRef, {
-                            joinRequests: arrayUnion(userId)
-                        });
-
-                        if (typeof ZappyApp !== 'undefined' && ZappyApp.ui) ZappyApp.ui.displayMessage('join-server-success', 'Join request sent! Awaiting owner approval.', false);
-                        if (joinCodeInput) joinCodeInput.value = '';
-                    } catch (error) {
-                        console.error("Error joining server:", error);
-
-                        // More specific error handling
-                        if (error.code === 'permission-denied') {
-                            if (typeof ZappyApp !== 'undefined' && ZappyApp.ui) ZappyApp.ui.displayMessage('join-server-error', `Permission denied. Ensure you are signed in and have proper authorization (Firestore rules).`, true);
-                        } else {
-                            if (typeof ZappyApp !== 'undefined' && ZappyApp.ui) ZappyApp.ui.displayMessage('join-server-error', `Error sending join request: ${error.message}. Please try again.`, true);
-                        }
-                    } finally {
-                        if (typeof ZappyApp !== 'undefined' && ZappyApp.elements && ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
-                    }
-                },
-
-                bindEvents() {
-                    if (ZappyApp.elements.serverList) ZappyApp.elements.serverList.addEventListener('click', this.handleSelectServer);
-                    const showCreateServerModalBtn = document.getElementById('show-create-server-modal-btn');
-                    if (showCreateServerModalBtn) showCreateServerModalBtn.addEventListener('click', () => {
-                        if (ZappyApp.elements.createServerModal) ZappyApp.elements.createServerModal.classList.remove('hidden');
-                        const createServerErrorEl = document.getElementById('create-server-error');
-                        if (createServerErrorEl) createServerErrorEl.textContent = ''; // Clear error on modal open
-                        const createServerForm = document.getElementById('create-server-form');
-                        if (createServerForm) createServerForm.reset();
-                    });
-                    const cancelCreateServerBtn = document.getElementById('cancel-create-server-btn');
-                    if (cancelCreateServerBtn) cancelCreateServerBtn.addEventListener('click', () => {
-                        if (ZappyApp.elements.createServerModal) ZappyApp.elements.createServerModal.classList.add('hidden');
-                    });
-                    const createServerForm = document.getElementById('create-server-form');
-                    if (createServerForm) createServerForm.addEventListener('submit', this.handleCreateServer);
-                    const joinServerBtn = document.getElementById('join-server-btn');
-                    if (joinServerBtn) joinServerBtn.addEventListener('click', this.handleJoinServer);
+                } catch (error) {
+                    console.error("Error rendering server list:", error);
+                    this.elements.serverListError.textContent = 'Failed to load server list. Please refresh the page.';
                 }
             },
 
-            // --- SERVER PANEL MODULE ---
-            panel: {
-                init() {
-                    this.cleanup(); // Clean up old listeners before initializing new ones
-                    const server = ZappyApp.state.currentServer;
-                    if (!server) return;
-
-                    ZappyApp.ui.showView('panel');
-                    ZappyApp.ui.showTab('main'); // Default to main info tab
-
-                    // Populate UI
-                    if (ZappyApp.elements.panelServerName) ZappyApp.elements.panelServerName.textContent = server.name;
-                    if (ZappyApp.elements.panelServerCode) ZappyApp.elements.panelServerCode.textContent = `Code: ${server.code}`;
-                    if (ZappyApp.elements.editServerNameInput) ZappyApp.elements.editServerNameInput.value = server.name;
-                    if (ZappyApp.elements.editApiKeyInput) ZappyApp.elements.editApiKeyInput.value = server.apiKey || ''; // Populate API key input
-
-                    this.setupOwnerControls(server);
-                    this.setupTabListeners();
-                    this.startRealtimeListeners(); // Start listeners for logs, players, shifts, and active shift
-
-                    // Initial refresh of API data when panel opens
-                    this.refreshStats();
-                    this.refreshPlayers();
-                    this.refreshVehicles();
-                    this.refreshKillLogs();
-                },
-
-                cleanup() {
-                    // Stop shift timer if running
-                    if (ZappyApp.state.shiftInterval) {
-                        clearInterval(ZappyApp.state.shiftInterval);
-                        ZappyApp.state.shiftInterval = null;
-                        ZappyApp.state.shiftTimerRunning = false;
-                        if (ZappyApp.elements.shiftToggleButton) ZappyApp.elements.shiftToggleButton.textContent = 'Start Shift';
-                        if (ZappyApp.elements.shiftTimer) ZappyApp.elements.shiftTimer.textContent = '00:00:00';
-                    }
-                    // Unsubscribe all active Firestore listeners
-                    ZappyApp.state.unsubscribeListeners.forEach(unsub => unsub());
-                    ZappyApp.state.unsubscribeListeners = [];
-                    // Reset UI elements when cleaning up. Add null/undefined checks.
-                    if (ZappyApp.elements.logOutput) ZappyApp.elements.logOutput.innerHTML = 'Connecting...';
-                    if (ZappyApp.elements.serverStatsOutput) ZappyApp.elements.serverStatsOutput.innerHTML = 'Loading...';
-                    if (ZappyApp.elements.playerList) ZappyApp.elements.playerList.innerHTML = '';
-                    if (ZappyApp.elements.joinRequestsDisplay) ZappyApp.elements.joinRequestsDisplay.innerHTML = '';
-                    if (ZappyApp.elements.shiftLeaderboard) ZappyApp.elements.shiftLeaderboard.innerHTML = 'Loading...';
-                    if (ZappyApp.elements.ownerJoinRequestsList) ZappyApp.elements.ownerJoinRequestsList.innerHTML = '<p class="text-slate-500">No pending requests.</p>';
-                    if (ZappyApp.elements.vehicleList) ZappyApp.elements.vehicleList.innerHTML = 'No vehicle data available.';
-                    if (ZappyApp.elements.killLogList) ZappyApp.elements.killLogList.innerHTML = 'No kill logs available.';
-                    if (ZappyApp.elements.commandLogList) ZappyApp.elements.commandLogList.innerHTML = 'No command logs available.';
-                    if (ZappyApp.elements.serverMembersList) ZappyApp.elements.serverMembersList.innerHTML = '<p class="text-slate-500">No members to display.</p>';
-                },
-
-                setupOwnerControls(server) {
-                    const isOwner = server.ownerId === ZappyApp.state.currentUser.uid;
-                    const ownerTabBtn = ZappyApp.elements.panelTabButtons ? ZappyApp.elements.panelTabButtons.querySelector('[data-tab="owner"]') : null;
-
-                    if (isOwner) {
-                        if (!ownerTabBtn && ZappyApp.elements.panelTabButtons) { // Add owner tab if not present
-                            ZappyApp.elements.panelTabButtons.insertAdjacentHTML('beforeend',
-                                `<button class="tab-button btn btn-secondary" data-tab="owner" id="owner-tab-btn">Admin</button>`
-                            );
-                            // Re-bind tab listeners after adding new button
-                            this.setupTabListeners();
-                        }
-                        // Show owner-only shift wave controls
-                        if (ZappyApp.elements.startShiftWaveBtn) ZappyApp.elements.startShiftWaveBtn.classList.remove('hidden');
-                        if (ZappyApp.elements.endShiftWaveBtn) ZappyApp.elements.endShiftWaveBtn.classList.remove('hidden');
+            handleServerSelect: async function(serverId) {
+                this.showLoading(true);
+                try {
+                    const serverDoc = await getDoc(doc(db, `artifacts/${appId}/public/data/servers/${serverId}`));
+                    if (serverDoc.exists()) {
+                        this.showServerPanel(serverDoc);
                     } else {
-                        if (ownerTabBtn) { // Remove owner tab if user is not owner
-                            ownerTabBtn.remove();
-                        }
-                        // Hide owner-only shift wave controls
-                        if (ZappyApp.elements.startShiftWaveBtn) ZappyApp.elements.startShiftWaveBtn.classList.add('hidden');
-                        if (ZappyApp.elements.endShiftWaveBtn) ZappyApp.elements.endShiftWaveBtn.classList.add('hidden');
+                        showCustomModal("Error", "Server not found. It may have been deleted.", "alert");
+                        this.renderServerList(); // Refresh the list
                     }
-                },
+                } catch (error) {
+                    console.error("Error selecting server:", error);
+                    showCustomModal("Error", "Failed to load server panel.", "alert");
+                } finally {
+                    this.showLoading(false);
+                }
+            },
 
-                setupTabListeners() {
-                    document.querySelectorAll('.tab-button').forEach(button => {
-                        button.removeEventListener('click', this.handleTabClick); // Avoid duplicate listeners
-                        button.addEventListener('click', this.handleTabClick);
-                    });
-                },
+            setupServerPanelListeners: function() {
+                // Command Execution
+                const executeCommandButton = document.getElementById('execute-command-button');
+                executeCommandButton.onclick = this.handleExecuteCommand.bind(this);
+            },
 
-                handleTabClick(e) {
-                    const tabName = e.target.dataset.tab;
-                    ZappyApp.ui.showTab(tabName);
-                },
+            updateOwnerControls: function() {
+                const isOwner = this.state.currentServer.ownerId === this.state.currentUser.uid;
+                const ownerTab = document.getElementById('tab-owner');
+                const ownerTabBtn = document.createElement('button');
+                ownerTabBtn.className = 'tab-button btn btn-secondary';
+                ownerTabBtn.dataset.tab = 'owner';
+                ownerTabBtn.textContent = 'Admin';
+                
+                // Clear and re-add the owner tab button based on status
+                const existingOwnerBtn = document.querySelector('[data-tab="owner"]');
+                if (existingOwnerBtn) existingOwnerBtn.remove();
+                if (isOwner) {
+                    this.elements.panelTabButtons.appendChild(ownerTabBtn);
+                    document.getElementById('edit-server-name').value = this.state.currentServer.name;
+                    document.getElementById('command-input').disabled = false;
+                    document.getElementById('execute-command-button').disabled = false;
+                    document.getElementById('command-permission-text').textContent = 'Enter a command to execute on the ER:LC server.';
+                } else {
+                    document.getElementById('command-input').disabled = true;
+                    document.getElementById('execute-command-button').disabled = true;
+                    document.getElementById('command-permission-text').textContent = 'This functionality is restricted to the server owner.';
+                }
+            },
 
-                // Real-time listeners for panel data
-                startRealtimeListeners() {
-                    const serverId = ZappyApp.state.currentServer.id;
-                    const userId = ZappyApp.state.currentUser.uid;
+            attachFirestoreListeners: function() {
+                const serverId = this.state.currentServer.id;
+                this.state.unsubscribeListeners.forEach(unsub => unsub());
+                this.state.unsubscribeListeners = [];
 
-                    // Server Statistics Listener (Firebase portion)
-                    const serverDocRef = doc(db, `/artifacts/${appId}/public/data/servers`, serverId);
-                    const unsubscribeServerStats = onSnapshot(serverDocRef, (docSnap) => {
-                        if (docSnap.exists()) {
-                            const data = docSnap.data();
-                            // Update server members list for owner tab if current user is owner
-                            if (ZappyApp.state.currentServer.ownerId === userId) {
-                                this.displayServerMembers(data.members || []);
-                                this.displayOwnerJoinRequests(data.joinRequests || []); // Also display join requests for owner
-                            }
-                        } else {
-                            // Handled by API calls now, this only covers Firebase document existence
-                            // ZappyApp.ui.displayMessage('server-stats-output', '<p class="text-red-400">Server data not found.</p>', true);
+                // Listen to Server Stats
+                const statsRef = doc(db, `artifacts/${appId}/public/data/servers/${serverId}`);
+                this.state.unsubscribeListeners.push(onSnapshot(statsRef, (doc) => {
+                    if (doc.exists()) {
+                        const data = doc.data();
+                        this.elements.serverStatsOutput.innerHTML = `
+                            <p>Online Players: ${data.stats?.onlinePlayers || 0}</p>
+                            <p>Total Servers: ${data.stats?.totalServers || 0}</p>
+                            <p>Members: ${data.members.length}</p>
+                        `;
+                    }
+                }, (error) => {
+                    console.error("Error listening to stats:", error);
+                    this.elements.serverStatsOutput.textContent = 'Failed to load stats.';
+                }));
+
+                // Listen to Log
+                const logRef = collection(db, `artifacts/${appId}/public/data/servers/${serverId}/logs`);
+                this.state.unsubscribeListeners.push(onSnapshot(query(logRef, where("type", "==", "realtime_event")), (snapshot) => {
+                    this.elements.logOutput.innerHTML = '';
+                    snapshot.docChanges().forEach((change) => {
+                        if (change.type === "added") {
+                            const newLog = change.doc.data();
+                            const logEntry = document.createElement('div');
+                            logEntry.textContent = newLog.message;
+                            this.elements.logOutput.prepend(logEntry); // Prepend for new logs at the top
                         }
-                    }, (error) => {
-                        console.error("Error listening to server stats (Firebase portion):", error);
-                        // ZappyApp.ui.displayMessage('server-stats-output', '<p class="text-red-400">Failed to load Firebase server data (permission error).</p>', true);
                     });
-                    ZappyApp.state.unsubscribeListeners.push(unsubscribeServerStats);
+                }, (error) => {
+                    console.error("Error listening to logs:", error);
+                    this.elements.logOutput.textContent = 'Failed to load logs.';
+                }));
 
-
-                    // Log Output Listener (Firebase)
-                    const unsubscribeLog = onSnapshot(collection(db, `/artifacts/${appId}/public/data/servers/${serverId}/logs`),
-                        (snapshot) => {
-                            if (ZappyApp.elements.logOutput) ZappyApp.elements.logOutput.innerHTML = '';
-                            if (snapshot.empty) {
-                                if (ZappyApp.elements.logOutput) ZappyApp.elements.logOutput.innerHTML = '<p class="text-slate-500">No recent events.</p>';
-                                return;
-                            }
-                            snapshot.docs.sort((a, b) => b.data().timestamp.toDate() - a.data().timestamp.toDate()) // Sort newest first
-                                .slice(0, 100) // Limit to 100 entries for performance
-                                .forEach(doc => {
-                                    const log = doc.data();
-                                    const timestamp = log.timestamp ? new Date(log.timestamp.toDate()).toLocaleTimeString() : 'N/A';
-                                    if (ZappyApp.elements.logOutput) ZappyApp.elements.logOutput.insertAdjacentHTML('beforeend', `<p>[${timestamp}] ${log.message}</p>`);
-                                });
-                            if (ZappyApp.elements.logOutput) ZappyApp.elements.logOutput.scrollTop = ZappyApp.elements.logOutput.scrollHeight; // Scroll to bottom
-                        }, (error) => {
-                            console.error("Error listening to logs:", error);
-                            if (ZappyApp.elements.logOutput) ZappyApp.elements.logOutput.innerHTML = '<p class="text-red-400">Failed to load logs (permission error).</p>';
+                // Listen to Players & Queue
+                const playerListRef = collection(db, `artifacts/${appId}/public/data/servers/${serverId}/players`);
+                this.state.unsubscribeListeners.push(onSnapshot(playerListRef, (snapshot) => {
+                    this.elements.playerList.innerHTML = '';
+                    this.elements.playerQueue.innerHTML = '';
+                    let onlineCount = 0;
+                    let queueCount = 0;
+                    snapshot.forEach(doc => {
+                        const playerData = doc.data();
+                        const playerItem = document.createElement('li');
+                        playerItem.textContent = `${playerData.username} (${playerData.status})`;
+                        if (playerData.status === 'online') {
+                            this.elements.playerList.appendChild(playerItem);
+                            onlineCount++;
+                        } else if (playerData.status === 'queue') {
+                            this.elements.playerQueue.appendChild(playerItem);
+                            queueCount++;
                         }
-                    );
-                    ZappyApp.state.unsubscribeListeners.push(unsubscribeLog);
+                    });
+                    this.elements.playerCount.textContent = onlineCount;
+                    this.elements.queueCount.textContent = queueCount;
+                }, (error) => {
+                    console.error("Error listening to players:", error);
+                }));
 
-
-                    // Shifts Leaderboard Listener (Firebase)
-                    const shiftsCollectionRef = collection(db, `/artifacts/${appId}/public/data/servers/${serverId}/shifts`);
-                    const unsubscribeShifts = onSnapshot(shiftsCollectionRef, async (snapshot) => {
-                        if (ZappyApp.elements.shiftLeaderboard) ZappyApp.elements.shiftLeaderboard.innerHTML = '';
+                // Listen to Join Requests (Owner only)
+                const isOwner = this.state.currentServer.ownerId === this.state.currentUser.uid;
+                if (isOwner) {
+                    const joinRequestsRef = collection(db, `artifacts/${appId}/public/data/servers/${serverId}/joinRequests`);
+                    this.state.unsubscribeListeners.push(onSnapshot(joinRequestsRef, (snapshot) => {
+                        this.elements.ownerJoinRequestsList.innerHTML = '';
                         if (snapshot.empty) {
-                            if (ZappyApp.elements.shiftLeaderboard) ZappyApp.elements.shiftLeaderboard.innerHTML = '<p class="text-slate-500">No shifts recorded yet.</p>';
+                            this.elements.ownerJoinRequestsList.innerHTML = '<p class="text-slate-400">No pending requests.</p>';
                             return;
                         }
-
-                        const shiftsData = {};
                         snapshot.forEach(doc => {
-                            const shift = doc.data();
-                            if (shift.userId) {
-                                shiftsData[shift.userId] = (shiftsData[shift.userId] || 0) + (shift.duration || 0);
-                            }
-                        });
-
-                        const sortedShifts = Object.entries(shiftsData).sort(([, durationA], [, durationB]) => durationB - durationA);
-
-                        // Use Promise.all to await all user data fetches before updating UI
-                        const shiftElements = await Promise.all(sortedShifts.map(async ([userId, totalDuration]) => {
-                            // Defensive check for userId before attempting to get userData
-                            if (!userId) return '';
-                            const userDoc = await getDoc(doc(db, `/artifacts/${appId}/users`, userId)); // Corrected path
-                            const userEmail = userDoc.exists() ? (userDoc.data().email || userId) : userId;
-                            return `
-                                <div class="flex justify-between items-center card p-3">
-                                    <span>${userEmail}</span>
-                                    <span class="font-mono text-white">${ZappyApp.utils.formatDuration(totalDuration)}</span>
-                                </div>
-                            `;
-                        }));
-                        if (ZappyApp.elements.shiftLeaderboard) ZappyApp.elements.shiftLeaderboard.innerHTML = shiftElements.join('');
-
-                    }, (error) => {
-                        console.error("Error listening to shifts:", error);
-                        if (ZappyApp.elements.shiftLeaderboard) ZappyApp.elements.shiftLeaderboard.innerHTML = '<p class="text-red-400">Failed to load shift leaderboard (permission error).</p>';
-                    });
-                    ZappyApp.state.unsubscribeListeners.push(unsubscribeShifts);
-
-                    // Active Shift Listener (Firebase)
-                    this.checkActiveShift();
-
-                    // Shift Wave Status Listener (Firebase)
-                    const shiftWaveStatusRef = doc(db, `/artifacts/${appId}/public/data/servers/${serverId}/settings/shiftWaveStatus`);
-                    const unsubscribeShiftWaveStatus = onSnapshot(shiftWaveStatusRef, (docSnap) => {
-                        const shiftWaveActive = docSnap.exists() && docSnap.data().active;
-                        if (ZappyApp.elements.shiftToggleButton) {
-                            // Disable start shift button if no shift wave is active
-                            if (!shiftWaveActive) {
-                                ZappyApp.elements.shiftToggleButton.setAttribute('disabled', 'true');
-                                ZappyApp.elements.shiftToggleButton.classList.add('opacity-50', 'cursor-not-allowed');
-                                ZappyApp.ui.displayMessage('shift-controls-message', 'No active shift wave. Cannot start shift.', true);
-                            } else {
-                                ZappyApp.elements.shiftToggleButton.removeAttribute('disabled');
-                                ZappyApp.elements.shiftToggleButton.classList.remove('opacity-50', 'cursor-not-allowed');
-                                // Clear message if it was about shift wave inactivity
-                                if (ZappyApp.elements.shiftControlsMessage.textContent.includes('No active shift wave')) {
-                                    ZappyApp.elements.shiftControlsMessage.textContent = '';
-                                }
-                            }
-
-                            // If shift wave ends while user is on shift, automatically end their local shift
-                            // The checkActiveShift listener already handles this via `currentShiftServerId` comparison.
-                        }
-                    }, (error) => {
-                        console.error("Error listening to shift wave status:", error);
-                        ZappyApp.ui.displayMessage('shift-controls-message', 'Failed to load shift wave status (permission error).', true);
-                    });
-                    ZappyApp.state.unsubscribeListeners.push(unsubscribeShiftWaveStatus);
-                },
-                async handleJoinRequestAction(actionType, serverId, event) {
-                    // 'this' will be ZappyApp due to bind
-                    const button = event.target;
-                    const requesterId = button.dataset.requesterId;
-                
-                    if (!requesterId || !serverId) {
-                        console.error("Missing requester ID or server ID for join request action.");
-                        return;
-                    }
-                
-                    console.log(`Action: ${actionType} for requester: ${requesterId} on server: ${serverId}`);
-                
-                    try {
-                        const serverRef = doc(db, 'artifacts', appId, 'public', 'data', 'servers', serverId);
-                        const serverSnap = await getDoc(serverRef);
-                
-                        if (!serverSnap.exists()) {
-                            console.error("Server not found for join request action.");
-                            return;
-                        }
-                
-                        const serverData = serverSnap.data();
-                        let newJoinRequests = [...(serverData.joinRequests || [])];
-                        let newMembers = [...(serverData.members || [])];
-                
-                        // Remove requester from joinRequests
-                        newJoinRequests = newJoinRequests.filter(id => id !== requesterId);
-                
-                        if (actionType === 'accept') {
-                            // Add requester to members if not already there
-                            if (!newMembers.includes(requesterId)) {
-                                newMembers.push(requesterId);
-                            }
-                            console.log(`Accepted ${requesterId} for server ${serverId}.`);
-                        } else if (actionType === 'reject') {
-                            console.log(`Rejected ${requesterId} for server ${serverId}.`);
-                        }
-                
-                        // Update Firestore
-                        await updateDoc(serverRef, {
-                            joinRequests: newJoinRequests,
-                            members: newMembers
-                        });
-                
-                        console.log('Server document updated successfully.');
-                
-                        // Re-display join requests to update the UI
-                        this.displayOwnerJoinRequests(serverId); // 'this' refers to ZappyApp
-                    } catch (error) {
-                        console.error("Error handling join request action:", error);
-                        alert(`Failed to ${actionType} request: ${error.message}`);
-                    }
-                },
-                async displayOwnerJoinRequests(currentServerId) { // This parameter MUST be the server's document ID (e.g., 'DHBRP')
-
-                    const listEl = typeof ZappyApp !== 'undefined' && ZappyApp.elements ? ZappyApp.elements.ownerJoinRequestsList : null;
-                    const ServerId = ZappyApp.state.currentServer.id;
-                    if (!listEl) {
-                
-                        console.error("displayOwnerJoinRequests: ownerJoinRequestsList element not found.");
-                
-                        return;
-                
-                    }
-                
-                
-                
-                    listEl.innerHTML = ''; // Clear existing content
-                
-                
-                    // **CRITICAL FIX: Validate currentServerId type**
-                
-                    if (!db || !appId || !ServerId || typeof ServerId !== 'string') {
-                
-                        console.error("displayOwnerJoinRequests: Firebase 'db', 'appId', or 'currentServerId' is invalid. currentServerId must be a non-empty string.");
-                
-                        listEl.innerHTML = '<p class="text-red-400">Error: Server ID not provided or invalid. Cannot display requests.</p>';
-                
-                        return;
-                
-                    }
-                
-                
-                
-                    let joinRequests = [];
-                
-                    try {
-                
-                        // First, fetch the server document to get its joinRequests array
-                
-                        // currentServerId MUST be a string representing the server's document ID (e.g., 'DHBRP')
-                
-                        const serverDocRef = doc(db, `/artifacts/${appId}/public/data/servers`, ServerId);
-                
-                        const serverDocSnap = await getDoc(serverDocRef);
-                
-                
-                
-                        if (!serverDocSnap.exists()) {
-                
-                            console.warn(`Server document ${ServerId} not found or current user not authorized to read it. (Check server read rules!)`);
-                
-                            listEl.innerHTML = '<p class="text-slate-500">Server not found or access denied. No pending requests.</p>';
-                
-                            return;
-                
-                        }
-                
-                
-                
-                        const serverData = serverDocSnap.data();
-                
-                        joinRequests = serverData.joinRequests || [];
-                
-                
-                
-                    } catch (error) {
-                
-                        console.error(`Error fetching server data for ${ServerId}:`, error);
-                
-                        listEl.innerHTML = `<p class="text-red-400">Error fetching server requests: ${error.message}</p>`;
-                
-                        return;
-                
-                    }
-                
-                
-                
-                
-                
-                    if (joinRequests.length === 0) {
-                
-                        listEl.innerHTML = '<p class="text-slate-500">No pending requests.</p>';
-                
-                        return;
-                
-                    }
-                
-                
-                
-                    // Use a for...of loop to correctly await each user data fetch
-                
-                    for (const requesterId of joinRequests) {
-                
-                        try {
-                
-                            // Fetch user data for requester's email
-                
-                            // This relies on the security rule for /users/{userId} allowing reads by any authenticated user.
-                
-                            const userDoc = await getDoc(doc(db, `/artifacts/${appId}/users`, requesterId));
-                
-                            const requesterEmail = userDoc.exists() ? (userDoc.data().email || requesterId) : requesterId;
-                
-                
-                
-                            // Append HTML for each request
-                
-                            listEl.insertAdjacentHTML('beforeend', `
-                
-                                <div class="flex justify-between items-center bg-gray-700 rounded-md p-3 mb-2 shadow-md">
-                
-                                    <span class="text-white">${requesterEmail} (<span class="text-gray-400 text-sm">${requesterId.substring(0, 0)}...</span>)</span>
-                
-                                    <div class="space-x-2">
-                
-                                        <button class="btn bg-green-600 hover:bg-green-700 text-white font-bold py-1 px-3 rounded-md transition-colors duration-200 accept-join-btn" data-requester-id="${requesterId}">Accept</button>
-                
-                                        <button class="btn bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded-md transition-colors duration-200 reject-join-btn" data-requester-id="${requesterId}">Reject</button>
-                
-                                    </div>
-                
-                                </div>
-                
-                            `);
-                
-                        } catch (error) {
-                
-                            console.error(`Error fetching user data for requester ${requesterId}:`, error);
-                
-                            // Display an error for this specific request, but continue with others
-                
-                            listEl.insertAdjacentHTML('beforeend', `
-                
-                                <div class="flex justify-between items-center bg-gray-700 rounded-md p-3 mb-2 shadow-md">
-                
-                                    <span class="text-red-400">Error loading user (${requesterId})</span>
-                
-                                    <div class="space-x-2">
-                
-                                        <button class="btn bg-green-600 hover:bg-green-700 text-white font-bold py-1 px-3 rounded-md transition-colors duration-200 accept-join-btn" data-requester-id="${requesterId}">Accept</button>
-                
-                                        <button class="btn bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded-md transition-colors duration-200 reject-join-btn" data-requester-id="${requesterId}">Reject</button>
-                
-                                    </div>
-                
-                                </div>
-                
-                            `);
-                
-                        }
-                
-                    }
-                
-                
-                
-                    // Re-add event listeners each time the list is rendered
-                
-                    if (typeof ZappyApp !== 'undefined' && ZappyApp.panel.handleJoinRequestAction && typeof ZappyApp.panel.handleJoinRequestAction === 'function') {
-                            listEl.querySelectorAll('.accept-join-btn').forEach(button => {
-                                // Ensure no duplicate listeners are added if this function is called multiple times
-                                button.removeEventListener('click', ZappyApp.panel.handleJoinRequestAction); // Remove previous if any
-                                button.addEventListener('click', ZappyApp.panel.handleJoinRequestAction.bind(ZappyApp, 'accept', ServerId));
-                                // Passing currentServerId as a parameter
-                            });
-                
-                            listEl.querySelectorAll('.reject-join-btn').forEach(button => {
-                                button.removeEventListener('click', ZappyApp.panel.handleJoinRequestAction); // Remove previous if any
-                                button.addEventListener('click', ZappyApp.panel.handleJoinRequestAction.bind(ZappyApp, 'reject', ServerId));
-                                // Passing currentServerId as a parameter
-                            });
-                        // }, 0); // Optional small delay
-                    } else {
-                        console.warn("ZappyApp.handleJoinRequestAction not found or is not a function. Join request buttons may not be functional.");
-                    }
-
-
-
-},
-
-                async displayServerMembers(members) {
-                    const listEl = ZappyApp.elements.serverMembersList;
-                    if (listEl) listEl.innerHTML = ''; // Clear existing list
-                    if (ZappyApp.elements.serverMembersMessage) ZappyApp.elements.serverMembersMessage.textContent = ''; // Clear previous messages
-
-                    if (members.length === 0) {
-                        if (listEl) listEl.innerHTML = '<p class="text-slate-500">No members in this server.</p>';
-                        return;
-                    }
-
-                    for (const memberId of members) {
-                        // Avoid fetching user data for the current authenticated user (performance)
-                        let userEmail;
-                        if (memberId === ZappyApp.state.currentUser.uid) {
-                            userEmail = ZappyApp.state.currentUser.email || memberId;
-                        } else {
-                            const userDoc = await getDoc(doc(db, `/artifacts/${appId}/users`, memberId)); // Corrected path
-                            userEmail = userDoc.exists() ? (userDoc.data().email || memberId) : memberId;
-                        }
-
-
-                        let kickButtonHtml = '';
-                        // Only allow kicking if the current user is the owner AND not kicking themselves
-                        if (ZappyApp.state.currentServer.ownerId === ZappyApp.state.currentUser.uid && memberId !== ZappyApp.state.currentUser.uid) {
-                            kickButtonHtml = `<button class="btn btn-danger btn-sm kick-member-btn" data-member-id="${memberId}">Kick</button>`;
-                        }
-
-                        if (listEl) listEl.insertAdjacentHTML('beforeend', `
-                            <div class="flex justify-between items-center card p-3">
-                                <span>${userEmail} (${memberId}) ${memberId === ZappyApp.state.currentServer.ownerId ? '👑 Owner' : ''} ${memberId === ZappyApp.state.currentUser.uid ? '(You)' : ''}</span>
+                            const request = doc.data();
+                            const requestEl = document.createElement('div');
+                            requestEl.className = 'card p-3 flex justify-between items-center';
+                            requestEl.innerHTML = `
                                 <div>
-                                    ${kickButtonHtml}
+                                    <p class="font-semibold text-white">${request.userEmail}</p>
                                 </div>
-                            </div>
-                        `);
-                    }
-
-                    // Add event listeners for kick buttons
-                    if (listEl) {
-                        listEl.querySelectorAll('.kick-member-btn').forEach(button => {
-                            button.addEventListener('click', this.handleKickMember.bind(this));
-                        });
-                    }
-                },
-
-                async handleKickMember(e) {
-                    const memberIdToKick = e.target.dataset.memberId;
-                    const serverId = ZappyApp.state.currentServer.id;
-                    const serverDocRef = doc(db, `/artifacts/${appId}/public/data/servers`, serverId);
-
-                    if (ZappyApp.elements.serverMembersMessage) ZappyApp.elements.serverMembersMessage.textContent = ''; // Clear previous messages
-
-                    if (!memberIdToKick || memberIdToKick === ZappyApp.state.currentUser.uid) {
-                        ZappyApp.ui.displayMessage('server-members-message', 'Cannot kick yourself or an invalid member.', true);
-                        return;
-                    }
-
-                    ZappyApp.utils.showConfirmModal(
-                        'Kick Member',
-                        `Are you sure you want to kick ${memberIdToKick} from the server?`,
-                        async () => {
-                            if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
-                            try {
-                                await updateDoc(serverDocRef, {
-                                    members: arrayRemove(memberIdToKick)
-                                });
-                                ZappyApp.ui.displayMessage('server-members-message', `Member ${memberIdToKick} kicked successfully.`, false);
-                            } catch (error) {
-                                console.error("Error kicking member:", error);
-                                ZappyApp.ui.displayMessage('server-members-message', `Failed to kick member: ${error.message}. Check permissions.`, true);
-                            } finally {
-                                if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
-                            }
-                        }
-                    );
-                },
-
-                async checkActiveShift() {
-                    const userId = ZappyApp.state.currentUser.uid;
-                    const userDataRef = doc(db, `/artifacts/${appId}/users`, userId);
-                    const serverId = ZappyApp.state.currentServer ? ZappyApp.state.currentServer.id : null; // Get current server ID
-
-                    // Use onSnapshot for real-time updates to active shift status
-                    const unsubscribeShiftStatus = onSnapshot(userDataRef, async (docSnap) => {
-                        const userData = docSnap.data();
-                        const isShiftActiveInFirestore = userData && userData.activeShift && userData.shiftStartTime && userData.currentShiftServerId === serverId;
-
-                        let shiftWaveIsActive = false;
-                        if (isShiftActiveInFirestore && serverId) {
-                            try {
-                                const shiftWaveStatusDoc = await getDoc(doc(db, `/artifacts/${appId}/public/data/servers/${serverId}/settings/shiftWaveStatus`));
-                                shiftWaveIsActive = shiftWaveStatusDoc.exists() && shiftWaveStatusDoc.data().active;
-                            } catch (error) {
-                                console.error("Error checking shift wave status:", error);
-                                // Assume false if unable to read (e.g., permissions or non-existent)
-                                shiftWaveIsActive = false;
-                            }
-                        }
-
-                        if (isShiftActiveInFirestore && shiftWaveIsActive) {
-                            ZappyApp.state.shiftStartTime = userData.shiftStartTime.toDate();
-                            ZappyApp.state.shiftTimerRunning = true;
-                            if (ZappyApp.elements.shiftToggleButton) ZappyApp.elements.shiftToggleButton.textContent = 'End Shift';
-                            this.startShiftTimer();
-                        } else {
-                            // If shift was active but now should not be (e.g., shift wave ended or server changed)
-                            if (ZappyApp.state.shiftTimerRunning) {
-                                clearInterval(ZappyApp.state.shiftInterval);
-                                ZappyApp.state.shiftInterval = null;
-                            }
-                            ZappyApp.state.shiftTimerRunning = false;
-                            if (ZappyApp.elements.shiftToggleButton) ZappyApp.elements.shiftToggleButton.textContent = 'Start Shift';
-                            if (ZappyApp.elements.shiftTimer) ZappyApp.elements.shiftTimer.textContent = '00:00:00';
-
-                            // If shift was active but now not allowed to be, try to reset it in Firestore
-                            if (userData && userData.activeShift) {
-                                console.log('Automatically ending shift in Firestore due to wave inactivity or server mismatch.');
-                                try {
-                                    await updateDoc(userDataRef, {
-                                        activeShift: false,
-                                        shiftStartTime: null,
-                                        currentShiftServerId: null, // Clear the server ID when shift ends
-                                    });
-                                    ZappyApp.ui.displayMessage('shift-controls-message', 'Your shift ended automatically.', false);
-                                } catch (error) {
-                                    console.error("Error automatically ending shift:", error);
-                                    ZappyApp.ui.displayMessage('shift-controls-message', 'Error resetting shift status.', true);
-                                }
-                            }
-                        }
-                    }, (error) => {
-                        console.error("Error listening to active shift status:", error);
-                        if (error.code === 'permission-denied' || error.code === 'unavailable') {
-                             ZappyApp.ui.displayMessage('shift-controls-message', 'Failed to load shift status (permission error).', true);
-                        } else {
-                             ZappyApp.ui.displayMessage('shift-controls-message', `Error loading shift status: ${error.message}`, true);
-                        }
-                    });
-                    ZappyApp.state.unsubscribeListeners.push(unsubscribeShiftStatus);
-                },
-
-
-                startShiftTimer() {
-                    if (ZappyApp.state.shiftInterval) clearInterval(ZappyApp.state.shiftInterval);
-
-                    ZappyApp.state.shiftInterval = setInterval(() => {
-                        if (ZappyApp.state.shiftStartTime) {
-                            const now = new Date();
-                            const durationSeconds = Math.floor((now.getTime() - ZappyApp.state.shiftStartTime.getTime()) / 1000);
-                            if (ZappyApp.elements.shiftTimer) ZappyApp.elements.shiftTimer.textContent = ZappyApp.utils.formatDuration(durationSeconds);
-                        }
-                    }, 1000);
-                },
-
-                async toggleShift() {
-                    if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
-                    const userId = ZappyApp.state.currentUser.uid;
-                    const serverId = ZappyApp.state.currentServer.id;
-                    const userDataRef = doc(db, `/artifacts/${appId}/users`, userId);
-                    const shiftControlsMessageEl = ZappyApp.elements.shiftControlsMessage;
-                    if (shiftControlsMessageEl) shiftControlsMessageEl.textContent = ''; // Clear previous messages
-
-                    try {
-                        if (ZappyApp.state.shiftTimerRunning) {
-                            // End shift
-                            const now = new Date();
-                            const durationSeconds = Math.floor((now.getTime() - ZappyApp.state.shiftStartTime.getTime()) / 1000);
-
-                            const userDocSnap = await getDoc(userDataRef);
-                            const currentTotalDuration = userDocSnap.exists() && typeof userDocSnap.data().totalShiftDuration === 'number'
-                                                         ? userDocSnap.data().totalShiftDuration : 0;
-
-                            await updateDoc(userDataRef, {
-                                activeShift: false,
-                                shiftStartTime: null,
-                                currentShiftServerId: null, // Clear the server ID when shift ends
-                                totalShiftDuration: currentTotalDuration + durationSeconds
-                            });
-
-                            await addDoc(collection(db, `/artifacts/${appId}/public/data/servers/${serverId}/shifts`), {
-                                userId: userId,
-                                serverId: serverId,
-                                startTime: ZappyApp.state.shiftStartTime,
-                                endTime: now,
-                                duration: durationSeconds,
-                                recordedAt: serverTimestamp()
-                            });
-
-                            ZappyApp.ui.displayMessage('shift-controls-message', 'Shift ended.', false);
-                        } else {
-                            // Start shift
-                            // First, check if there's an active shift wave for this server
-                            const shiftWaveStatusRef = doc(db, `/artifacts/${appId}/public/data/servers/${serverId}/settings/shiftWaveStatus`);
-                            const shiftWaveStatusDoc = await getDoc(shiftWaveStatusRef);
-                            const shiftWaveActive = shiftWaveStatusDoc.exists() && shiftWaveStatusDoc.data().active;
-
-                            if (!shiftWaveActive) {
-                                ZappyApp.ui.displayMessage('shift-controls-message', 'Cannot start shift: No active shift wave on this server.', true);
-                                return; // Stop execution
-                            }
-
-                            const now = new Date();
-                            ZappyApp.state.shiftStartTime = now;
-
-                            await setDoc(userDataRef, {
-                                activeShift: true,
-                                shiftStartTime: now,
-                                currentShiftServerId: serverId, // Store the server ID for which the shift is active
-                                email: ZappyApp.state.currentUser.email || 'Anonymous User',
-                                totalShiftDuration: 0, // Will be updated on subsequent shifts if not already present
-                                createdAt: serverTimestamp()
-                            }, { merge: true });
-
-                            ZappyApp.ui.displayMessage('shift-controls-message', 'Shift started!', false);
-                        }
-                    } catch (error) {
-                        console.error("Error toggling shift:", error);
-                        ZappyApp.ui.displayMessage('shift-controls-message', `Error: ${error.message}. Check user data and shift wave permissions.`, true);
-                    } finally {
-                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
-                    }
-                },
-
-                async handleExecuteCommand() {
-                    const commandInput = typeof ZappyApp !== 'undefined' && ZappyApp.elements ? ZappyApp.elements.commandInput : null;
-                    const commandResponseEl = typeof ZappyApp !== 'undefined' && ZappyApp.elements ? ZappyApp.elements.commandResponse : null;
-                    const command = commandInput ? commandInput.value.trim() : '';
-                    
-                    // The serverId for fetching the API key from Firestore is "TEXASRP" as per image_9cb8e3.png
-                    const serverIdForApiKey = ZappyApp.state.currentServer.id;
-                    let erlcApiKey = null;
-
-                    if (commandResponseEl) commandResponseEl.textContent = ''; // Clear previous response
-
-                    if (!command) {
-                        if (commandResponseEl) {
-                            commandResponseEl.textContent = 'Please enter a command.';
-                            commandResponseEl.classList.remove('text-green-400', 'text-red-400');
-                            commandResponseEl.classList.add('text-yellow-400');
-                        }
-                        return;
-                    }
-
-                    // --- Fetch API Key from Firebase Firestore ---
-                    try {
-                        if (!db || !appId) {
-                            console.error("Firebase 'db' or 'appId' not initialized. Cannot fetch API key.");
-                            if (commandResponseEl) {
-                                commandResponseEl.textContent = 'Firebase not initialized. Cannot execute command.';
-                                commandResponseEl.classList.remove('text-green-400', 'text-red-400');
-                                commandResponseEl.classList.add('text-yellow-400');
-                            }
-                            return;
-                        }
-
-                        const apiKeyDocPath = `/artifacts/${appId}/public/data/servers/${serverIdForApiKey}`;
-                        const apiKeyDocRef = doc(db, apiKeyDocPath);
-                        const apiKeyDocSnap = await getDoc(apiKeyDocRef);
-
-                        if (apiKeyDocSnap.exists()) {
-                            erlcApiKey = apiKeyDocSnap.data().apiKey;
-                            if (!erlcApiKey) {
-                                console.error("ERLC API key field not found in Firebase document at:", apiKeyDocPath);
-                                if (commandResponseEl) {
-                                    commandResponseEl.textContent = 'Cannot execute command: ERLC API Key missing in Firebase.';
-                                    commandResponseEl.classList.remove('text-green-400', 'text-red-400');
-                                    commandResponseEl.classList.add('text-yellow-400');
-                                }
-                                return;
-                            }
-                        } else {
-                            console.error("ERLC API key configuration document not found at:", apiKeyDocPath);
-                            if (commandResponseEl) {
-                                commandResponseEl.textContent = 'Cannot execute command: ERLC API Key configuration not found in Firebase.';
-                                commandResponseEl.classList.remove('text-green-400', 'text-red-400');
-                                commandResponseEl.classList.add('text-yellow-400');
-                            }
-                            return;
-                        }
-                    } catch (firebaseError) {
-                        console.error("Error fetching ERLC API key from Firebase:", firebaseError);
-                        if (commandResponseEl) {
-                            commandResponseEl.textContent = `Failed to retrieve API key: ${firebaseError.message}`;
-                            commandResponseEl.classList.remove('text-green-400', 'text-red-400');
-                            commandResponseEl.classList.add('text-yellow-400');
-                        }
-                        return;
-                    }
-                    // --- End Fetch API Key ---
-
-                    if (commandResponseEl) {
-                        commandResponseEl.textContent = `Sending command: "${command}" to ER:LC API...`;
-                        commandResponseEl.classList.remove('text-green-400', 'text-red-400', 'text-yellow-400');
-                        commandResponseEl.classList.add('text-slate-400');
-                    }
-                    if (typeof ZappyApp !== 'undefined' && ZappyApp.elements && ZappyApp.elements.loadingOverlay) {
-                        ZappyApp.elements.loadingOverlay.classList.remove('hidden');
-                    }
-
-                    // ERLC API endpoint for executing commands (from image_394563.png)
-                    // This API does not require a server ID in the URL.
-                    const apiUrl = `https://api.policeroleplay.community/v1/server/command`;
-
-                    try {
-                        const response = await fetch(apiUrl, {
-                            method: 'POST', // It's a POST request as per the screenshot
-                            headers: {
-                                'server-key': erlcApiKey, // Use the fetched API key
-                                'Content-Type': 'application/json', // Specify content type for JSON body
-                                'Accept': 'application/json' // Expect JSON response
-                            },
-                            body: JSON.stringify({ command: command }) // Send command in JSON body
-                        });
-
-                        let responseMessage = '';
-                        let isError = false;
-
-                        if (response.ok) {
-                            // ERLC API for command execution might return 200 OK with no content or a simple message
-                            // Check for content before parsing as JSON
-                            const responseText = await response.text(); // Read as text first
-                            let apiResponse = {};
-                            try {
-                                if (responseText) {
-                                    apiResponse = JSON.parse(responseText); // Try to parse if there's content
-                                }
-                            } catch (jsonError) {
-                                console.warn("ERLC API response was not JSON:", responseText);
-                                // If it's not JSON, assume success if status is OK
-                                apiResponse = { status: 'success', message: responseText || 'Command executed successfully.' };
-                            }
-                            
-                            responseMessage = `Command executed successfully: ${apiResponse.message || 'No specific message from API.'}`;
-                            if (commandResponseEl) {
-                                commandResponseEl.classList.remove('text-red-400', 'text-slate-400', 'text-yellow-400');
-                                commandResponseEl.classList.add('text-green-400');
-                            }
-                            // Log successful command to Firestore for audit
-                            await addDoc(collection(db, `/artifacts/${appId}/public/data/servers/${(typeof ZappyApp !== 'undefined' && ZappyApp.state && ZappyApp.state.currentServer) ? ZappyApp.state.currentServer.id : serverIdForApiKey}/commandLogs`), {
-                                command: command,
-                                executedBy: (typeof ZappyApp !== 'undefined' && ZappyApp.state && ZappyApp.state.currentUser) ? ZappyApp.state.currentUser.uid : 'unknown_user',
-                                timestamp: serverTimestamp(),
-                                status: 'success'
-                            });
-                        } else {
-                            // Handle API errors based on status code and response text
-                            const errorText = await response.text();
-                            let errorMessage = `Command failed: ${response.status} ${response.statusText}`;
-                            try {
-                                const errorJson = JSON.parse(errorText);
-                                errorMessage = `Command failed: ${errorJson.message || errorText}`;
-                            } catch (e) {
-                                errorMessage = `Command failed: ${errorText || response.statusText}`;
-                            }
-                            
-                            responseMessage = errorMessage;
-                            if (commandResponseEl) {
-                                commandResponseEl.classList.remove('text-green-400', 'text-slate-400', 'text-yellow-400');
-                                commandResponseEl.classList.add('text-red-400');
-                            }
-                            isError = true;
-                            // Log failed command
-                            await addDoc(collection(db, `/artifacts/${appId}/public/data/servers/${(typeof ZappyApp !== 'undefined' && ZappyApp.state && ZappyApp.state.currentServer) ? ZappyApp.state.currentServer.id : serverIdForApiKey}/commandLogs`), {
-                                command: command,
-                                executedBy: (typeof ZappyApp !== 'undefined' && ZappyApp.state && ZappyApp.state.currentUser) ? ZappyApp.state.currentUser.uid : 'unknown_user',
-                                timestamp: serverTimestamp(),
-                                status: 'failed',
-                                errorMessage: responseMessage
-                            });
-                        }
-                        if (commandResponseEl) commandResponseEl.textContent = responseMessage;
-                        if (commandInput) commandInput.value = ''; // Clear input
-                    } catch (error) {
-                        console.error("Error executing command (API call):", error);
-                        if (commandResponseEl) {
-                            commandResponseEl.textContent = `Error during command execution: ${error.message}`;
-                            commandResponseEl.classList.remove('text-green-400', 'text-slate-400', 'text-yellow-400');
-                            commandResponseEl.classList.add('text-red-400');
-                        }
-                        // Log general error
-                        await addDoc(collection(db, `/artifacts/${appId}/public/data/servers/${(typeof ZappyApp !== 'undefined' && ZappyApp.state && ZappyApp.state.currentServer) ? ZappyApp.state.currentServer.id : serverIdForApiKey}/commandLogs`), {
-                            command: command,
-                            executedBy: (typeof ZappyApp !== 'undefined' && ZappyApp.state && ZappyApp.state.currentUser) ? ZappyApp.state.currentUser.uid : 'unknown_user',
-                            timestamp: serverTimestamp(),
-                            status: 'error',
-                            errorMessage: error.message
-                        });
-                    } finally {
-                        if (typeof ZappyApp !== 'undefined' && ZappyApp.elements && ZappyApp.elements.loadingOverlay) {
-                            ZappyApp.elements.loadingOverlay.classList.add('hidden');
-                        }
-                    }
-                },
-
-                async handleSaveServerName() {
-                    const newName = ZappyApp.elements.editServerNameInput?.value.trim();
-                    const serverId = ZappyApp.state.currentServer.id;
-                    const serverDocRef = doc(db, `/artifacts/${appId}/public/data/servers`, serverId);
-
-                    if (ZappyApp.elements.ownerSettingsSuccess) ZappyApp.elements.ownerSettingsSuccess.textContent = '';
-                    if (ZappyApp.elements.ownerSettingsError) ZappyApp.elements.ownerSettingsError.textContent = '';
-
-                    if (!newName) {
-                        ZappyApp.ui.displayMessage('owner-settings-error', 'Server name cannot be empty.', true);
-                        return;
-                    }
-
-                    if (newName === ZappyApp.state.currentServer.name) {
-                        ZappyApp.ui.displayMessage('owner-settings-success', 'Server name is already up to date.', false);
-                        return;
-                    }
-
-                    if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
-                    try {
-                        await updateDoc(serverDocRef, { name: newName });
-                        ZappyApp.state.currentServer.name = newName; // Update local state
-                        if (ZappyApp.elements.panelServerName) ZappyApp.elements.panelServerName.textContent = newName; // Update panel header
-                        ZappyApp.ui.displayMessage('owner-settings-success', 'Server name updated successfully!', false);
-                    } catch (error) {
-                        console.error("Error updating server name:", error);
-                        ZappyApp.ui.displayMessage('owner-settings-error', `Failed to update server name: ${error.message}`, true);
-                    } finally {
-                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
-                    }
-                },
-
-                async handleSaveApiKey() {
-                    const newApiKey = ZappyApp.elements.editApiKeyInput?.value.trim();
-                    const serverId = ZappyApp.state.currentServer.id;
-                    const serverDocRef = doc(db, `/artifacts/${appId}/public/data/servers`, serverId);
-
-                    if (ZappyApp.elements.ownerApiKeySuccess) ZappyApp.elements.ownerApiKeySuccess.textContent = '';
-                    if (ZappyApp.elements.ownerApiKeyError) ZappyApp.elements.ownerApiKeyError.textContent = '';
-
-                    if (!newApiKey) {
-                        ZappyApp.ui.displayMessage('owner-api-key-error', 'API Key cannot be empty.', true);
-                        return;
-                    }
-
-                    if (newApiKey === ZappyApp.state.currentServer.apiKey) {
-                        ZappyApp.ui.displayMessage('owner-api-key-success', 'API Key is already up to date.', false);
-                        return;
-                    }
-
-                    if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
-                    try {
-                        await updateDoc(serverDocRef, { apiKey: newApiKey });
-                        ZappyApp.state.currentServer.apiKey = newApiKey; // Update local state
-                        ZappyApp.ui.displayMessage('owner-api-key-success', 'API Key updated successfully!', false);
-                    } catch (error) {
-                        console.error("Error updating API Key:", error);
-                        ZappyApp.ui.displayMessage('owner-api-key-error', `Failed to update API Key: ${error.message}`, true);
-                    } finally {
-                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
-                    }
-                },
-
-
-                handleDeleteServer() {
-                    ZappyApp.utils.showConfirmModal(
-                        'Delete Server',
-                        'This action is irreversible and will delete all server data, including member lists, join requests, and logs. Are you absolutely sure?',
-                        async () => {
-                            if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
-                            const serverId = ZappyApp.state.currentServer.id;
-                            const serverDocRef = doc(db, `/artifacts/${appId}/public/data/servers`, serverId);
-
-                            try {
-                                // Delete subcollections first (Firestore does not delete subcollections automatically)
-                                const batch = writeBatch(db);
-
-                                // Helper function to delete documents in a subcollection
-                                const deleteCollection = async (collectionPath) => {
-                                    const q = query(collection(db, collectionPath));
-                                    const snapshot = await getDocs(q);
-                                    snapshot.forEach(doc => batch.delete(doc.ref));
-                                };
-
-                                await deleteCollection(`/artifacts/${appId}/public/data/servers/${serverId}/commandLogs`);
-                                await deleteCollection(`/artifacts/${appId}/public/data/servers/${serverId}/shifts`);
-                                await deleteCollection(`/artifacts/${appId}/public/data/servers/${serverId}/logs`); // Ensure logs are also deleted
-                                await deleteCollection(`/artifacts/${appId}/public/data/servers/${serverId}/settings`); // Delete settings subcollection
-
-                                // Add more subcollections here as they are added (vehicles, killlogs etc.)
-
-                                await batch.commit(); // Commit deletions of subcollection documents
-
-                                // Now delete the server document itself
-                                await deleteDoc(serverDocRef);
-
-                                ZappyApp.state.currentServer = null; // Clear current server state
-                                ZappyApp.ui.displayMessage('server-list-error', 'Server deleted successfully.', false); // Display message on dashboard
-                                ZappyApp.ui.showView('dashboard');
-                            } catch (error) {
-                                console.error("Error deleting server:", error);
-                                ZappyApp.ui.displayMessage('owner-settings-error', `Failed to delete server: ${error.message}`, true);
-                            } finally {
-                                if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
-                            }
-                        }
-                    );
-                },
-
-
-                async  refreshStats() {
-                    const outputEl = typeof ZappyApp !== 'undefined' && ZappyApp.elements ? ZappyApp.elements.serverStatsOutput : null;
-                    if (outputEl) outputEl.innerHTML = '<p class="text-slate-400">Fetching server statistics...</p>';
-
-                    // The serverId for fetching the API key from Firestore is "TEXASRP" as per image_9cb8e3.png
-                    const serverIdForApiKey = ZappyApp.state.currentServer.id;
-                    let erlcApiKey = null;
-
-                    try {
-                        // Construct the Firestore document path to the API key based on image_9cb8e3.png:
-                        // /artifacts/{appId}/public/data/servers/TEXASRP
-                        const apiKeyDocPath = `/artifacts/${appId}/public/data/servers/${serverIdForApiKey}`;
-                        const apiKeyDocRef = doc(db, apiKeyDocPath);
-                        const apiKeyDocSnap = await getDoc(apiKeyDocRef);
-
-                        if (apiKeyDocSnap.exists()) {
-                            erlcApiKey = apiKeyDocSnap.data().apiKey;
-                            if (!erlcApiKey) {
-                                console.error("ERLC API key field not found in Firebase document at:", apiKeyDocPath);
-                                if (outputEl) {
-                                    outputEl.innerHTML = '<p class="text-red-400">ERLC API key missing in Firebase configuration.</p>';
-                                }
-                                return;
-                            }
-                        } else {
-                            console.error("ERLC API key configuration document not found at:", apiKeyDocPath);
-                            if (outputEl) {
-                                outputEl.innerHTML = '<p class="text-red-400">ERLC API key configuration not found in Firebase.</p>';
-                            }
-                            return;
-                        }
-                    } catch (firebaseError) {
-                        console.error("Error fetching ERLC API key from Firebase:", firebaseError);
-                        if (outputEl) {
-                            outputEl.innerHTML = '<p class="text-red-400">Failed to retrieve API key from Firebase (check console for details).</p>';
-                        }
-                        return;
-                    }
-
-                    // New ERLC API endpoint for server status (from image_9c5349.png)
-                    // This API does not require a server ID in the URL.
-                    const apiUrl = `https://api.policeroleplay.community/v1/server`;
-
-                    try {
-                        const response = await fetch(apiUrl, {
-                            method: 'GET',
-                            headers: {
-                                'server-key': erlcApiKey, // Use the fetched API key
-                                'Accept': 'application/json'
-                            }
-                        });
-
-                        if (!response.ok) {
-                            const errorText = await response.text();
-                            console.error(`ERLC API Error: ${response.status} - ${errorText}`);
-                            if (outputEl) {
-                                outputEl.innerHTML = `<p class="text-red-400">Failed to load server statistics: ${response.status} ${response.statusText}.</p>`;
-                            }
-                            return;
-                        }
-
-                        const statsData = await response.json();
-
-                        // Assuming the response structure matches the example in image_9c5349.png:
-                        // { "Name": "API Test", "OwnerId": 1, "CurrentPlayers": 1, "MaxPlayers": 1, ... }
-                        if (statsData && outputEl) {
-                            // Map ERLC API response fields to your desired display format
-                            const currentPlayers = statsData.CurrentPlayers !== undefined ? statsData.CurrentPlayers : 'N/A';
-                            const maxPlayers = statsData.MaxPlayers !== undefined ? statsData.MaxPlayers : 'N/A';
-                            const serverName = statsData.Name || 'N/A';
-                            const ownerId = statsData.OwnerId !== undefined ? statsData.OwnerId : 'N/A';
-                            // The API response doesn't directly provide currentVehicles, totalGameTimeHours, serverStatus, serverRegion.
-                            // You might need to infer or mock these if they are not available from this specific API.
-                            // For now, I'll use placeholders or infer based on player count for status.
-                            const serverStatus = (currentPlayers > 0 && currentPlayers !== 'N/A') ? 'online' : 'offline'; // Infer status
-                            const currentVehicles = 'N/A'; // Not provided by this API endpoint
-                            const totalGameTimeHours = 'N/A'; // Not provided by this API endpoint
-                            const serverRegion = 'N/A'; // Not provided by this API endpoint
-
-
-                            outputEl.innerHTML = `
-                                <p><strong>Server Name:</strong> ${serverName}</p>
-                                <p><strong>Owner ID:</strong> ${ownerId}</p>
-                                <p><strong>Status:</strong> <span class="${serverStatus === 'online' ? 'text-green-400' : 'text-red-400'}">${serverStatus.toUpperCase()}</span></p>
-                                <p><strong>Players:</strong> ${currentPlayers}/${maxPlayers}</p>
-                                <p><strong>Active Vehicles:</strong> ${currentVehicles}</p>
-                                <p><strong>Region:</strong> ${serverRegion}</p>
-                                <p><strong>Total Uptime:</strong> ${totalGameTimeHours} hours</p>
+                                <div>
+                                    <button class="btn btn-primary btn-sm accept-btn" data-id="${doc.id}">Accept</button>
+                                    <button class="btn btn-danger btn-sm deny-btn" data-id="${doc.id}">Deny</button>
+                                </div>
                             `;
-                        } else if (outputEl) {
-                            outputEl.innerHTML = '<p class="text-red-400">Failed to load server statistics or data is empty.</p>';
-                        }
-                    } catch (error) {
-                        console.error("Error refreshing stats:", error);
-                        if (outputEl) outputEl.innerHTML = `<p class="text-red-400">Error: ${error.message}</p>`;
-                    }
-                },
-
-                async  refreshPlayers() {
-                    const playersListEl = typeof ZappyApp !== 'undefined' && ZappyApp.elements ? ZappyApp.elements.playerList : null;
-                    const joinRequestsDisplayEl = typeof ZappyApp !== 'undefined' && ZappyApp.elements ? ZappyApp.elements.joinRequestsDisplay : null;
-                    const playerCountEl = typeof ZappyApp !== 'undefined' && ZappyApp.elements ? ZappyApp.elements.playerCount : null;
-                    const queueCountEl = typeof ZappyApp !== 'undefined' && ZappyApp.elements ? ZappyApp.elements.queueCount : null;
-
-                    if (playersListEl) playersListEl.innerHTML = '<p class="text-slate-400">Fetching player data...</p>';
-                    if (joinRequestsDisplayEl) joinRequestsDisplayEl.innerHTML = '<p class="text-slate-400">Loading requests from Firebase...</p>';
-                    if (playerCountEl) playerCountEl.textContent = '...';
-                    if (queueCountEl) queueCountEl.textContent = '...';
-
-                    // The serverId for fetching the API key from Firestore is "TEXASRP" as per image_9cb8e3.png
-                    const serverIdForApiKey = ZappyApp.state.currentServer.id;
-                    let erlcApiKey = null;
-
-                    try {
-                        // Construct the Firestore document path to the API key based on image_9cb8e3.png:
-                        // /artifacts/{appId}/public/data/servers/TEXASRP
-                        const apiKeyDocPath = `/artifacts/${appId}/public/data/servers/${serverIdForApiKey}`;
-                        const apiKeyDocRef = doc(db, apiKeyDocPath);
-                        const apiKeyDocSnap = await getDoc(apiKeyDocRef);
-
-                        if (apiKeyDocSnap.exists()) {
-                            erlcApiKey = apiKeyDocSnap.data().apiKey;
-                            if (!erlcApiKey) {
-                                console.error("ERLC API key field not found in Firebase document at:", apiKeyDocPath);
-                                if (playersListEl) {
-                                    playersListEl.innerHTML = '<p class="text-red-400">ERLC API key missing in Firebase configuration.</p>';
-                                }
-                                if (playerCountEl) playerCountEl.textContent = 'Error';
-                                if (queueCountEl) queueCountEl.textContent = 'Error';
-                                return;
-                            }
-                        } else {
-                            console.error("ERLC API key configuration document not found at:", apiKeyDocPath);
-                            if (playersListEl) {
-                                playersListEl.innerHTML = '<p class="text-red-400">ERLC API key configuration not found in Firebase.</p>';
-                            }
-                            if (playerCountEl) playerCountEl.textContent = 'Error';
-                            if (queueCountEl) queueCountEl.textContent = 'Error';
-                            return;
-                        }
-                    } catch (firebaseError) {
-                        console.error("Error fetching ERLC API key from Firebase:", firebaseError);
-                        if (playersListEl) {
-                            playersListEl.innerHTML = '<p class="text-red-400">Failed to retrieve API key from Firebase (check console for details).</p>';
-                        }
-                        if (playerCountEl) playerCountEl.textContent = 'Error';
-                        if (queueCountEl) queueCountEl.textContent = 'Error';
-                        return;
-                    }
-
-                    // New ERLC API endpoint for players (from image_39b63d.png)
-                    // This API does not require a server ID in the URL.
-                    const apiUrl = `https://api.policeroleplay.community/v1/server/players`;
-
-                    try {
-                        const response = await fetch(apiUrl, {
-                            method: 'GET',
-                            headers: {
-                                'server-key': erlcApiKey, // Use the fetched API key
-                                'Accept': 'application/json'
-                            }
+                            this.elements.ownerJoinRequestsList.appendChild(requestEl);
                         });
-
-                        if (!response.ok) {
-                            const errorText = await response.text();
-                            console.error(`ERLC API Error: ${response.status} - ${errorText}`);
-                            if (playersListEl) {
-                                playersListEl.innerHTML = `<p class="text-red-400">Failed to load player data: ${response.status} ${response.statusText}.</p>`;
-                            }
-                            if (playerCountEl) playerCountEl.textContent = 'Error';
-                            if (queueCountEl) queueCountEl.textContent = 'Error';
-                            return;
-                        }
-
-                        const playersData = await response.json();
-
-                        // Assuming the response is an array of player objects as shown in image_39b63d.png
-                        // Example structure: [{ "Player": "PlayerName Id", "Permission": "Normal", "Callsign": "...", "Team": "..." }]
-                        if (playersData && Array.isArray(playersData) && playersListEl) {
-                            playersListEl.innerHTML = ''; // Clear existing players
-
-                            if (playersData.length > 0) {
-                                playersData.forEach(player => {
-                                    const playerName = player.Player || 'Unknown Player';
-                                    const playerPermission = player.Permission || 'N/A';
-                                    const playerCallsign = player.Callsign ? ` (Callsign: ${player.Callsign})` : '';
-                                    const playerTeam = player.Team ? ` (Team: ${player.Team})` : '';
-                                    
-                                    // The ERLC API for players doesn't provide 'ping' or 'job' directly in the same format
-                                    // as your original Gemini API prompt. 'Permission' might be used as 'job' equivalent.
-                                    // 'Ping' is not available from this endpoint.
-                                    playersListEl.insertAdjacentHTML('beforeend', `
-                                        <li>${playerName} - ${playerPermission}${playerCallsign}${playerTeam}</li>
-                                    `);
-                                });
-                            } else {
-                                playersListEl.innerHTML = '<p class="text-slate-500">No players online.</p>';
-                            }
-
-                            if (playerCountEl) playerCountEl.textContent = playersData.length;
-                            // The ERLC API for players doesn't provide queue size. Defaulting to 0 or 'N/A'.
-                            if (queueCountEl) queueCountEl.textContent = 'N/A'; // Or 0 if you prefer a number
-                        } else if (playersListEl) {
-                            playersListEl.innerHTML = '<p class="text-red-400">Failed to load player data or data is empty.</p>';
-                            if (playerCountEl) playerCountEl.textContent = 'Error';
-                            if (queueCountEl) queueCountEl.textContent = 'Error';
-                        }
-                    } catch (error) {
-                        console.error("Error refreshing players:", error);
-                        if (playersListEl) playersListEl.innerHTML = `<p class="text-red-400">Error: ${error.message}</p>`;
-                        if (playerCountEl) playerCountEl.textContent = 'Error';
-                        if (queueCountEl) queueCountEl.textContent = 'Error';
-                    }
-                    // Join requests are handled by Firebase onSnapshot listener (as per your original comment)
-                    // This part remains unchanged as it refers to Firebase data, not ERLC API.
-                    // If you need to integrate ERLC API for join requests, that would be a separate task.
-                },
-
-                async refreshVehicles() {
-                    const vehiclesListEl = typeof ZappyApp !== 'undefined' && ZappyApp.elements ? ZappyApp.elements.vehicleList : null;
-                    if (vehiclesListEl) vehiclesListEl.innerHTML = '<p class="text-slate-400">Fetching vehicle data...</p>';
-
-                    // The serverId for fetching the API key from Firestore is "TEXASRP" as per image_9cb8e3.png
-                    const serverIdForApiKey = ZappyApp.state.currentServer.id;
-                    let erlcApiKey = null;
-
-                    try {
-                        // Construct the Firestore document path to the API key based on image_9cb8e3.png:
-                        // /artifacts/{appId}/public/data/servers/TEXASRP
-                        const apiKeyDocPath = `/artifacts/${appId}/public/data/servers/${serverIdForApiKey}`;
-                        const apiKeyDocRef = doc(db, apiKeyDocPath);
-                        const apiKeyDocSnap = await getDoc(apiKeyDocRef);
-
-                        if (apiKeyDocSnap.exists()) {
-                            erlcApiKey = apiKeyDocSnap.data().apiKey;
-                            if (!erlcApiKey) {
-                                console.error("ERLC API key field not found in Firebase document at:", apiKeyDocPath);
-                                if (vehiclesListEl) {
-                                    vehiclesListEl.innerHTML = '<p class="text-red-400">ERLC API key missing in Firebase configuration.</p>';
-                                }
-                                return;
-                            }
-                        } else {
-                            console.error("ERLC API key configuration document not found at:", apiKeyDocPath);
-                            if (vehiclesListEl) {
-                                vehiclesListEl.innerHTML = '<p class="text-red-400">ERLC API key configuration not found in Firebase.</p>';
-                            }
-                            return;
-                        }
-                    } catch (firebaseError) {
-                        console.error("Error fetching ERLC API key from Firebase:", firebaseError);
-                        if (vehiclesListEl) {
-                            vehiclesListEl.innerHTML = '<p class="text-red-400">Failed to retrieve API key from Firebase (check console for details).</p>';
-                        }
-                        return;
-                    }
-
-                    // New ERLC API endpoint for vehicles (from image_3949a0.png)
-                    // This API does not require a server ID in the URL.
-                    const apiUrl = `https://api.policeroleplay.community/v1/server/vehicles`;
-
-                    try {
-                        const response = await fetch(apiUrl, {
-                            method: 'GET',
-                            headers: {
-                                'server-key': erlcApiKey, // Use the fetched API key
-                                'Accept': 'application/json'
-                            }
+                        this.elements.ownerJoinRequestsList.querySelectorAll('.accept-btn').forEach(btn => {
+                            btn.addEventListener('click', (e) => this.handleAcceptJoinRequest(e.currentTarget.dataset.id));
                         });
-
-                        if (!response.ok) {
-                            const errorText = await response.text();
-                            console.error(`ERLC API Error: ${response.status} - ${errorText}`);
-                            if (vehiclesListEl) {
-                                vehiclesListEl.innerHTML = `<p class="text-red-400">Failed to load vehicle data: ${response.status} ${response.statusText}.</p>`;
-                            }
-                            return;
-                        }
-
-                        const vehiclesData = await response.json();
-
-                        // Assuming the response is an array of vehicle objects as shown in image_3949a0.png
-                        // Example structure: [{ "Texture": "Standard", "Name": "2019 Falcon Interceptor Utility", "Owner": "flat_bird" }]
-                        if (vehiclesData && Array.isArray(vehiclesData) && vehiclesListEl) {
-                            vehiclesListEl.innerHTML = ''; // Clear existing vehicles
-
-                            if (vehiclesData.length > 0) {
-                                vehiclesData.forEach(vehicle => {
-                                    const vehicleName = vehicle.Name || 'Unknown Vehicle';
-                                    const vehicleOwner = vehicle.Owner || 'N/A';
-                                    const vehicleTexture = vehicle.Texture || 'Standard'; // Default to Standard if not provided
-                                    
-                                    // The ERLC API for vehicles doesn't provide 'location' or a direct 'type' (like Police Cruiser).
-                                    // 'Name' could be used as a more specific type.
-                                    const vehicleType = vehicleName; // Using Name as the type for display
-                                    const vehicleLocation = 'N/A'; // Not provided by this API endpoint
-
-                                    vehiclesListEl.insertAdjacentHTML('beforeend', `
-                                        <li>${vehicleType} (Texture: ${vehicleTexture}) owned by ${vehicleOwner} at ${vehicleLocation}</li>
-                                    `);
-                                });
-                            } else {
-                                vehiclesListEl.innerHTML = '<p class="text-slate-500">No active vehicles.</p>';
-                            }
-                        } else if (vehiclesListEl) {
-                            vehiclesListEl.innerHTML = '<p class="text-red-400">Failed to load vehicle data or data is empty.</p>';
-                        }
-                    } catch (error) {
-                        console.error("Error refreshing vehicles:", error);
-                        if (vehiclesListEl) vehiclesListEl.innerHTML = `<p class="text-red-400">Error: ${error.message}</p>`;
-                    }
-                },
-
-                async refreshKillLogs() {
-                    const killLogListEl = typeof ZappyApp !== 'undefined' && ZappyApp.elements ? ZappyApp.elements.killLogList : null;
-                    if (killLogListEl) killLogListEl.innerHTML = '<p class="text-slate-400">Fetching kill logs...</p>';
-
-                    // The serverId for fetching the API key from Firestore is "TEXASRP" as per image_9cb8e3.png
-                    const serverIdForApiKey = ZappyApp.state.currentServer.id; 
-                    let erlcApiKey = null;
-
-                    try {
-                        // Construct the Firestore document path to the API key based on image_9cb8e3.png:
-                        // /artifacts/{appId}/public/data/servers/TEXASRP
-                        const apiKeyDocPath = `/artifacts/${appId}/public/data/servers/${serverIdForApiKey}`;
-                        const apiKeyDocRef = doc(db, apiKeyDocPath);
-                        const apiKeyDocSnap = await getDoc(apiKeyDocRef);
-
-                        if (apiKeyDocSnap.exists()) {
-                            erlcApiKey = apiKeyDocSnap.data().apiKey;
-                            if (!erlcApiKey) {
-                                console.error("ERLC API key field not found in Firebase document at:", apiKeyDocPath);
-                                if (killLogListEl) {
-                                    killLogListEl.innerHTML = '<p class="text-red-400">ERLC API key missing in Firebase configuration.</p>';
-                                }
-                                return;
-                            }
-                        } else {
-                            console.error("ERLC API key configuration document not found at:", apiKeyDocPath);
-                            if (killLogListEl) {
-                                killLogListEl.innerHTML = '<p class="text-red-400">ERLC API key configuration not found in Firebase.</p>';
-                            }
-                            return;
-                        }
-                    } catch (firebaseError) {
-                        console.error("Error fetching ERLC API key from Firebase:", firebaseError);
-                        if (killLogListEl) {
-                            killLogListEl.innerHTML = '<p class="text-red-400">Failed to retrieve API key from Firebase (check console for details).</p>';
-                        }
-                        return;
-                    }
-
-                    // New ERLC API endpoint for kill logs (from image_394d41.png)
-                    // This API does not require a server ID in the URL.
-                    const apiUrl = `https://api.policeroleplay.community/v1/server/killlogs`;
-
-                    try {
-                        const response = await fetch(apiUrl, {
-                            method: 'GET',
-                            headers: {
-                                'server-key': erlcApiKey, // Use the fetched API key
-                                'Accept': 'application/json'
-                            }
+                        this.elements.ownerJoinRequestsList.querySelectorAll('.deny-btn').forEach(btn => {
+                            btn.addEventListener('click', (e) => this.handleDenyJoinRequest(e.currentTarget.dataset.id));
                         });
-
-                        if (!response.ok) {
-                            const errorText = await response.text();
-                            console.error(`ERLC API Error: ${response.status} - ${errorText}`);
-                            if (killLogListEl) {
-                                killLogListEl.innerHTML = `<p class="text-red-400">Failed to load kill logs: ${response.status} ${response.statusText}.</p>`;
-                            }
-                            return;
-                        }
-
-                        const killLogsData = await response.json();
-
-                        // Assuming the response is an array of kill log objects as shown in image_394d41.png
-                        // Example structure: [{ "Killed": "PlayerName:Id", "Timestamp": 1704614400, "Killer": "PlayerName:Id" }]
-                        if (killLogsData && Array.isArray(killLogsData) && killLogListEl) {
-                            killLogListEl.innerHTML = ''; // Clear existing logs
-
-                            if (killLogsData.length > 0) {
-                                // Sort logs by timestamp in descending order (newest first)
-                                killLogsData.sort((a, b) => b.Timestamp - a.Timestamp)
-                                    .forEach(log => {
-                                        const killedPlayer = log.Killed || 'Unknown Victim';
-                                        const killerPlayer = log.Killer || 'Unknown Killer';
-                                        const timestamp = log.Timestamp ? new Date(log.Timestamp * 1000).toLocaleString() : 'N/A'; // Convert Unix epoch seconds
-                                        
-                                        // The ERLC API for kill logs doesn't provide 'weapon' directly.
-                                        // You might need to infer or use a placeholder.
-                                        const weapon = 'N/A'; // Not provided by this API endpoint
-
-                                        killLogListEl.insertAdjacentHTML('beforeend', `
-                                            <li>[${timestamp}] ${killerPlayer} eliminated ${killedPlayer} (Weapon: ${weapon}).</li>
-                                        `);
-                                    });
-                            } else {
-                                killLogListEl.innerHTML = '<p class="text-slate-500">No kill logs available.</p>';
-                            }
-                        } else if (killLogListEl) {
-                            killLogListEl.innerHTML = '<p class="text-red-400">Failed to load kill logs or data is empty.</p>';
-                        }
-                    } catch (error) {
-                        console.error("Error refreshing kill logs:", error);
-                        if (killLogListEl) killLogListEl.innerHTML = `<p class="text-red-400">Error: ${error.message}</p>`;
-                    }
-                },
-
-                
-
-                async handleShiftWaveAction(action) {
-                    if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
-                    const serverId = ZappyApp.state.currentServer.id;
-                    const shiftWaveStatusRef = doc(db, `/artifacts/${appId}/public/data/servers/${serverId}/settings/shiftWaveStatus`);
-                    if (ZappyApp.elements.shiftControlsMessage) ZappyApp.elements.shiftControlsMessage.textContent = ''; // Clear previous messages
-
-                    try {
-                        if (action === 'start') {
-                            await setDoc(shiftWaveStatusRef, { active: true, startTime: serverTimestamp(), triggeredBy: ZappyApp.state.currentUser.uid });
-                            ZappyApp.ui.displayMessage('shift-controls-message', 'Shift wave started!', false);
-                        } else if (action === 'end') {
-                            await setDoc(shiftWaveStatusRef, { active: false, endTime: serverTimestamp(), triggeredBy: ZappyApp.state.currentUser.uid });
-                            ZappyApp.ui.displayMessage('shift-controls-message', 'Shift wave ended!', false);
-
-                            // WIPE SHIFTS FOR THIS SERVER
-                            console.log(`Clearing all shifts for server: ${serverId}`);
-                            const shiftsCollectionRef = collection(db, `/artifacts/${appId}/public/data/servers/${serverId}/shifts`);
-                            const shiftsSnapshot = await getDocs(shiftsCollectionRef);
-                            const batchDeleteShifts = writeBatch(db);
-                            shiftsSnapshot.docs.forEach(doc => {
-                                batchDeleteShifts.delete(doc.ref);
-                            });
-                            if (shiftsSnapshot.empty) {
-                                console.log('No shifts to clear.');
-                            } else {
-                                await batchDeleteShifts.commit();
-                                console.log('All shifts for this server cleared successfully.');
-                                ZappyApp.ui.displayMessage('shift-controls-message', 'Shift wave ended and all shifts cleared!', false);
-                            }
-
-                            // Optional: Reset active shifts for users who were on this server's shift wave
-                            // This would be a more advanced feature, likely requiring backend logic for robustness.
-                            // For client-side only, their individual `checkActiveShift` listeners
-                            // will handle local state updates due to `shiftWaveStatus.active` changing.
-                        }
-                    } catch (error) {
-                        console.error(`Error ${action}ing shift wave or wiping shifts:`, error);
-                        ZappyApp.ui.displayMessage('shift-controls-message', `Failed to ${action} shift wave: ${error.message}`, true);
-                    } finally {
-                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
-                    }
-                },
-
-                bindEvents() {
-                    const backToDashboardBtn = document.getElementById('back-to-dashboard-btn');
-                    if (backToDashboardBtn) backToDashboardBtn.addEventListener('click', () => {
-                        ZappyApp.ui.showView('dashboard');
-                        ZappyApp.panel.cleanup();
-                    });
-                    if (ZappyApp.elements.shiftToggleButton) ZappyApp.elements.shiftToggleButton.addEventListener('click', this.toggleShift.bind(this));
-                    const executeCommandButton = document.getElementById('execute-command-button');
-                    if (executeCommandButton) executeCommandButton.addEventListener('click', this.handleExecuteCommand.bind(this));
-                    const saveServerNameBtn = document.getElementById('save-server-name-btn');
-                    if (saveServerNameBtn) saveServerNameBtn.addEventListener('click', this.handleSaveServerName.bind(this));
-                    const saveApiKeyBtn = document.getElementById('save-api-key-btn');
-                    if (saveApiKeyBtn) saveApiKeyBtn.addEventListener('click', this.handleSaveApiKey.bind(this)); // Bind new API key save button
-                    const deleteServerBtn = document.getElementById('delete-server-btn');
-                    if (deleteServerBtn) deleteServerBtn.addEventListener('click', this.handleDeleteServer.bind(this));
-
-                    // Refresh buttons for various tabs
-                    const refreshStatsBtn = document.getElementById('refresh-stats-btn');
-                    if (refreshStatsBtn) refreshStatsBtn.addEventListener('click', this.refreshStats.bind(this)); // Bind context
-                    const refreshPlayersBtn = document.getElementById('refresh-players-btn');
-                    if (refreshPlayersBtn) refreshPlayersBtn.addEventListener('click', this.refreshPlayers.bind(this)); // Bind context
-                    const refreshVehiclesBtn = document.getElementById('refresh-vehicles-btn');
-                    if (refreshVehiclesBtn) refreshVehiclesBtn.addEventListener('click', this.refreshVehicles.bind(this)); // Bind context
-                    const refreshKillLogsBtn = document.getElementById('refresh-killlogs-btn');
-                    if (refreshKillLogsBtn) refreshKillLogsBtn.addEventListener('click', this.refreshKillLogs.bind(this)); // Bind context
-                    const refreshCommandLogsBtn = document.getElementById('refresh-commandlogs-btn');
-                    if (refreshCommandLogsBtn) refreshCommandLogsBtn.addEventListener('click', this.refreshCommandLogs.bind(this)); // Bind context
-
-                    // Shift wave controls
-                    if (ZappyApp.elements.startShiftWaveBtn) ZappyApp.elements.startShiftWaveBtn.addEventListener('click', this.handleShiftWaveAction.bind(this, 'start'));
-                    if (ZappyApp.elements.endShiftWaveBtn) ZappyApp.elements.endShiftWaveBtn.addEventListener('click', this.handleShiftWaveAction.bind(this, 'end'));
-
-                    // Initial setup of tab listeners
-                    this.setupTabListeners();
+                    }, (error) => {
+                        console.error("Error listening to join requests:", error);
+                        this.elements.ownerJoinRequestsListError.textContent = 'Failed to load join requests.';
+                    }));
                 }
-            }
+
+                // Listen to Shifts
+                const shiftsRef = collection(db, `artifacts/${appId}/public/data/servers/${serverId}/shifts`);
+                this.state.unsubscribeListeners.push(onSnapshot(shiftsRef, (snapshot) => {
+                    const shifts = [];
+                    snapshot.forEach(doc => shifts.push(doc.data()));
+                    this.renderShiftLeaderboard(shifts);
+                }, (error) => {
+                    console.error("Error listening to shifts:", error);
+                }));
+
+                // Listen to Punishment Logs
+                this.state.unsubscribeListeners.push(onSnapshot(collection(db, `artifacts/${appId}/public/data/servers/${serverId}/punishmentLogs`), (snapshot) => {
+                    const logs = [];
+                    snapshot.forEach(doc => logs.push({ id: doc.id, ...doc.data() }));
+                    this.state.punishmentLogs = logs;
+                    this.renderPunishmentLogs();
+                    if (isOwner) {
+                        this.renderOwnerPunishmentLogs(logs);
+                    }
+                }, (error) => {
+                    console.error("Error listening to punishment logs:", error);
+                    this.elements.punishmentLogList.innerHTML = '<p class="text-center text-red-400">Failed to load punishment logs.</p>';
+                    if (isOwner) {
+                        this.elements.ownerPunishmentLogs.innerHTML = '<p class="text-center text-red-400">Failed to load logs for editing.</p>';
+                    }
+                }));
+            },
+
+            renderShiftLeaderboard: function(shifts) {
+                this.elements.shiftLeaderboard.innerHTML = '';
+                if (shifts.length === 0) {
+                    this.elements.shiftLeaderboard.innerHTML = '<p class="text-center text-slate-400">No shifts recorded yet.</p>';
+                    return;
+                }
+                const sortedShifts = shifts.sort((a, b) => (b.endTime - b.startTime) - (a.endTime - a.startTime));
+                let html = '';
+                sortedShifts.forEach((shift, index) => {
+                    const duration = shift.endTime - shift.startTime;
+                    const hours = Math.floor(duration / (1000 * 60 * 60));
+                    const minutes = Math.floor((duration % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((duration % (1000 * 60)) / 1000);
+                    const formattedDuration = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    html += `
+                        <div class="card p-4 flex justify-between items-center">
+                            <span class="font-semibold text-white">#${index + 1} ${shift.userEmail}</span>
+                            <span class="font-mono text-indigo-300">${formattedDuration}</span>
+                        </div>
+                    `;
+                });
+                this.elements.shiftLeaderboard.innerHTML = html;
+            },
+
+            handleAcceptJoinRequest: async function(docId) {
+                const serverId = this.state.currentServer.id;
+                this.showLoading(true);
+                try {
+                    const requestRef = doc(db, `artifacts/${appId}/public/data/servers/${serverId}/joinRequests`, docId);
+                    const requestDoc = await getDoc(requestRef);
+                    if (!requestDoc.exists()) return;
+
+                    const requestData = requestDoc.data();
+                    const batch = writeBatch(db);
+
+                    // Add user to server members
+                    const serverRef = doc(db, `artifacts/${appId}/public/data/servers/${serverId}`);
+                    batch.update(serverRef, {
+                        members: arrayUnion(requestData.userId)
+                    });
+
+                    // Add server to user's profile
+                    const userProfileRef = doc(db, `artifacts/${appId}/users/${requestData.userId}/profile/${requestData.userId}`);
+                    batch.set(userProfileRef, {
+                        servers: arrayUnion({ id: serverId, code: this.state.currentServer.code, role: 'member' })
+                    }, { merge: true });
+
+                    // Delete the join request
+                    batch.delete(requestRef);
+
+                    await batch.commit();
+                    showCustomModal("Success", `Accepted request from ${requestData.userEmail}.`, "alert");
+                } catch (error) {
+                    console.error("Error accepting request:", error);
+                    showCustomModal("Error", "Failed to accept join request.", "alert");
+                } finally {
+                    this.showLoading(false);
+                }
+            },
+
+            handleDenyJoinRequest: async function(docId) {
+                const serverId = this.state.currentServer.id;
+                this.showLoading(true);
+                try {
+                    const requestRef = doc(db, `artifacts/${appId}/public/data/servers/${serverId}/joinRequests`, docId);
+                    await deleteDoc(requestRef);
+                    showCustomModal("Success", "Join request denied.", "alert");
+                } catch (error) {
+                    console.error("Error denying request:", error);
+                    showCustomModal("Error", "Failed to deny join request.", "alert");
+                } finally {
+                    this.showLoading(false);
+                }
+            },
+
+            handleExecuteCommand: async function() {
+                if (this.state.currentServer.ownerId !== this.state.currentUser.uid) {
+                    this.elements.commandResponse.textContent = "Error: Only the server owner can execute commands.";
+                    this.elements.commandResponse.style.color = '#f87171'; // Red
+                    return;
+                }
+
+                const command = this.elements.commandInput.value.trim();
+                const responseDiv = this.elements.commandResponse;
+                responseDiv.textContent = 'Executing...';
+                responseDiv.style.color = '#94a3b8'; // Slate 400
+
+                if (!command) {
+                    responseDiv.textContent = 'Error: Command cannot be empty.';
+                    responseDiv.style.color = '#f87171'; // Red
+                    return;
+                }
+
+                try {
+                    // Simulate command execution with a log entry
+                    await addDoc(collection(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}/logs`), {
+                        type: 'command_execution',
+                        command: command,
+                        executedBy: this.state.currentUser.email,
+                        executedAt: serverTimestamp()
+                    });
+                    responseDiv.textContent = `Command "${command}" executed successfully.`;
+                    responseDiv.style.color = '#4ade80'; // Green
+                } catch (error) {
+                    console.error("Error executing command:", error);
+                    responseDiv.textContent = 'Error: Failed to execute command. Please check server API status.';
+                    responseDiv.style.color = '#f87171'; // Red
+                }
+            },
+
+            handleAddPunishment: async function(e) {
+                e.preventDefault();
+                const type = this.elements.punishmentTypeInput.value;
+                const username = this.elements.punishmentUsernameInput.value.trim();
+                const reason = this.elements.punishmentReasonInput.value.trim();
+                const messageDiv = this.elements.punishmentFormMessage;
+                messageDiv.textContent = '';
+                messageDiv.style.color = '#f87171';
+
+                if (!username || !reason) {
+                    messageDiv.textContent = 'Please fill out all fields.';
+                    return;
+                }
+
+                this.showLoading(true);
+                try {
+                    await addDoc(collection(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}/punishmentLogs`), {
+                        type,
+                        username,
+                        reason,
+                        submittedBy: this.state.currentUser.email,
+                        createdAt: serverTimestamp()
+                    });
+                    messageDiv.textContent = 'Punishment log submitted successfully!';
+                    messageDiv.style.color = '#4ade80';
+                    e.target.reset();
+                } catch (error) {
+                    console.error("Error adding punishment log:", error);
+                    messageDiv.textContent = 'Failed to add punishment log. Please try again.';
+                } finally {
+                    this.showLoading(false);
+                }
+            },
+
+            renderPunishmentLogs: function(searchQuery = '') {
+                const logsContainer = this.elements.punishmentLogList;
+                logsContainer.innerHTML = '';
+                let logsToDisplay = this.state.punishmentLogs;
+
+                if (searchQuery) {
+                    logsToDisplay = logsToDisplay.filter(log => log.username.toLowerCase().includes(searchQuery.toLowerCase()));
+                }
+
+                if (logsToDisplay.length === 0) {
+                    logsContainer.innerHTML = '<p class="text-center text-slate-400">No punishment logs found.</p>';
+                    return;
+                }
+
+                logsToDisplay.sort((a, b) => b.createdAt.toDate() - a.createdAt.toDate());
+
+                logsToDisplay.forEach(log => {
+                    const logElement = document.createElement('div');
+                    logElement.className = 'card p-4 space-y-2';
+                    const date = log.createdAt.toDate().toLocaleDateString() + ' ' + log.createdAt.toDate().toLocaleTimeString();
+                    logElement.innerHTML = `
+                        <p class="font-semibold text-white">Punishment: <span class="text-red-400">${log.type}</span></p>
+                        <p class="text-sm">Username: <span class="font-bold text-indigo-300">${log.username}</span></p>
+                        <p class="text-sm">Reason: ${log.reason}</p>
+                        <p class="text-xs text-slate-500">Submitted by: ${log.submittedBy}</p>
+                        <p class="text-xs text-slate-500">Date: ${date}</p>
+                    `;
+                    logsContainer.appendChild(logElement);
+                });
+            },
+
+            renderOwnerPunishmentLogs: function(logs) {
+                const logsContainer = this.elements.ownerPunishmentLogs;
+                logsContainer.innerHTML = '';
+
+                if (logs.length === 0) {
+                    logsContainer.innerHTML = '<p class="text-center text-slate-400">No punishment logs found.</p>';
+                    return;
+                }
+                
+                logs.sort((a, b) => b.createdAt.toDate() - a.createdAt.toDate());
+
+                logs.forEach(log => {
+                    const logElement = document.createElement('div');
+                    logElement.className = 'card p-4 space-y-2';
+                    const date = log.createdAt.toDate().toLocaleDateString() + ' ' + log.createdAt.toDate().toLocaleTimeString();
+                    logElement.innerHTML = `
+                        <p class="font-semibold text-white">Punishment: <span class="text-red-400">${log.type}</span></p>
+                        <p class="text-sm">Username: <span class="font-bold text-indigo-300">${log.username}</span></p>
+                        <p class="text-sm">Reason: ${log.reason}</p>
+                        <p class="text-xs text-slate-500">Submitted by: ${log.submittedBy}</p>
+                        <p class="text-xs text-slate-500 mb-4">Date: ${date}</p>
+                        <div class="flex gap-2">
+                            <button class="btn btn-secondary btn-sm edit-log-btn" data-id="${log.id}">Edit</button>
+                            <button class="btn btn-danger btn-sm delete-log-btn" data-id="${log.id}">Delete</button>
+                        </div>
+                    `;
+                    logsContainer.appendChild(logElement);
+                });
+
+                logsContainer.querySelectorAll('.edit-log-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => this.handleEditPunishmentLog(e.currentTarget.dataset.id));
+                });
+                logsContainer.querySelectorAll('.delete-log-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => this.handleDeletePunishmentLog(e.currentTarget.dataset.id));
+                });
+            },
+            
+            handleSearchPunishmentLogs: function() {
+                const searchQuery = this.elements.searchUsernameInput.value.trim();
+                this.renderPunishmentLogs(searchQuery);
+            },
+            
+            handleClearSearch: function() {
+                this.elements.searchUsernameInput.value = '';
+                this.renderPunishmentLogs();
+            },
+
+            handleEditPunishmentLog: function(logId) {
+                const log = this.state.punishmentLogs.find(l => l.id === logId);
+                if (!log) {
+                    showCustomModal('Error', 'Log not found.', 'alert');
+                    return;
+                }
+
+                const newReason = window.prompt("Edit reason:", log.reason);
+                if (newReason !== null && newReason.trim() !== '') {
+                    this.showLoading(true);
+                    updateDoc(doc(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}/punishmentLogs`, logId), {
+                        reason: newReason.trim(),
+                        editedAt: serverTimestamp()
+                    }).then(() => {
+                        showCustomModal('Success', 'Log updated successfully.', 'alert');
+                    }).catch(error => {
+                        console.error('Error updating log:', error);
+                        showCustomModal('Error', 'Failed to update log.', 'alert');
+                    }).finally(() => {
+                        this.showLoading(false);
+                    });
+                }
+            },
+
+            handleDeletePunishmentLog: function(logId) {
+                showCustomModal('Confirm Delete', 'Are you sure you want to delete this punishment log? This action cannot be undone.', 'confirm', () => {
+                    this.showLoading(true);
+                    deleteDoc(doc(db, `artifacts/${appId}/public/data/servers/${this.state.currentServer.id}/punishmentLogs`, logId))
+                        .then(() => {
+                            showCustomModal('Success', 'Log deleted successfully.', 'alert');
+                        })
+                        .catch(error => {
+                            console.error('Error deleting log:', error);
+                            showCustomModal('Error', 'Failed to delete log.', 'alert');
+                        })
+                        .finally(() => {
+                            this.showLoading(false);
+                        });
+                });
+            },
+
+            // Other existing functions (shift handling, etc.) can go here...
         };
 
         // Initialize the app when the DOM is fully loaded
@@ -2404,4 +1284,3 @@
     </script>
 </body>
 </html>
-
