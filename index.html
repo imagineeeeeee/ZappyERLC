@@ -1039,7 +1039,6 @@
                         const serverDoc = await getDoc(doc(db, `/artifacts/${appId}/public/data/servers`, serverId));
                         if (serverDoc.exists()) {
                             ZappyApp.state.currentServer = { id: serverDoc.id, ...serverDoc.data() };
-                            ZappyApp.panel.init();
                         } else {
                             ZappyApp.ui.displayMessage('server-list-error', 'Server not found.', true);
                         }
@@ -1649,6 +1648,7 @@
     </script>
 </body>
 </html>
+
 
 
 
