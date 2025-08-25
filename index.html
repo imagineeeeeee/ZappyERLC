@@ -481,6 +481,75 @@
         const app = initializeApp(finalFirebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+        
+        // =========================================================================
+        // IMPORTANT: Define top-level event handlers as functions before the main object
+        // to prevent the "handler undefined" error due to subtle timing issues.
+        // =========================================================================
+        async function handleLogout() {
+            try {
+                await signOut(auth);
+                console.log("User logged out successfully.");
+            } catch (error) {
+                console.error("Error signing out:", error);
+                this.displayModal("Logout Failed", "There was an error logging out. Please try again.", "OK");
+            }
+        }
+
+        function showCreateServerModal() {
+            ZappyApp.elements.createServerModal.classList.remove('hidden');
+        }
+
+        async function handleJoinServer() {
+             const joinCode = ZappyApp.elements.joinCodeInput.value.trim();
+             ZappyApp.elements.joinServerError.textContent = '';
+             ZappyApp.elements.joinServerSuccess.textContent = '';
+
+             if (!joinCode) {
+                 ZappyApp.elements.joinServerError.textContent = "Please enter a server code.";
+                 return;
+             }
+
+             try {
+                 const serverRef = doc(db, `/artifacts/${appId}/public/data/servers/${joinCode}`);
+                 const serverSnap = await getDoc(serverRef);
+
+                 if (!serverSnap.exists()) {
+                     ZappyApp.elements.joinServerError.textContent = "Server not found. Please check the code.";
+                     return;
+                 }
+                 
+                 const serverData = serverSnap.data();
+                 const userId = ZappyApp.state.currentUser.uid;
+                 const isOwnerOrMember = serverData.ownerId === userId || (serverData.members && serverData.members.some(member => member.uid === userId));
+
+                 if (isOwnerOrMember) {
+                     ZappyApp.elements.joinServerSuccess.textContent = "You are already a member of this server. Redirecting...";
+                     setTimeout(() => ZappyApp.enterServerPanel(joinCode), 1500);
+                     return;
+                 }
+
+                 const joinRequestsRef = collection(serverRef, "joinRequests");
+                 const existingRequest = await getDocs(query(joinRequestsRef, where("userId", "==", userId)));
+                 if (!existingRequest.empty) {
+                     ZappyApp.elements.joinServerError.textContent = "Your join request is already pending.";
+                     return;
+                 }
+
+                 await addDoc(joinRequestsRef, {
+                     userId: userId,
+                     userEmail: ZappyApp.state.currentUser.email,
+                     timestamp: serverTimestamp()
+                 });
+
+                 ZappyApp.elements.joinServerSuccess.textContent = "Join request sent successfully! Awaiting owner approval.";
+                 ZappyApp.elements.joinCodeInput.value = '';
+
+             } catch (e) {
+                 console.error("Error joining server:", e);
+                 ZappyApp.elements.joinServerError.textContent = "Failed to send join request. Please try again.";
+             }
+         }
 
         /**
          * ZappyApp
@@ -529,6 +598,7 @@
                     // Dashboard Elements
                     serverList: document.getElementById('server-list'),
                     userEmailSpan: document.getElementById('user-email'),
+                    joinCodeInput: document.getElementById('join-code-input'),
                     joinServerError: document.getElementById('join-server-error'),
                     joinServerSuccess: document.getElementById('join-server-success'),
                     serverListError: document.getElementById('server-list-error'),
@@ -588,7 +658,6 @@
                     editPunishDuration: document.getElementById('edit-punish-duration'),
                     editPunishmentForm: document.getElementById('edit-punishment-form'),
                     cancelEditPunishmentBtn: document.getElementById('cancel-edit-punishment-btn'),
-
                 };
             },
 
@@ -613,7 +682,8 @@
              * @param {string} [id]
              */
             bindEvent: function(element, event, handler, id = `event-${Date.now()}-${Math.random()}`) {
-                if (element && handler) {
+                // Defensive check to ensure both element and handler exist before binding
+                if (element && handler && typeof handler === 'function') {
                     const boundHandler = handler.bind(this);
                     element.addEventListener(event, boundHandler);
                     this.state.eventListeners[id] = { element, event, handler: boundHandler };
@@ -636,9 +706,9 @@
              */
             bindDashboardEvents: function() {
                 this.removeListeners(); // Clear previous listeners
-                this.bindEvent(this.elements.logoutBtn, 'click', this.handleLogout);
-                this.bindEvent(this.elements.showCreateServerModalBtn, 'click', this.showCreateServerModal);
-                this.bindEvent(this.elements.joinServerBtn, 'click', this.handleJoinServer);
+                this.bindEvent(this.elements.logoutBtn, 'click', handleLogout);
+                this.bindEvent(this.elements.showCreateServerModalBtn, 'click', showCreateServerModal);
+                this.bindEvent(this.elements.joinServerBtn, 'click', handleJoinServer);
             },
 
             /**
@@ -756,7 +826,48 @@
              * Fetches the user's servers from Firestore.
              */
             fetchUserServers: async function() {
-                // ... (unchanged)
+                this.elements.serverList.innerHTML = '';
+                this.elements.serverListError.textContent = '';
+
+                try {
+                    const userId = this.state.currentUser.uid;
+                    const serversRef = collection(db, `/artifacts/${appId}/public/data/servers`);
+                    const q = query(serversRef, where("members", "array-contains", { uid: userId }));
+                    const q2 = query(serversRef, where("ownerId", "==", userId));
+                    const [memberServers, ownerServers] = await Promise.all([getDocs(q), getDocs(q2)]);
+
+                    const servers = new Map();
+                    memberServers.forEach(doc => servers.set(doc.id, { id: doc.id, ...doc.data() }));
+                    ownerServers.forEach(doc => servers.set(doc.id, { id: doc.id, ...doc.data() }));
+
+                    if (servers.size === 0) {
+                         this.elements.serverList.innerHTML = '<p class="text-slate-400">You are not a member of any servers yet. Create one or join one using a code!</p>';
+                         return;
+                    }
+                    
+                    servers.forEach(server => {
+                        const card = document.createElement('div');
+                        card.className = 'card flex flex-col justify-between';
+                        card.innerHTML = `
+                             <div>
+                                <h3 class="text-xl font-semibold text-white mb-2">${server.name}</h3>
+                                <p class="text-sm text-slate-400 mb-2">Code: <span class="font-mono text-white">${server.id}</span></p>
+                                <p class="text-sm text-slate-500 mb-4">Owned by: ${server.ownerEmail}</p>
+                             </div>
+                             <button class="btn btn-primary btn-sm mt-4 enter-server-btn" data-id="${server.id}">Manage Server</button>
+                        `;
+                        this.elements.serverList.appendChild(card);
+                    });
+
+                    // Add event listeners for the new buttons
+                    document.querySelectorAll('.enter-server-btn').forEach(button => {
+                         this.bindEvent(button, 'click', () => this.enterServerPanel(button.dataset.id));
+                    });
+
+                } catch (e) {
+                     console.error("Error fetching user servers:", e);
+                     this.elements.serverListError.textContent = "Failed to load servers. Please try refreshing the page.";
+                }
             },
 
             /**
