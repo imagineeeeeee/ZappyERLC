@@ -915,7 +915,7 @@
                         if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
                         const serverId = e.target.dataset.serverId;
                         try {
-                            const serverDoc = await getDoc(doc(db, `/artifacts/${appId}/public/data/servers`, serverId));
+                            const serverDoc = getDoc(doc(db, `/artifacts/${appId}/public/data/servers`, serverId));
                             if (serverDoc.exists()) {
                                 ZappyApp.state.currentServer = { id: serverDoc.id, ...serverDoc.data() };
                                 ZappyApp.panel.init();
@@ -1647,6 +1647,7 @@
     </script>
 </body>
 </html>
+
 
 
 
