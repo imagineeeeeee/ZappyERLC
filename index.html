@@ -966,6 +966,75 @@
             }
         }
 
+        /**
+         * Manually refreshes the players list.
+         */
+        async function refreshPlayers() {
+            const { playerList, playerQueue, playerCount, queueCount } = ZappyApp.elements;
+            playerList.innerHTML = '<p class="text-center text-slate-400">Refreshing...</p>';
+            playerQueue.innerHTML = '<p class="text-center text-slate-400">Refreshing...</p>';
+
+            try {
+                const serverRef = doc(db, `/artifacts/${appId}/public/data/servers/${ZappyApp.state.currentServer.id}`);
+                const playersCollection = collection(serverRef, "players");
+                const querySnapshot = await getDocs(playersCollection);
+
+                const players = [];
+                const queue = [];
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    data.isQueued ? queue.push(data) : players.push(data);
+                });
+                displayPlayers(players, queue);
+            } catch (e) {
+                console.error("Failed to refresh players:", e);
+                playerList.innerHTML = `<p class="text-center text-red-400">Failed to refresh: ${e.message}</p>`;
+                playerQueue.innerHTML = '';
+            }
+        }
+
+        /**
+         * Manually refreshes the vehicles list.
+         */
+        async function refreshVehicles() {
+            const { vehicleList } = ZappyApp.elements;
+            vehicleList.innerHTML = '<p class="text-center text-slate-400">Refreshing...</p>';
+
+            try {
+                const serverRef = doc(db, `/artifacts/${appId}/public/data/servers/${ZappyApp.state.currentServer.id}`);
+                const vehiclesCollection = collection(serverRef, "vehicles");
+                const querySnapshot = await getDocs(vehiclesCollection);
+
+                const vehicles = [];
+                querySnapshot.forEach(doc => vehicles.push(doc.data()));
+                displayVehicles(vehicles);
+            } catch (e) {
+                console.error("Failed to refresh vehicles:", e);
+                vehicleList.innerHTML = `<p class="text-center text-red-400">Failed to refresh: ${e.message}</p>`;
+            }
+        }
+
+        /**
+         * Manually refreshes the kill logs.
+         */
+        async function refreshKillLogs() {
+            const { killLogList } = ZappyApp.elements;
+            killLogList.innerHTML = '<p class="text-center text-slate-400">Refreshing...</p>';
+
+            try {
+                const serverRef = doc(db, `/artifacts/${appId}/public/data/servers/${ZappyApp.state.currentServer.id}`);
+                const killLogsCollection = collection(serverRef, "killlogs");
+                const querySnapshot = await getDocs(killLogsCollection);
+
+                const logs = [];
+                querySnapshot.forEach(doc => logs.push(doc.data()));
+                displayKillLogs(logs);
+            } catch (e) {
+                console.error("Failed to refresh kill logs:", e);
+                killLogList.innerHTML = `<p class="text-center text-red-400">Failed to refresh: ${e.message}</p>`;
+            }
+        }
+        
         // =========================================================================
         // UI & Data Display Functions
         // =========================================================================
