@@ -117,8 +117,7 @@
             <div class="card">
                 <h2 id="auth-title" class="text-2xl font-bold text-center text-white mb-6">Login to Zappy</h2>
                 <form id="auth-form">
-                     <!-- Added username field for registration -->
-                    <div class="mb-4 hidden" id="username-field-container">
+                    <div id="username-field" class="mb-4 hidden">
                         <label for="username" class="block mb-2 text-sm font-medium text-slate-400">Username</label>
                         <input type="text" id="username" class="form-input">
                     </div>
@@ -139,7 +138,6 @@
                 </p>
             </div>
         </div>
-
 
         <!-- Main Dashboard Section (Post-Login) -->
         <div id="dashboard-section" class="hidden">
@@ -690,6 +688,7 @@
                     e.preventDefault();
                     const email = document.getElementById('email')?.value;
                     const pass = document.getElementById('password')?.value;
+                    const username = document.getElementById('username')?.value?.trim();
                     const authTitle = document.getElementById('auth-title');
                     const isRegister = authTitle ? authTitle.textContent.includes('Register') : false;
                     
@@ -697,34 +696,48 @@
                 
                     try {
                         if (isRegister) {
+                            // Validate username for registration
+                            if (!username || username.length < 3 || username.length > 20) {
+                                ZappyApp.ui.displayMessage('auth-error', 'Username must be 3-20 characters long.', true);
+                                return;
+                            }
+                            
+                            // Check for valid username characters (letters, numbers, underscores, hyphens)
+                            if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
+                                ZappyApp.ui.displayMessage('auth-error', 'Username can only contain letters, numbers, underscores, and hyphens.', true);
+                                return;
+                            }
+                
+                            // Check if username already exists
+                            const usernameQuery = query(collection(db, `/artifacts/${appId}/usernames`), where('username', '==', username));
+                            const usernameSnapshot = await getDocs(usernameQuery);
+                            
+                            if (!usernameSnapshot.empty) {
+                                ZappyApp.ui.displayMessage('auth-error', 'Username already taken. Please choose another.', true);
+                                return;
+                            }
+                
                             // Create user account
                             const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
                             const user = userCredential.user;
-                            
-                            // Prompt for username
-                            const username = prompt('Choose a username (this will be displayed to other users):');
-                            if (!username || username.trim().length < 3) {
-                                ZappyApp.ui.displayMessage('auth-error', 'Username must be at least 3 characters long.', true);
-                                await user.delete(); // Delete the created account if username is invalid
-                                return;
-                            }
-                            
-                            // Check if username is unique
-                            const usernameQuery = query(collection(db, `/artifacts/${appId}/users`), where('username', '==', username.trim()));
-                            const usernameSnapshot = await getDocs(usernameQuery);
-                            if (!usernameSnapshot.empty) {
-                                ZappyApp.ui.displayMessage('auth-error', 'Username already taken. Please choose another.', true);
-                                await user.delete(); // Delete the created account if username is taken
-                                return;
-                            }
-                            
-                            // Save user data with username
+                
+                            // Store user data with username
                             await setDoc(doc(db, `/artifacts/${appId}/users`, user.uid), {
-                                email: email,
-                                username: username.trim(),
+                                email: user.email,
+                                username: username,
+                                createdAt: serverTimestamp(),
+                                totalShiftDuration: 0
+                            });
+                
+                            // Store username mapping for uniqueness checking
+                            await setDoc(doc(db, `/artifacts/${appId}/usernames`, user.uid), {
+                                username: username,
+                                userId: user.uid,
                                 createdAt: serverTimestamp()
                             });
+                
                         } else {
+                            // Login with email and password only
                             await signInWithEmailAndPassword(auth, email, pass);
                         }
                         // Auth state listener handles view change on success
@@ -743,25 +756,31 @@
                     const link = document.getElementById('auth-toggle-link');
                     const emailInput = document.getElementById('email');
                     const passwordInput = document.getElementById('password');
+                    const usernameInput = document.getElementById('username');
+                    const usernameField = document.getElementById('username-field');
                     const authError = document.getElementById('auth-error');
-
+                
                     // Clear inputs and previous error message on toggle
                     if (emailInput) emailInput.value = '';
                     if (passwordInput) passwordInput.value = '';
+                    if (usernameInput) usernameInput.value = '';
                     if (authError) authError.textContent = '';
-
-
-                    if (title && button && prompt && link) {
+                
+                    if (title && button && prompt && link && usernameField) {
                         if (title.textContent.includes('Login')) {
                             title.textContent = 'Register for Zappy';
                             button.textContent = 'Register';
                             prompt.textContent = 'Already have an account?';
                             link.textContent = 'Login';
+                            usernameField.classList.remove('hidden'); // Show username field
+                            if (usernameInput) usernameInput.setAttribute('required', 'true');
                         } else {
                             title.textContent = 'Login to Zappy';
                             button.textContent = 'Login';
                             prompt.textContent = "Don't have an account?";
                             link.textContent = 'Register';
+                            usernameField.classList.add('hidden'); // Hide username field
+                            if (usernameInput) usernameInput.removeAttribute('required');
                         }
                     }
                 },
@@ -2400,6 +2419,7 @@
     </script>
 </body>
 </html>
+
 
 
 
