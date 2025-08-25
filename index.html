@@ -605,9 +605,12 @@
              * @param {string} [id]
              */
             bindEvent: function(element, event, handler, id = `event-${Date.now()}-${Math.random()}`) {
-                if (element) {
-                    element.addEventListener(event, handler.bind(this));
-                    this.state.eventListeners[id] = { element, event, handler: handler.bind(this) };
+                if (element && handler) {
+                    const boundHandler = handler.bind(this);
+                    element.addEventListener(event, boundHandler);
+                    this.state.eventListeners[id] = { element, event, handler: boundHandler };
+                } else {
+                    console.warn(`Attempted to bind event to null element or with a null handler:`, { element, handler });
                 }
             },
 
@@ -683,27 +686,18 @@
             // --- AUTHENTICATION METHODS ---
             /**
              * Handles Firebase Auth state changes.
+             * This function now only OBSERVES state, it does not perform auth actions.
              * @param {firebase.User} user
              */
-            handleAuthStateChange: async function(user) {
+            handleAuthStateChange: function(user) {
                 this.state.currentUser = user;
                 if (user) {
-                    try {
-                        const __initial_auth_token = "placeholder_token";
-                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token.length > 0) {
-                            await signInWithCustomToken(auth, __initial_auth_token);
-                        } else {
-                            await signInAnonymously(auth);
-                        }
-                    } catch (e) {
-                        console.error("Error signing in with custom token:", e);
-                    }
                     this.elements.authSection.classList.add('hidden');
                     this.elements.dashboardSection.classList.remove('hidden');
                     this.elements.userEmailSpan.textContent = user.email;
                     this.elements.loadingOverlay.classList.add('hidden');
-                    this.bindDashboardEvents(); // Bind dashboard-specific events
-                    await this.fetchUserServers();
+                    this.bindDashboardEvents();
+                    this.fetchUserServers();
                 } else {
                     this.elements.authSection.classList.remove('hidden');
                     this.elements.dashboardSection.classList.add('hidden');
@@ -712,7 +706,7 @@
                     this.state.unsubscribeListeners.forEach(unsub => unsub());
                     this.state.unsubscribeListeners = [];
                     clearInterval(this.state.shiftInterval);
-                    this.bindAuthEvents(); // Bind auth-specific events
+                    this.bindAuthEvents();
                 }
             },
             
@@ -1205,6 +1199,25 @@
             // --- APP INITIALIZATION ---
             init: function() {
                 this.cacheElements();
+
+                // This is the correct way to handle auth. We first try to sign in,
+                // and the onAuthStateChanged listener will fire once the state is stable.
+                (async () => {
+                    this.elements.loadingOverlay.classList.remove('hidden');
+                    try {
+                         // The __initial_auth_token is provided by the environment
+                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token.length > 0) {
+                            await signInWithCustomToken(auth, __initial_auth_token);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                    } catch (e) {
+                        // If custom token fails, it's better to just let the onAuthStateChanged listener handle it
+                        console.error("Initial authentication failed:", e);
+                    }
+                })();
+
+                // Now, we set up the listener to react to any auth state changes.
                 onAuthStateChanged(auth, this.handleAuthStateChange.bind(this));
             },
         };
