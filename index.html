@@ -910,7 +910,7 @@
              * Handles a click on a server card to navigate to the server panel.
              * @param {Event} e - The click event.
              */
-            async handleSelectServer(e) {
+            handleSelectServer(e) {
                     if (e.target.classList.contains('select-server-btn')) {
                         if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
                         const serverId = e.target.dataset.serverId;
@@ -1647,6 +1647,7 @@
     </script>
 </body>
 </html>
+
 
 
 
