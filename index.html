@@ -910,44 +910,26 @@
              * Handles a click on a server card to navigate to the server panel.
              * @param {Event} e - The click event.
              */
-            async handleServerCardClick(e) {
-                const serverCard = e.target.closest('.card');
-                if (!serverCard) return;
-
-                const serverId = serverCard.dataset.serverId;
-                console.log("Server card clicked:", serverId);
-
-                try {
-                    const serverDocRef = doc(db, "servers", serverId);
-                    const serverDoc = await getDoc(serverDocRef);
-                    if (!serverDoc.exists()) {
-                         console.error("Server document not found.");
-                         return;
+            async handleSelectServer(e) {
+                    if (e.target.classList.contains('select-server-btn')) {
+                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
+                        const serverId = e.target.dataset.serverId;
+                        try {
+                            const serverDoc = await getDoc(doc(db, `/artifacts/${appId}/public/data/servers`, serverId));
+                            if (serverDoc.exists()) {
+                                ZappyApp.state.currentServer = { id: serverDoc.id, ...serverDoc.data() };
+                                ZappyApp.panel.init();
+                            } else {
+                                ZappyApp.ui.displayMessage('server-list-error', 'Server not found.', true);
+                            }
+                        } catch (error) {
+                            console.error("Error selecting server:", error);
+                            ZappyApp.ui.displayMessage('server-list-error', 'Failed to open server due to a permission error or network issue.', true);
+                        } finally {
+                            if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
+                        }
                     }
-
-                    const server = serverDoc.data();
-                    this.state.currentServer = server;
-                    this.elements.dashboardSection.classList.add('hidden');
-                    this.elements.serverPanelSection.classList.remove('hidden');
-                    this.elements.panelServerName.textContent = server.name;
-                    this.elements.panelServerCode.textContent = `Server Code: ${server.code}`;
-
-                    // Check if current user is the owner
-                    const isOwner = this.state.currentUser.uid === server.ownerId;
-                    this.setupPanelTabs(isOwner);
-
-                    // Check if a shift is already in progress for the current user in this server
-                    await this.checkExistingShift(serverId, this.state.currentUser.uid);
-
-                    // Initialize the main tab content
-                    this.handleRefreshStats();
-                    this.fetchShiftLeaderboard(serverId);
-
-                } catch (error) {
-                    console.error("Error loading server panel:", error);
-                    // Handle error gracefully
-                }
-            },
+                },
 
             /**
              * Dynamically sets up the tabs for the server panel based on user role.
@@ -1665,6 +1647,7 @@
     </script>
 </body>
 </html>
+
 
 
 
