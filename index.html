@@ -614,60 +614,49 @@
             /**
              * Fetches and displays the list of servers the user is a member of.
              */
-            async fetchServers() {
-                if (!this.state.currentUser) return;
-                this.elements.serverList.innerHTML = '';
-                this.elements.serverListError.textContent = '';
+            async fetchUserServers() {
+                    if (!ZappyApp.state.currentUser) {
+                        if (ZappyApp.elements.serverList) ZappyApp.elements.serverList.innerHTML = '<p class="text-slate-400">You are not logged in.</p>';
+                        return;
+                    }
 
-                try {
-                    // Fetch user's server memberships
-                    const userDocRef = doc(db, "users", this.state.currentUser.uid);
-                    const userDoc = await getDoc(userDocRef);
-                    if (!userDoc.exists()) {
-                        console.log("User document does not exist, creating it.");
-                        await setDoc(userDocRef, {
-                            username: this.state.currentUser.displayName || this.state.currentUser.email,
-                            email: this.state.currentUser.email,
-                            servers: [],
-                            createdAt: serverTimestamp()
+                    const serverListEl = ZappyApp.elements.serverList;
+                    if (serverListEl) serverListEl.innerHTML = '<p class="text-slate-400">Loading your servers...</p>';
+                    if (ZappyApp.elements.serverListError) ZappyApp.elements.serverListError.textContent = ''; // Clear previous errors
+
+                    // Clear previous listeners for this section
+                    ZappyApp.state.unsubscribeListeners.forEach(unsub => unsub());
+                    ZappyApp.state.unsubscribeListeners = [];
+
+                    const q = query(collection(db, `/artifacts/${appId}/public/data/servers`),
+                                    where('members', 'array-contains', ZappyApp.state.currentUser.uid));
+
+                    const unsubscribe = onSnapshot(q, (snapshot) => {
+                        if (snapshot.empty) {
+                            if (serverListEl) serverListEl.innerHTML = '<p class="text-slate-400">You have no servers. Create or join one!</p>';
+                            return;
+                        }
+                        if (serverListEl) serverListEl.innerHTML = ''; // Clear existing content
+                        snapshot.forEach((doc) => {
+                            const server = { id: doc.id, ...doc.data() };
+                            const isOwner = server.ownerId === ZappyApp.state.currentUser.uid;
+                            if (serverListEl) serverListEl.insertAdjacentHTML('beforeend', `
+                                <div class="card flex flex-col justify-between">
+                                    <div>
+                                        <h4 class="text-lg font-bold text-white">${server.name}</h4>
+                                        <p class="text-sm text-slate-400 mb-4">${isOwner ? '👑 Owner' : '👥 Member'}</p>
+                                    </div>
+                                    <button class="btn btn-primary mt-auto select-server-btn" data-server-id="${server.id}">Open Panel</button>
+                                </div>`);
                         });
-                        this.elements.serverList.innerHTML = '<p class="text-slate-400">You are not a member of any servers. Create one or join one!</p>';
-                        return;
-                    }
-
-                    const userData = userDoc.data();
-                    const userServers = userData.servers || [];
-
-                    if (userServers.length === 0) {
-                        this.elements.serverList.innerHTML = '<p class="text-slate-400">You are not a member of any servers. Create one or join one!</p>';
-                        return;
-                    }
-
-                    const serverDocs = await getDocs(query(collection(db, "servers"), where("id", "in", userServers)));
-                    if (serverDocs.empty) {
-                        this.elements.serverList.innerHTML = '<p class="text-slate-400">No servers found for your memberships.</p>';
-                        return;
-                    }
-
-                    let serverCardsHtml = '';
-                    serverDocs.forEach(serverDoc => {
-                        const server = serverDoc.data();
-                        const isOwner = server.ownerId === this.state.currentUser.uid;
-                        serverCardsHtml += `
-                            <div class="card cursor-pointer hover:bg-slate-700 transition-colors duration-200" data-server-id="${server.id}">
-                                <h4 class="text-xl font-semibold text-white">${server.name}</h4>
-                                <p class="text-slate-400 text-sm font-mono mt-1">Code: ${server.code}</p>
-                                <p class="text-slate-400 text-xs mt-2">Owner: ${isOwner ? 'You' : 'Not you'}</p>
-                            </div>
-                        `;
+                    }, (error) => {
+                        console.error("Error fetching servers:", error);
+                        ZappyApp.ui.displayMessage('server-list-error', 'Could not load servers due to a permission error or network issue.', true);
+                        if (serverListEl) serverListEl.innerHTML = '<p class="text-red-400">Failed to load servers.</p>';
                     });
-                    this.elements.serverList.innerHTML = serverCardsHtml;
+                    ZappyApp.state.unsubscribeListeners.push(unsubscribe); // Store for cleanup
+                },
 
-                } catch (error) {
-                    console.error("Error fetching servers:", error);
-                    this.elements.serverListError.textContent = 'Failed to load servers. Please try again.';
-                }
-            },
 
             /**
              * Fetches and displays the full shift leaderboard.
@@ -1676,4 +1665,5 @@
     </script>
 </body>
 </html>
+
 
