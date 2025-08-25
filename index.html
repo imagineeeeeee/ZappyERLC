@@ -628,7 +628,20 @@
 
                 updateUserInfo(user) {
                     if (user && ZappyApp.elements.userEmailSpan) {
-                        ZappyApp.elements.userEmailSpan.textContent = user.email || (user.isAnonymous ? "Anonymous User" : "Logged In");
+                        if (user.isAnonymous) {
+                            ZappyApp.elements.userEmailSpan.textContent = "Anonymous User";
+                        } else {
+                            // Try to get username from Firestore
+                            getDoc(doc(db, `/artifacts/${appId}/users`, user.uid)).then(userDoc => {
+                                if (userDoc.exists() && userDoc.data().username) {
+                                    ZappyApp.elements.userEmailSpan.textContent = userDoc.data().username;
+                                } else {
+                                    ZappyApp.elements.userEmailSpan.textContent = user.email || "Logged In";
+                                }
+                            }).catch(() => {
+                                ZappyApp.elements.userEmailSpan.textContent = user.email || "Logged In";
+                            });
+                        }
                     }
                 },
 
@@ -681,10 +694,36 @@
                     const isRegister = authTitle ? authTitle.textContent.includes('Register') : false;
                     
                     if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
-
+                
                     try {
                         if (isRegister) {
-                            await createUserWithEmailAndPassword(auth, email, pass);
+                            // Create user account
+                            const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+                            const user = userCredential.user;
+                            
+                            // Prompt for username
+                            const username = prompt('Choose a username (this will be displayed to other users):');
+                            if (!username || username.trim().length < 3) {
+                                ZappyApp.ui.displayMessage('auth-error', 'Username must be at least 3 characters long.', true);
+                                await user.delete(); // Delete the created account if username is invalid
+                                return;
+                            }
+                            
+                            // Check if username is unique
+                            const usernameQuery = query(collection(db, `/artifacts/${appId}/users`), where('username', '==', username.trim()));
+                            const usernameSnapshot = await getDocs(usernameQuery);
+                            if (!usernameSnapshot.empty) {
+                                ZappyApp.ui.displayMessage('auth-error', 'Username already taken. Please choose another.', true);
+                                await user.delete(); // Delete the created account if username is taken
+                                return;
+                            }
+                            
+                            // Save user data with username
+                            await setDoc(doc(db, `/artifacts/${appId}/users`, user.uid), {
+                                email: email,
+                                username: username.trim(),
+                                createdAt: serverTimestamp()
+                            });
                         } else {
                             await signInWithEmailAndPassword(auth, email, pass);
                         }
@@ -696,7 +735,6 @@
                         if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
                     }
                 },
-
                 toggleView(e) {
                     e.preventDefault();
                     const title = document.getElementById('auth-title');
@@ -1116,7 +1154,7 @@
                             if (ZappyApp.elements.shiftLeaderboard) ZappyApp.elements.shiftLeaderboard.innerHTML = '<p class="text-slate-500">No shifts recorded yet.</p>';
                             return;
                         }
-
+                    
                         const shiftsData = {};
                         snapshot.forEach(doc => {
                             const shift = doc.data();
@@ -1124,24 +1162,28 @@
                                 shiftsData[shift.userId] = (shiftsData[shift.userId] || 0) + (shift.duration || 0);
                             }
                         });
-
+                    
                         const sortedShifts = Object.entries(shiftsData).sort(([, durationA], [, durationB]) => durationB - durationA);
-
+                    
                         // Use Promise.all to await all user data fetches before updating UI
                         const shiftElements = await Promise.all(sortedShifts.map(async ([userId, totalDuration]) => {
                             // Defensive check for userId before attempting to get userData
                             if (!userId) return '';
-                            const userDoc = await getDoc(doc(db, `/artifacts/${appId}/users`, userId)); // Corrected path
-                            const userEmail = userDoc.exists() ? (userDoc.data().email || userId) : userId;
+                            const userDoc = await getDoc(doc(db, `/artifacts/${appId}/users`, userId));
+                            let displayName = userId; // fallback to userId
+                            if (userDoc.exists()) {
+                                const userData = userDoc.data();
+                                displayName = userData.username || userData.email || userId;
+                            }
                             return `
                                 <div class="flex justify-between items-center card p-3">
-                                    <span>${userEmail}</span>
+                                    <span>${displayName}</span>
                                     <span class="font-mono text-white">${ZappyApp.utils.formatDuration(totalDuration)}</span>
                                 </div>
                             `;
                         }));
                         if (ZappyApp.elements.shiftLeaderboard) ZappyApp.elements.shiftLeaderboard.innerHTML = shiftElements.join('');
-
+                    
                     }, (error) => {
                         console.error("Error listening to shifts:", error);
                         if (ZappyApp.elements.shiftLeaderboard) ZappyApp.elements.shiftLeaderboard.innerHTML = '<p class="text-red-400">Failed to load shift leaderboard (permission error).</p>';
@@ -1232,181 +1274,106 @@
                         alert(`Failed to ${actionType} request: ${error.message}`);
                     }
                 },
-                async displayOwnerJoinRequests(currentServerId) { // This parameter MUST be the server's document ID (e.g., 'DHBRP')
-
+                async displayOwnerJoinRequests(currentServerId) {
                     const listEl = typeof ZappyApp !== 'undefined' && ZappyApp.elements ? ZappyApp.elements.ownerJoinRequestsList : null;
                     const ServerId = ZappyApp.state.currentServer.id;
                     if (!listEl) {
-                
                         console.error("displayOwnerJoinRequests: ownerJoinRequestsList element not found.");
-                
                         return;
-                
                     }
-                
-                
                 
                     listEl.innerHTML = ''; // Clear existing content
                 
-                
                     // **CRITICAL FIX: Validate currentServerId type**
-                
                     if (!db || !appId || !ServerId || typeof ServerId !== 'string') {
-                
                         console.error("displayOwnerJoinRequests: Firebase 'db', 'appId', or 'currentServerId' is invalid. currentServerId must be a non-empty string.");
-                
                         listEl.innerHTML = '<p class="text-red-400">Error: Server ID not provided or invalid. Cannot display requests.</p>';
-                
                         return;
-                
                     }
-                
-                
                 
                     let joinRequests = [];
-                
                     try {
-                
                         // First, fetch the server document to get its joinRequests array
-                
-                        // currentServerId MUST be a string representing the server's document ID (e.g., 'DHBRP')
-                
                         const serverDocRef = doc(db, `/artifacts/${appId}/public/data/servers`, ServerId);
-                
                         const serverDocSnap = await getDoc(serverDocRef);
                 
-                
-                
                         if (!serverDocSnap.exists()) {
-                
                             console.warn(`Server document ${ServerId} not found or current user not authorized to read it. (Check server read rules!)`);
-                
                             listEl.innerHTML = '<p class="text-slate-500">Server not found or access denied. No pending requests.</p>';
-                
                             return;
-                
                         }
-                
-                
                 
                         const serverData = serverDocSnap.data();
-                
                         joinRequests = serverData.joinRequests || [];
                 
-                
-                
                     } catch (error) {
-                
                         console.error(`Error fetching server data for ${ServerId}:`, error);
-                
                         listEl.innerHTML = `<p class="text-red-400">Error fetching server requests: ${error.message}</p>`;
-                
                         return;
-                
                     }
-                
-                
-                
-                
                 
                     if (joinRequests.length === 0) {
-                
                         listEl.innerHTML = '<p class="text-slate-500">No pending requests.</p>';
-                
                         return;
-                
                     }
-                
-                
                 
                     // Use a for...of loop to correctly await each user data fetch
-                
                     for (const requesterId of joinRequests) {
-                
                         try {
-                
-                            // Fetch user data for requester's email
-                
-                            // This relies on the security rule for /users/{userId} allowing reads by any authenticated user.
-                
+                            // Fetch user data for requester's username and email
                             const userDoc = await getDoc(doc(db, `/artifacts/${appId}/users`, requesterId));
+                            let requesterName = requesterId; // fallback to userId
+                            let requesterEmail = 'N/A';
+                            
+                            if (userDoc.exists()) {
+                                const userData = userDoc.data();
+                                requesterName = userData.username || userData.email || requesterId;
+                                requesterEmail = userData.email || 'N/A';
+                            }
                 
-                            const requesterEmail = userDoc.exists() ? (userDoc.data().email || requesterId) : requesterId;
-                
-                
-                
-                            // Append HTML for each request
-                
+                            // Append HTML for each request - show username prominently, email and userId as details
                             listEl.insertAdjacentHTML('beforeend', `
-                
                                 <div class="flex justify-between items-center bg-gray-700 rounded-md p-3 mb-2 shadow-md">
-                
-                                    <span class="text-white">${requesterEmail} (<span class="text-gray-400 text-sm">${requesterId.substring(0, 0)}...</span>)</span>
-                
-                                    <div class="space-x-2">
-                
-                                        <button class="btn bg-green-600 hover:bg-green-700 text-white font-bold py-1 px-3 rounded-md transition-colors duration-200 accept-join-btn" data-requester-id="${requesterId}">Accept</button>
-                
-                                        <button class="btn bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded-md transition-colors duration-200 reject-join-btn" data-requester-id="${requesterId}">Reject</button>
-                
+                                    <div class="flex flex-col">
+                                        <span class="text-white font-semibold">${requesterName}</span>
+                                        <span class="text-gray-400 text-sm">${requesterEmail}</span>
+                                        <span class="text-gray-500 text-xs">ID: ${requesterId.substring(0, 8)}...</span>
                                     </div>
-                
+                                    <div class="space-x-2">
+                                        <button class="btn bg-green-600 hover:bg-green-700 text-white font-bold py-1 px-3 rounded-md transition-colors duration-200 accept-join-btn" data-requester-id="${requesterId}">Accept</button>
+                                        <button class="btn bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded-md transition-colors duration-200 reject-join-btn" data-requester-id="${requesterId}">Reject</button>
+                                    </div>
                                 </div>
-                
                             `);
-                
                         } catch (error) {
-                
                             console.error(`Error fetching user data for requester ${requesterId}:`, error);
-                
                             // Display an error for this specific request, but continue with others
-                
                             listEl.insertAdjacentHTML('beforeend', `
-                
                                 <div class="flex justify-between items-center bg-gray-700 rounded-md p-3 mb-2 shadow-md">
-                
-                                    <span class="text-red-400">Error loading user (${requesterId})</span>
-                
+                                    <span class="text-red-400">Error loading user (${requesterId.substring(0, 8)}...)</span>
                                     <div class="space-x-2">
-                
                                         <button class="btn bg-green-600 hover:bg-green-700 text-white font-bold py-1 px-3 rounded-md transition-colors duration-200 accept-join-btn" data-requester-id="${requesterId}">Accept</button>
-                
                                         <button class="btn bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded-md transition-colors duration-200 reject-join-btn" data-requester-id="${requesterId}">Reject</button>
-                
                                     </div>
-                
                                 </div>
-                
                             `);
-                
                         }
-                
                     }
                 
-                
-                
                     // Re-add event listeners each time the list is rendered
-                
                     if (typeof ZappyApp !== 'undefined' && ZappyApp.panel.handleJoinRequestAction && typeof ZappyApp.panel.handleJoinRequestAction === 'function') {
-                            listEl.querySelectorAll('.accept-join-btn').forEach(button => {
-                                // Ensure no duplicate listeners are added if this function is called multiple times
-                                button.removeEventListener('click', ZappyApp.panel.handleJoinRequestAction); // Remove previous if any
-                                button.addEventListener('click', ZappyApp.panel.handleJoinRequestAction.bind(ZappyApp, 'accept', ServerId));
-                                // Passing currentServerId as a parameter
-                            });
+                        listEl.querySelectorAll('.accept-join-btn').forEach(button => {
+                            button.removeEventListener('click', ZappyApp.panel.handleJoinRequestAction);
+                            button.addEventListener('click', ZappyApp.panel.handleJoinRequestAction.bind(ZappyApp, 'accept', ServerId));
+                        });
                 
-                            listEl.querySelectorAll('.reject-join-btn').forEach(button => {
-                                button.removeEventListener('click', ZappyApp.panel.handleJoinRequestAction); // Remove previous if any
-                                button.addEventListener('click', ZappyApp.panel.handleJoinRequestAction.bind(ZappyApp, 'reject', ServerId));
-                                // Passing currentServerId as a parameter
-                            });
-                        // }, 0); // Optional small delay
+                        listEl.querySelectorAll('.reject-join-btn').forEach(button => {
+                            button.removeEventListener('click', ZappyApp.panel.handleJoinRequestAction);
+                            button.addEventListener('click', ZappyApp.panel.handleJoinRequestAction.bind(ZappyApp, 'reject', ServerId));
+                        });
                     } else {
                         console.warn("ZappyApp.handleJoinRequestAction not found or is not a function. Join request buttons may not be functional.");
                     }
-
-
-
 },
 
                 async displayServerMembers(members) {
@@ -2433,6 +2400,7 @@
     </script>
 </body>
 </html>
+
 
 
 
