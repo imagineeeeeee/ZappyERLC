@@ -394,7 +394,7 @@
         // Import statements - updated to 11.9.1
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-analytics.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, signInWithCustomToken, signInAnonymously, updateProfile } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, signInWithCustomToken, updateProfile } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp, onSnapshot, updateDoc, deleteDoc, writeBatch, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
         // Initialize Firebase
@@ -497,15 +497,6 @@
                 });
 
                 // Authenticate with custom token if available, otherwise sign in anonymously
-                if (typeof __initial_auth_token !== 'undefined') {
-                    signInWithCustomToken(auth, __initial_auth_token)
-                        .catch((error) => {
-                            console.error("Custom token sign-in failed:", error);
-                            signInAnonymously(auth);
-                        });
-                } else {
-                    signInAnonymously(auth);
-                }
             },
 
             /**
@@ -1685,3 +1676,4 @@
     </script>
 </body>
 </html>
+
