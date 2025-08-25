@@ -840,9 +840,12 @@
             renderServerList: async function() {
                 this.elements.serverList.innerHTML = '<p class="text-slate-400">Loading your servers...</p>';
                 this.elements.serverListError.textContent = '';
+                
                 try {
                     const userUid = this.state.currentUser.uid;
-                    const serversRef = collection(db, `artifacts/${appId}/public/data/servers`);
+                    // Correct Firestore path: Use collection('servers') directly.
+                    const serversRef = collection(db, 'servers');
+                    // Query for servers where the current user is a member or owner.
                     const serversQuery = query(serversRef, where(`members.${userUid}.role`, 'in', ['owner', 'member']));
                     const querySnapshot = await getDocs(serversQuery);
                     
@@ -850,10 +853,11 @@
                         this.elements.serverList.innerHTML = '<p class="text-slate-400">You are not a member of any servers. Create one or join one!</p>';
                         return;
                     }
-
+                    
                     const serverCardsHtml = querySnapshot.docs.map(serverDoc => {
                         const serverData = serverDoc.data();
                         const userRole = serverData.members[userUid].role;
+                        
                         return `
                             <div class="card cursor-pointer hover:bg-slate-700 transition" data-server-id="${serverDoc.id}">
                                 <h3 class="text-xl font-semibold text-white mb-2">${serverData.name}</h3>
@@ -867,9 +871,12 @@
                     document.querySelectorAll('#server-list .card').forEach(card => {
                         card.addEventListener('click', (e) => this.handleServerSelect(e.currentTarget.dataset.serverId));
                     });
+            
                 } catch (error) {
                     console.error("Error rendering server list:", error);
                     this.elements.serverListError.textContent = 'Failed to load your server list. Please refresh the page.';
+                } finally {
+                    this.showLoading(false);
                 }
             },
 
@@ -1426,3 +1433,4 @@
     </script>
 </body>
 </html>
+
