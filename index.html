@@ -187,10 +187,10 @@
                         <h1 id="panel-server-name" class="text-3xl font-bold text-white">Server Name</h1>
                         <p id="panel-server-code" class="text-slate-400 font-mono"></p>
                     </div>
-                    <div id="shift-controls" class="card p-4 flex items-center gap-4">
+                    <div id="shift-controls" class="card p-4 flex flex-col md:flex-row items-center gap-4">
                         <p class="text-slate-300">Your Shift: <span id="shift-timer" class="font-mono">00:00:00</span></p>
                         <button id="shift-toggle-btn" class="btn btn-primary">Start Shift</button>
-                         <p id="shift-controls-message" class="text-sm mt-2 text-center"></p>
+                        <p id="shift-controls-message" class="text-sm mt-2 text-center"></p>
                     </div>
                 </div>
             </header>
@@ -470,7 +470,7 @@
             measurementId: "G-K4LDYN8L3E"
         };
         const finalFirebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'; // Use default-app-id for local testing
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
         // Import statements - updated to 11.9.1
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
@@ -481,887 +481,903 @@
         const app = initializeApp(finalFirebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        
+
+        /**
+         * The central application state and UI element cache.
+         * All logic functions will now reference this object directly.
+         */
+        const ZappyApp = {
+            state: {
+                currentUser: null,
+                currentServer: null,
+                shiftInterval: null,
+                shiftStartTime: null,
+                isOwner: false,
+                unsubscribeListeners: [],
+                eventListeners: {},
+                authMode: 'login'
+            },
+            elements: {},
+        };
+
         // =========================================================================
-        // IMPORTANT: Define top-level event handlers as functions before the main object
-        // to prevent the "handler undefined" error due to subtle timing issues.
+        // Core Logic and UI Management Functions (Top-level for stability)
         // =========================================================================
+
+        /**
+         * Caches all the necessary DOM elements.
+         */
+        function cacheElements() {
+            ZappyApp.elements = {
+                loadingOverlay: document.getElementById('loading-overlay'),
+                authSection: document.getElementById('auth-section'),
+                dashboardSection: document.getElementById('dashboard-section'),
+                serverPanelSection: document.getElementById('server-panel-section'),
+                createServerModal: document.getElementById('create-server-modal'),
+                confirmModal: document.getElementById('confirm-modal'),
+                editPunishmentModal: document.getElementById('edit-punishment-modal'),
+                
+                // Auth Form elements
+                authTitle: document.getElementById('auth-title'),
+                authForm: document.getElementById('auth-form'),
+                authToggleLink: document.getElementById('auth-toggle-link'),
+                authPromptText: document.getElementById('auth-prompt-text'),
+                authSubmitBtn: document.getElementById('auth-submit-btn'),
+                authError: document.getElementById('auth-error'),
+                emailInput: document.getElementById('email'),
+                passwordInput: document.getElementById('password'),
+
+                // Dashboard Elements
+                serverList: document.getElementById('server-list'),
+                userEmailSpan: document.getElementById('user-email'),
+                joinCodeInput: document.getElementById('join-code-input'),
+                joinServerError: document.getElementById('join-server-error'),
+                joinServerSuccess: document.getElementById('join-server-success'),
+                serverListError: document.getElementById('server-list-error'),
+                showCreateServerModalBtn: document.getElementById('show-create-server-modal-btn'),
+                joinServerBtn: document.getElementById('join-server-btn'),
+                logoutBtn: document.getElementById('logout-btn'),
+
+                // Panel Elements
+                backToDashboardBtn: document.getElementById('back-to-dashboard-btn'),
+                panelServerName: document.getElementById('panel-server-name'),
+                panelServerCode: document.getElementById('panel-server-code'),
+                shiftTimer: document.getElementById('shift-timer'),
+                shiftToggleButton: document.getElementById('shift-toggle-btn'),
+                panelTabButtons: document.getElementById('panel-tab-buttons'),
+                panelTabContent: document.getElementById('panel-tab-content'),
+                logOutput: document.getElementById('log-output'),
+                serverStatsOutput: document.getElementById('server-stats-output'),
+                playerCount: document.getElementById('player-count'),
+                queueCount: document.getElementById('queue-count'),
+                playerList: document.getElementById('player-list'),
+                playerQueue: document.getElementById('player-queue'),
+                joinRequestsDisplay: document.getElementById('join-requests-display'),
+                commandInput: document.getElementById('command-input'),
+                commandResponse: document.getElementById('command-response'),
+                shiftLeaderboard: document.getElementById('shift-leaderboard'),
+                ownerJoinRequestsList: document.getElementById('owner-join-requests-list'),
+                editServerNameInput: document.getElementById('edit-server-name'),
+                editApiKeyInput: document.getElementById('edit-api-key'),
+                deleteServerBtn: document.getElementById('delete-server-btn'),
+                executeCommandButton: document.getElementById('execute-command-button'),
+                refreshPlayersBtn: document.getElementById('refresh-players-btn'),
+                refreshVehiclesBtn: document.getElementById('refresh-vehicles-btn'),
+                refreshKillLogsBtn: document.getElementById('refresh-killlogs-btn'),
+                refreshCommandLogsBtn: document.getElementById('refresh-commandlogs-btn'),
+                startShiftWaveBtn: document.getElementById('start-shift-wave-btn'),
+                endShiftWaveBtn: document.getElementById('end-shift-wave-btn'),
+                shiftControlsMessage: document.getElementById('shift-controls-message'),
+                vehicleList: document.getElementById('vehicle-list'),
+                killLogList: document.getElementById('kill-log-list'),
+                
+                // Punishment Tab Elements
+                punishUsernameInput: document.getElementById('punish-username-input'),
+                punishTypeSelect: document.getElementById('punish-type-select'),
+                punishReasonInput: document.getElementById('punish-reason-input'),
+                punishDurationInput: document.getElementById('punish-duration-input'),
+                addPunishmentBtn: document.getElementById('add-punishment-btn'),
+                punishLookupInput: document.getElementById('punish-lookup-input'),
+                punishLookupBtn: document.getElementById('punish-lookup-btn'),
+                punishShowAllBtn: document.getElementById('punish-show-all-btn'),
+                punishmentsList: document.getElementById('punishments-list'),
+
+                // Edit Punishment Modal Elements
+                editPunishmentDocId: document.getElementById('edit-punishment-doc-id'),
+                editPunishUsername: document.getElementById('edit-punish-username'),
+                editPunishType: document.getElementById('edit-punish-type'),
+                editPunishReason: document.getElementById('edit-punish-reason'),
+                editPunishDuration: document.getElementById('edit-punish-duration'),
+                editPunishmentForm: document.getElementById('edit-punishment-form'),
+                cancelEditPunishmentBtn: document.getElementById('cancel-edit-punishment-btn'),
+            };
+        }
+
+        /**
+         * Removes all stored event listeners.
+         */
+        function removeListeners() {
+            for (const eventId in ZappyApp.state.eventListeners) {
+                const listener = ZappyApp.state.eventListeners[eventId];
+                if (listener.element && listener.handler) {
+                    listener.element.removeEventListener(listener.event, listener.handler);
+                }
+            }
+            ZappyApp.state.eventListeners = {};
+        }
+
+        /**
+         * Binds a single event listener and stores it for later removal.
+         * @param {HTMLElement} element
+         * @param {string} event
+         * @param {Function} handler
+         * @param {string} [id]
+         */
+        function bindEvent(element, event, handler, id = `event-${Date.now()}-${Math.random()}`) {
+            if (element && handler && typeof handler === 'function') {
+                element.addEventListener(event, handler);
+                ZappyApp.state.eventListeners[id] = { element, event, handler };
+            } else {
+                console.warn(`Attempted to bind event to null element or with a null handler:`, { element, handler });
+            }
+        }
+
+        // =========================================================================
+        // Event Handler Functions
+        // =========================================================================
+
+        /**
+         * Handles the form submission for both login and register.
+         * @param {Event} event
+         */
+        async function handleAuthSubmit(event) {
+            event.preventDefault();
+            const { emailInput, passwordInput, authError } = ZappyApp.elements;
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            authError.textContent = '';
+            
+            try {
+                if (ZappyApp.state.authMode === 'login') {
+                    await signInWithEmailAndPassword(auth, email, password);
+                } else {
+                    await createUserWithEmailAndPassword(auth, email, password);
+                }
+            } catch (error) {
+                authError.textContent = error.message;
+            }
+        }
+
+        /**
+         * Toggles between login and register modes.
+         */
+        function toggleAuthMode() {
+            ZappyApp.state.authMode = ZappyApp.state.authMode === 'login' ? 'register' : 'login';
+            const { authTitle, authSubmitBtn, authPromptText, authToggleLink, authError } = ZappyApp.elements;
+            authTitle.textContent = ZappyApp.state.authMode === 'login' ? 'Login to Zappy' : 'Register for Zappy';
+            authSubmitBtn.textContent = ZappyApp.state.authMode === 'login' ? 'Login' : 'Register';
+            authPromptText.textContent = ZappyApp.state.authMode === 'login' ? 'Don\'t have an account?' : 'Already have an account?';
+            authToggleLink.textContent = ZappyApp.state.authMode === 'login' ? 'Register' : 'Login';
+            authError.textContent = '';
+        }
+
+        /**
+         * Handles user logout.
+         */
         async function handleLogout() {
             try {
                 await signOut(auth);
                 console.log("User logged out successfully.");
             } catch (error) {
                 console.error("Error signing out:", error);
-                this.displayModal("Logout Failed", "There was an error logging out. Please try again.", "OK");
             }
         }
-
+        
+        /**
+         * Shows the create server modal.
+         */
         function showCreateServerModal() {
             ZappyApp.elements.createServerModal.classList.remove('hidden');
         }
 
+        /**
+         * Handles joining a server.
+         */
         async function handleJoinServer() {
-             const joinCode = ZappyApp.elements.joinCodeInput.value.trim();
-             ZappyApp.elements.joinServerError.textContent = '';
-             ZappyApp.elements.joinServerSuccess.textContent = '';
+            const { joinCodeInput, joinServerError, joinServerSuccess } = ZappyApp.elements;
+            const joinCode = joinCodeInput.value.trim();
+            joinServerError.textContent = '';
+            joinServerSuccess.textContent = '';
 
-             if (!joinCode) {
-                 ZappyApp.elements.joinServerError.textContent = "Please enter a server code.";
-                 return;
-             }
+            if (!joinCode) {
+                joinServerError.textContent = "Please enter a server code.";
+                return;
+            }
 
-             try {
-                 const serverRef = doc(db, `/artifacts/${appId}/public/data/servers/${joinCode}`);
-                 const serverSnap = await getDoc(serverRef);
+            try {
+                const serverRef = doc(db, `/artifacts/${appId}/public/data/servers/${joinCode}`);
+                const serverSnap = await getDoc(serverRef);
 
-                 if (!serverSnap.exists()) {
-                     ZappyApp.elements.joinServerError.textContent = "Server not found. Please check the code.";
-                     return;
-                 }
-                 
-                 const serverData = serverSnap.data();
-                 const userId = ZappyApp.state.currentUser.uid;
-                 const isOwnerOrMember = serverData.ownerId === userId || (serverData.members && serverData.members.some(member => member.uid === userId));
+                if (!serverSnap.exists()) {
+                    joinServerError.textContent = "Server not found. Please check the code.";
+                    return;
+                }
+                
+                const serverData = serverSnap.data();
+                const userId = ZappyApp.state.currentUser.uid;
+                const isOwnerOrMember = serverData.ownerId === userId || (serverData.members && serverData.members.some(member => member.uid === userId));
 
-                 if (isOwnerOrMember) {
-                     ZappyApp.elements.joinServerSuccess.textContent = "You are already a member of this server. Redirecting...";
-                     setTimeout(() => ZappyApp.enterServerPanel(joinCode), 1500);
-                     return;
-                 }
+                if (isOwnerOrMember) {
+                    joinServerSuccess.textContent = "You are already a member of this server. Redirecting...";
+                    setTimeout(() => enterServerPanel(joinCode), 1500);
+                    return;
+                }
 
-                 const joinRequestsRef = collection(serverRef, "joinRequests");
-                 const existingRequest = await getDocs(query(joinRequestsRef, where("userId", "==", userId)));
-                 if (!existingRequest.empty) {
-                     ZappyApp.elements.joinServerError.textContent = "Your join request is already pending.";
-                     return;
-                 }
+                const joinRequestsRef = collection(serverRef, "joinRequests");
+                const existingRequest = await getDocs(query(joinRequestsRef, where("userId", "==", userId)));
+                if (!existingRequest.empty) {
+                    joinServerError.textContent = "Your join request is already pending.";
+                    return;
+                }
 
-                 await addDoc(joinRequestsRef, {
-                     userId: userId,
-                     userEmail: ZappyApp.state.currentUser.email,
-                     timestamp: serverTimestamp()
-                 });
+                await addDoc(joinRequestsRef, {
+                    userId: userId,
+                    userEmail: ZappyApp.state.currentUser.email,
+                    timestamp: serverTimestamp()
+                });
 
-                 ZappyApp.elements.joinServerSuccess.textContent = "Join request sent successfully! Awaiting owner approval.";
-                 ZappyApp.elements.joinCodeInput.value = '';
+                joinServerSuccess.textContent = "Join request sent successfully! Awaiting owner approval.";
+                joinCodeInput.value = '';
 
-             } catch (e) {
-                 console.error("Error joining server:", e);
-                 ZappyApp.elements.joinServerError.textContent = "Failed to send join request. Please try again.";
-             }
-         }
+            } catch (e) {
+                console.error("Error joining server:", e);
+                joinServerError.textContent = "Failed to send join request. Please try again.";
+            }
+        }
+        
+        /**
+         * Handles tab switching in the server panel.
+         * @param {Event} event
+         */
+        function handleTabSwitch(event) {
+             const tab = event.target.dataset.tab;
+             if (!tab) return;
+             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+             document.getElementById(`tab-${tab}`).classList.remove('hidden');
+             document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
+             event.target.classList.add('active');
+        }
 
         /**
-         * ZappyApp
-         * A structured object to organize all application logic, simulating a modular file structure.
+         * Handles starting or ending a shift.
          */
-        const ZappyApp = {
-            // --- STATE & CONFIG ---
-            state: {
-                currentUser: null,
-                currentServer: null,
-                shiftInterval: null,
-                shiftStartTime: null,
-                shiftTimerRunning: false,
-                unsubscribeListeners: [], // To store unsubscribe functions for cleanup
-                isOwner: false, // Tracks if the current user is the server owner
-                eventListeners: {}, // Stores references to event listeners for removal
-                authMode: 'login' // 'login' or 'register'
-            },
+        function handleShiftToggle() {
+            const { shiftToggleButton } = ZappyApp.elements;
+            if (shiftToggleButton.textContent === 'Start Shift') {
+                ZappyApp.state.shiftStartTime = Date.now();
+                shiftToggleButton.textContent = 'End Shift';
+                ZappyApp.state.shiftInterval = setInterval(updateShiftTimer, 1000);
+            } else {
+                clearInterval(ZappyApp.state.shiftInterval);
+                ZappyApp.state.shiftInterval = null;
+                shiftToggleButton.textContent = 'Start Shift';
+                // TODO: Logic to save shift duration to Firestore
+                console.log("Shift ended. Duration not yet saved to database.");
+            }
+        }
 
-            // --- UI ELEMENT CACHING ---
-            elements: {},
+        /**
+         * Handles command execution.
+         */
+        async function handleExecuteCommand() {
+            const { commandInput, commandResponse } = ZappyApp.elements;
+            if (!ZappyApp.state.isOwner) {
+                commandResponse.textContent = "Error: Only the server owner can execute commands.";
+                commandResponse.className = "mt-4 p-3 rounded-md bg-red-900 text-sm";
+                return;
+            }
+            const command = commandInput.value;
+            if (!command) return;
 
-            /**
-             * Caches all the necessary DOM elements.
-             */
-            cacheElements: function() {
-                this.elements = {
-                    loadingOverlay: document.getElementById('loading-overlay'),
-                    authSection: document.getElementById('auth-section'),
-                    dashboardSection: document.getElementById('dashboard-section'),
-                    serverPanelSection: document.getElementById('server-panel-section'),
-                    createServerModal: document.getElementById('create-server-modal'),
-                    confirmModal: document.getElementById('confirm-modal'),
-                    editPunishmentModal: document.getElementById('edit-punishment-modal'),
-                    
-                    // Auth Form elements
-                    authTitle: document.getElementById('auth-title'),
-                    authForm: document.getElementById('auth-form'),
-                    authToggleLink: document.getElementById('auth-toggle-link'),
-                    authPromptText: document.getElementById('auth-prompt-text'),
-                    authSubmitBtn: document.getElementById('auth-submit-btn'),
-                    authError: document.getElementById('auth-error'),
-                    emailInput: document.getElementById('email'),
-                    passwordInput: document.getElementById('password'),
+            const serverRef = doc(db, `/artifacts/${appId}/public/data/servers/${ZappyApp.state.currentServer.id}`);
+            const commandRef = collection(serverRef, "commandLogs");
 
-                    // Dashboard Elements
-                    serverList: document.getElementById('server-list'),
-                    userEmailSpan: document.getElementById('user-email'),
-                    joinCodeInput: document.getElementById('join-code-input'),
-                    joinServerError: document.getElementById('join-server-error'),
-                    joinServerSuccess: document.getElementById('join-server-success'),
-                    serverListError: document.getElementById('server-list-error'),
-                    showCreateServerModalBtn: document.getElementById('show-create-server-modal-btn'),
-                    joinServerBtn: document.getElementById('join-server-btn'),
-                    logoutBtn: document.getElementById('logout-btn'),
-
-                    // Panel Elements
-                    backToDashboardBtn: document.getElementById('back-to-dashboard-btn'),
-                    panelServerName: document.getElementById('panel-server-name'),
-                    panelServerCode: document.getElementById('panel-server-code'),
-                    shiftTimer: document.getElementById('shift-timer'),
-                    shiftToggleButton: document.getElementById('shift-toggle-btn'),
-                    panelTabButtons: document.getElementById('panel-tab-buttons'),
-                    panelTabContent: document.getElementById('panel-tab-content'),
-                    logOutput: document.getElementById('log-output'),
-                    serverStatsOutput: document.getElementById('server-stats-output'),
-                    playerCount: document.getElementById('player-count'),
-                    queueCount: document.getElementById('queue-count'),
-                    playerList: document.getElementById('player-list'),
-                    playerQueue: document.getElementById('player-queue'),
-                    joinRequestsDisplay: document.getElementById('join-requests-display'),
-                    commandInput: document.getElementById('command-input'),
-                    commandResponse: document.getElementById('command-response'),
-                    shiftLeaderboard: document.getElementById('shift-leaderboard'),
-                    ownerJoinRequestsList: document.getElementById('owner-join-requests-list'),
-                    editServerNameInput: document.getElementById('edit-server-name'),
-                    editApiKeyInput: document.getElementById('edit-api-key'),
-                    deleteServerBtn: document.getElementById('delete-server-btn'),
-                    executeCommandButton: document.getElementById('execute-command-button'),
-                    refreshPlayersBtn: document.getElementById('refresh-players-btn'),
-                    refreshVehiclesBtn: document.getElementById('refresh-vehicles-btn'),
-                    refreshKillLogsBtn: document.getElementById('refresh-killlogs-btn'),
-                    refreshCommandLogsBtn: document.getElementById('refresh-commandlogs-btn'),
-                    startShiftWaveBtn: document.getElementById('start-shift-wave-btn'),
-                    endShiftWaveBtn: document.getElementById('end-shift-wave-btn'),
-                    shiftControlsMessage: document.getElementById('shift-controls-message'),
-                    vehicleList: document.getElementById('vehicle-list'),
-                    killLogList: document.getElementById('kill-log-list'),
-                    
-                    // Punishment Tab Elements
-                    punishUsernameInput: document.getElementById('punish-username-input'),
-                    punishTypeSelect: document.getElementById('punish-type-select'),
-                    punishReasonInput: document.getElementById('punish-reason-input'),
-                    punishDurationInput: document.getElementById('punish-duration-input'),
-                    addPunishmentBtn: document.getElementById('add-punishment-btn'),
-                    punishLookupInput: document.getElementById('punish-lookup-input'),
-                    punishLookupBtn: document.getElementById('punish-lookup-btn'),
-                    punishShowAllBtn: document.getElementById('punish-show-all-btn'),
-                    punishmentsList: document.getElementById('punishments-list'),
-
-                    // Edit Punishment Modal Elements
-                    editPunishmentDocId: document.getElementById('edit-punishment-doc-id'),
-                    editPunishUsername: document.getElementById('edit-punish-username'),
-                    editPunishType: document.getElementById('edit-punish-type'),
-                    editPunishReason: document.getElementById('edit-punish-reason'),
-                    editPunishDuration: document.getElementById('edit-punish-duration'),
-                    editPunishmentForm: document.getElementById('edit-punishment-form'),
-                    cancelEditPunishmentBtn: document.getElementById('cancel-edit-punishment-btn'),
-                };
-            },
-
-            /**
-             * Removes all stored event listeners.
-             */
-            removeListeners: function() {
-                for (const eventId in this.state.eventListeners) {
-                    const listener = this.state.eventListeners[eventId];
-                    if (listener.element && listener.handler) {
-                        listener.element.removeEventListener(listener.event, listener.handler);
-                    }
-                }
-                this.state.eventListeners = {};
-            },
-
-            /**
-             * Binds a single event listener and stores it for later removal.
-             * @param {HTMLElement} element
-             * @param {string} event
-             * @param {Function} handler
-             * @param {string} [id]
-             */
-            bindEvent: function(element, event, handler, id = `event-${Date.now()}-${Math.random()}`) {
-                // Defensive check to ensure both element and handler exist before binding
-                if (element && handler && typeof handler === 'function') {
-                    const boundHandler = handler.bind(this);
-                    element.addEventListener(event, boundHandler);
-                    this.state.eventListeners[id] = { element, event, handler: boundHandler };
-                } else {
-                    console.warn(`Attempted to bind event to null element or with a null handler:`, { element, handler });
-                }
-            },
-
-            /**
-             * Binds all event listeners for the authentication section.
-             */
-            bindAuthEvents: function() {
-                this.removeListeners(); // Clear previous listeners
-                this.bindEvent(this.elements.authForm, 'submit', this.handleAuthSubmit);
-                this.bindEvent(this.elements.authToggleLink, 'click', this.toggleAuthMode);
-            },
-
-            /**
-             * Binds all event listeners for the dashboard section.
-             */
-            bindDashboardEvents: function() {
-                this.removeListeners(); // Clear previous listeners
-                this.bindEvent(this.elements.logoutBtn, 'click', handleLogout);
-                this.bindEvent(this.elements.showCreateServerModalBtn, 'click', showCreateServerModal);
-                this.bindEvent(this.elements.joinServerBtn, 'click', handleJoinServer);
-            },
-
-            /**
-             * Binds all event listeners for the server panel section.
-             */
-            bindPanelEvents: function() {
-                this.removeListeners(); // Clear previous listeners
-                this.bindEvent(this.elements.backToDashboardBtn, 'click', this.showDashboard);
-                this.bindEvent(this.elements.panelTabButtons, 'click', this.handleTabSwitch);
-                this.bindEvent(this.elements.shiftToggleButton, 'click', this.handleShiftToggle);
-                
-                // Punishments
-                this.bindEvent(this.elements.addPunishmentBtn, 'click', this.handleAddPunishment);
-                this.bindEvent(this.elements.punishLookupBtn, 'click', this.handleLookupPunishments);
-                this.bindEvent(this.elements.punishShowAllBtn, 'click', this.handleShowAllPunishments);
-
-                // Manual refresh buttons
-                this.bindEvent(this.elements.refreshPlayersBtn, 'click', this.refreshPlayers);
-                this.bindEvent(this.elements.refreshVehiclesBtn, 'click', this.refreshVehicles);
-                this.bindEvent(this.elements.refreshKillLogsBtn, 'click', this.refreshKillLogs);
-                this.bindEvent(this.elements.refreshCommandLogsBtn, 'click', this.refreshCommandLogs);
-                
-                // Shift Wave controls
-                this.bindEvent(this.elements.startShiftWaveBtn, 'click', this.handleShiftWaveAction.bind(this, 'start'));
-                this.bindEvent(this.elements.endShiftWaveBtn, 'click', this.handleShiftWaveAction.bind(this, 'end'));
-
-                // Commands
-                this.bindEvent(this.elements.executeCommandButton, 'click', this.handleExecuteCommand);
-                
-                // Owner-only
-                this.bindEvent(document.getElementById('save-server-name-btn'), 'click', this.handleSaveServerName);
-                this.bindEvent(document.getElementById('save-api-key-btn'), 'click', this.handleSaveApiKey);
-                this.bindEvent(this.elements.deleteServerBtn, 'click', this.handleDeleteServer);
-
-                // Modals
-                this.bindEvent(this.elements.cancelEditPunishmentBtn, 'click', () => this.elements.editPunishmentModal.classList.add('hidden'));
-                this.bindEvent(this.elements.editPunishmentForm, 'submit', this.handleEditPunishment);
-                
-                // Event delegation for dynamically created punishment buttons
-                this.bindEvent(this.elements.punishmentsList, 'click', (event) => {
-                    const editBtn = event.target.closest('.edit-punishment-btn');
-                    const deleteBtn = event.target.closest('.delete-punishment-btn');
-                    if (editBtn) {
-                        const docId = editBtn.dataset.docId;
-                        this.showEditPunishmentModal(docId);
-                    } else if (deleteBtn) {
-                        const docId = deleteBtn.dataset.docId;
-                        this.handleDeletePunishment(docId);
-                    }
+            try {
+                await addDoc(commandRef, {
+                    command,
+                    executedBy: ZappyApp.state.currentUser.email,
+                    timestamp: serverTimestamp()
                 });
-            },
+                commandResponse.textContent = `Command sent: "${command}". Awaiting response...`;
+                commandResponse.className = "mt-4 p-3 rounded-md bg-blue-900 text-sm";
+            } catch (e) {
+                commandResponse.textContent = `Failed to send command: ${e.message}`;
+                commandResponse.className = "mt-4 p-3 rounded-md bg-red-900 text-sm";
+            }
+        }
+        
+        /**
+         * Handles adding a new punishment.
+         */
+        async function handleAddPunishment() {
+            const { punishUsernameInput, punishTypeSelect, punishReasonInput, punishDurationInput } = ZappyApp.elements;
+            const username = punishUsernameInput.value.trim();
+            const type = punishTypeSelect.value;
+            const reason = punishReasonInput.value.trim();
+            const duration = type === 'Temp Ban' ? parseInt(punishDurationInput.value, 10) : null;
 
-            // --- AUTHENTICATION METHODS ---
-            /**
-             * Handles Firebase Auth state changes.
-             * This function now only OBSERVES state, it does not perform auth actions.
-             * @param {firebase.User} user
-             */
-            handleAuthStateChange: function(user) {
-                this.state.currentUser = user;
-                if (user) {
-                    this.elements.authSection.classList.add('hidden');
-                    this.elements.dashboardSection.classList.remove('hidden');
-                    this.elements.userEmailSpan.textContent = user.email || "Anonymous";
-                    this.elements.loadingOverlay.classList.add('hidden');
-                    this.bindDashboardEvents();
-                    this.fetchUserServers();
-                } else {
-                    this.elements.authSection.classList.remove('hidden');
-                    this.elements.dashboardSection.classList.add('hidden');
-                    this.elements.serverPanelSection.classList.add('hidden');
-                    this.elements.loadingOverlay.classList.add('hidden');
-                    this.state.unsubscribeListeners.forEach(unsub => unsub());
-                    this.state.unsubscribeListeners = [];
-                    clearInterval(this.state.shiftInterval);
-                    this.bindAuthEvents();
+            if (!username || !type || !reason) {
+                // TODO: Replace with a custom modal UI
+                alert("Username, type, and reason are required.");
+                return;
+            }
+
+            try {
+                const serverRef = doc(db, `/artifacts/${appId}/public/data/servers/${ZappyApp.state.currentServer.id}`);
+                await addDoc(collection(serverRef, "punishments"), {
+                    username,
+                    type,
+                    reason,
+                    duration,
+                    issuedBy: ZappyApp.state.currentUser.email,
+                    timestamp: serverTimestamp()
+                });
+                punishUsernameInput.value = '';
+                punishTypeSelect.value = '';
+                punishReasonInput.value = '';
+                punishDurationInput.value = '';
+                alert("Punishment added successfully!");
+            } catch (e) {
+                console.error("Error adding punishment:", e);
+                alert("Failed to add punishment. Please try again.");
+            }
+        }
+
+        /**
+         * Handles lookup of punishments by username.
+         */
+        async function handleLookupPunishments() {
+            const { punishLookupInput, punishmentsList } = ZappyApp.elements;
+            const username = punishLookupInput.value.trim();
+
+            if (!username) {
+                alert("Please enter a username to lookup.");
+                return;
+            }
+
+            punishmentsList.innerHTML = '<p class="text-center text-slate-400">Searching...</p>';
+
+            try {
+                const punishmentsRef = collection(db, `/artifacts/${appId}/public/data/servers/${ZappyApp.state.currentServer.id}/punishments`);
+                const q = query(punishmentsRef, where("username", "==", username));
+                const querySnapshot = await getDocs(q);
+
+                const punishments = [];
+                querySnapshot.forEach(doc => punishments.push({ id: doc.id, ...doc.data() }));
+
+                displayPunishments(punishments);
+            } catch (e) {
+                console.error("Error looking up punishments:", e);
+                punishmentsList.innerHTML = '<p class="text-center text-red-400">Failed to lookup punishments.</p>';
+            }
+        }
+
+        /**
+         * Handles the display of all punishments.
+         */
+        async function handleShowAllPunishments() {
+             ZappyApp.elements.punishLookupInput.value = ''; // Clear the lookup input
+             ZappyApp.elements.punishmentsList.innerHTML = '<p class="text-center text-slate-400">Loading all punishments...</p>';
+             try {
+                 const punishmentsRef = collection(db, `/artifacts/${appId}/public/data/servers/${ZappyApp.state.currentServer.id}/punishments`);
+                 const querySnapshot = await getDocs(punishmentsRef);
+
+                 const punishments = [];
+                 querySnapshot.forEach(doc => punishments.push({ id: doc.id, ...doc.data() }));
+
+                 displayPunishments(punishments);
+             } catch (e) {
+                 console.error("Error fetching all punishments:", e);
+                 ZappyApp.elements.punishmentsList.innerHTML = '<p class="text-center text-red-400">Failed to load punishments.</p>';
+             }
+        }
+
+        /**
+         * Handles saving the server name (owner only).
+         */
+        async function handleSaveServerName() {
+            const { editServerNameInput, ownerSettingsSuccess, ownerSettingsError } = ZappyApp.elements;
+            const newName = editServerNameInput.value.trim();
+            ownerSettingsSuccess.textContent = '';
+            ownerSettingsError.textContent = '';
+            if (!newName) {
+                ownerSettingsError.textContent = "Server name cannot be empty.";
+                return;
+            }
+            try {
+                const serverRef = doc(db, `/artifacts/${appId}/public/data/servers/${ZappyApp.state.currentServer.id}`);
+                await updateDoc(serverRef, { name: newName });
+                ownerSettingsSuccess.textContent = "Server name updated successfully!";
+            } catch (e) {
+                ownerSettingsError.textContent = "Failed to update server name.";
+            }
+        }
+        
+        /**
+         * Handles saving the API key (owner only).
+         */
+        async function handleSaveApiKey() {
+            const { editApiKeyInput, ownerApiKeySuccess, ownerApiKeyError } = ZappyApp.elements;
+            const newApiKey = editApiKeyInput.value.trim();
+            ownerApiKeySuccess.textContent = '';
+            ownerApiKeyError.textContent = '';
+            if (!newApiKey) {
+                ownerApiKeyError.textContent = "API key cannot be empty.";
+                return;
+            }
+            try {
+                const serverRef = doc(db, `/artifacts/${appId}/public/data/servers/${ZappyApp.state.currentServer.id}`);
+                await updateDoc(serverRef, { apiKey: newApiKey });
+                ownerApiKeySuccess.textContent = "API key updated successfully!";
+            } catch (e) {
+                ownerApiKeyError.textContent = "Failed to update API key.";
+            }
+        }
+
+        /**
+         * Handles deleting the server (owner only).
+         */
+        async function handleDeleteServer() {
+            // TODO: Replace with a custom modal UI
+            if (confirm("Are you sure you want to delete this server? This is permanent.")) {
+                try {
+                    const serverRef = doc(db, `/artifacts/${appId}/public/data/servers/${ZappyApp.state.currentServer.id}`);
+                    await deleteDoc(serverRef);
+                    showDashboard();
+                } catch (e) {
+                    console.error("Error deleting server:", e);
+                    alert("Failed to delete server.");
                 }
-            },
-            
-            /**
-             * Toggles between login and register modes.
-             */
-            toggleAuthMode: function() {
-                this.state.authMode = this.state.authMode === 'login' ? 'register' : 'login';
-                this.elements.authTitle.textContent = this.state.authMode === 'login' ? 'Login to Zappy' : 'Register for Zappy';
-                this.elements.authSubmitBtn.textContent = this.state.authMode === 'login' ? 'Login' : 'Register';
-                this.elements.authPromptText.textContent = this.state.authMode === 'login' ? 'Don\'t have an account?' : 'Already have an account?';
-                this.elements.authToggleLink.textContent = this.state.authMode === 'login' ? 'Register' : 'Login';
-                this.elements.authError.textContent = '';
-            },
+            }
+        }
 
-            /**
-             * Handles the form submission for both login and register.
-             * @param {Event} event
-             */
-            handleAuthSubmit: async function(event) {
-                event.preventDefault();
-                const email = this.elements.emailInput.value;
-                const password = this.elements.passwordInput.value;
-                this.elements.authError.textContent = '';
+        /**
+         * Handles starting or ending a shift wave.
+         * @param {string} action 'start' or 'end'
+         */
+        async function handleShiftWaveAction(action) {
+            const { shiftControlsMessage } = ZappyApp.elements;
+            if (!ZappyApp.state.isOwner) {
+                shiftControlsMessage.textContent = "Only the server owner can start or end a shift wave.";
+                shiftControlsMessage.className = "text-red-400 text-sm mt-2 text-center";
+                return;
+            }
+            const serverRef = doc(db, `/artifacts/${appId}/public/data/servers/${ZappyApp.state.currentServer.id}`);
+            
+            try {
+                await updateDoc(serverRef, {
+                    shiftWaveActive: action === 'start'
+                });
+                shiftControlsMessage.textContent = `Shift wave ${action}ed successfully.`;
+                shiftControlsMessage.className = "text-green-400 text-sm mt-2 text-center";
+            } catch (e) {
+                shiftControlsMessage.textContent = `Failed to ${action} shift wave.`;
+                shiftControlsMessage.className = "text-red-400 text-sm mt-2 text-center";
+            }
+        }
+
+        // =========================================================================
+        // UI & Data Display Functions
+        // =========================================================================
+
+        /**
+         * Updates the UI elements specific to the server panel.
+         */
+        function updateServerPanelUI() {
+            const { currentServer, isOwner } = ZappyApp.state;
+            const { panelServerName, panelServerCode, shiftToggleButton, panelTabButtons } = ZappyApp.elements;
+            
+            panelServerName.textContent = currentServer.name;
+            panelServerCode.textContent = `Code: ${currentServer.id}`;
+
+            // Handle shift timer button text
+            shiftToggleButton.textContent = ZappyApp.state.shiftInterval ? 'End Shift' : 'Start Shift';
+
+            // Add or remove owner tab based on user role
+            const existingOwnerTab = document.querySelector('[data-tab="owner"]');
+            if (isOwner) {
+                if (!existingOwnerTab) {
+                    const ownerTabBtn = document.createElement('button');
+                    ownerTabBtn.className = 'tab-button btn btn-secondary';
+                    ownerTabBtn.setAttribute('data-tab', 'owner');
+                    ownerTabBtn.textContent = 'Owner';
+                    panelTabButtons.appendChild(ownerTabBtn);
+                }
+                // Show owner-only controls
+                ZappyApp.elements.startShiftWaveBtn.classList.remove('hidden');
+                ZappyApp.elements.endShiftWaveBtn.classList.remove('hidden');
+            } else {
+                if (existingOwnerTab) {
+                    existingOwnerTab.remove();
+                }
+                // Hide owner-only controls
+                ZappyApp.elements.startShiftWaveBtn.classList.add('hidden');
+                ZappyApp.elements.endShiftWaveBtn.classList.add('hidden');
+            }
+        }
+
+        /**
+         * Displays the dashboard and hides the server panel.
+         */
+        function showDashboard() {
+            const { dashboardSection, serverPanelSection } = ZappyApp.elements;
+            serverPanelSection.classList.add('hidden');
+            dashboardSection.classList.remove('hidden');
+            removeListeners();
+            bindDashboardEvents();
+            fetchUserServers();
+        }
+
+        /**
+         * Fetches the user's servers from Firestore.
+         */
+        async function fetchUserServers() {
+            const { serverList, serverListError } = ZappyApp.elements;
+            serverList.innerHTML = '';
+            serverListError.textContent = '';
+
+            try {
+                const userId = ZappyApp.state.currentUser.uid;
+                const serversRef = collection(db, `/artifacts/${appId}/public/data/servers`);
+                const q = query(serversRef, where("members", "array-contains", { uid: userId }));
+                const q2 = query(serversRef, where("ownerId", "==", userId));
+                const [memberServers, ownerServers] = await Promise.all([getDocs(q), getDocs(q2)]);
+
+                const servers = new Map();
+                memberServers.forEach(doc => servers.set(doc.id, { id: doc.id, ...doc.data() }));
+                ownerServers.forEach(doc => servers.set(doc.id, { id: doc.id, ...doc.data() }));
+
+                if (servers.size === 0) {
+                     serverList.innerHTML = '<p class="text-slate-400">You are not a member of any servers yet. Create one or join one using a code!</p>';
+                     return;
+                }
                 
-                try {
-                    if (this.state.authMode === 'login') {
-                        await signInWithEmailAndPassword(auth, email, password);
-                    } else {
-                        await createUserWithEmailAndPassword(auth, email, password);
-                    }
-                } catch (error) {
-                    this.elements.authError.textContent = error.message;
-                }
-            },
-
-            // --- SERVER & DATA MANAGEMENT ---
-            /**
-             * Fetches the user's servers from Firestore.
-             */
-            fetchUserServers: async function() {
-                this.elements.serverList.innerHTML = '';
-                this.elements.serverListError.textContent = '';
-
-                try {
-                    const userId = this.state.currentUser.uid;
-                    const serversRef = collection(db, `/artifacts/${appId}/public/data/servers`);
-                    const q = query(serversRef, where("members", "array-contains", { uid: userId }));
-                    const q2 = query(serversRef, where("ownerId", "==", userId));
-                    const [memberServers, ownerServers] = await Promise.all([getDocs(q), getDocs(q2)]);
-
-                    const servers = new Map();
-                    memberServers.forEach(doc => servers.set(doc.id, { id: doc.id, ...doc.data() }));
-                    ownerServers.forEach(doc => servers.set(doc.id, { id: doc.id, ...doc.data() }));
-
-                    if (servers.size === 0) {
-                         this.elements.serverList.innerHTML = '<p class="text-slate-400">You are not a member of any servers yet. Create one or join one using a code!</p>';
-                         return;
-                    }
-                    
-                    servers.forEach(server => {
-                        const card = document.createElement('div');
-                        card.className = 'card flex flex-col justify-between';
-                        card.innerHTML = `
-                             <div>
-                                <h3 class="text-xl font-semibold text-white mb-2">${server.name}</h3>
-                                <p class="text-sm text-slate-400 mb-2">Code: <span class="font-mono text-white">${server.id}</span></p>
-                                <p class="text-sm text-slate-500 mb-4">Owned by: ${server.ownerEmail}</p>
-                             </div>
-                             <button class="btn btn-primary btn-sm mt-4 enter-server-btn" data-id="${server.id}">Manage Server</button>
-                        `;
-                        this.elements.serverList.appendChild(card);
-                    });
-
-                    // Add event listeners for the new buttons
-                    document.querySelectorAll('.enter-server-btn').forEach(button => {
-                         this.bindEvent(button, 'click', () => this.enterServerPanel(button.dataset.id));
-                    });
-
-                } catch (e) {
-                     console.error("Error fetching user servers:", e);
-                     this.elements.serverListError.textContent = "Failed to load servers. Please try refreshing the page.";
-                }
-            },
-
-            /**
-             * Fetches a single server's data and sets up real-time listeners.
-             * @param {string} serverId
-             */
-            enterServerPanel: async function(serverId) {
-                this.elements.loadingOverlay.classList.remove('hidden');
-                this.elements.dashboardSection.classList.add('hidden');
-                this.elements.serverPanelSection.classList.remove('hidden');
-                this.bindPanelEvents(); // Bind panel-specific events
-
-                const serverRef = doc(db, `/artifacts/${appId}/public/data/servers/${serverId}`);
-
-                try {
-                    const docSnap = await getDoc(serverRef);
-                    if (docSnap.exists()) {
-                        this.state.currentServer = { id: serverId, ...docSnap.data() };
-                        this.state.isOwner = this.state.currentServer.ownerId === this.state.currentUser.uid;
-                        this.updateServerPanelUI();
-                        this.setupRealtimeListeners();
-                        this.elements.loadingOverlay.classList.add('hidden');
-                    } else {
-                        console.error("Server not found!");
-                        this.showDashboard();
-                    }
-                } catch (e) {
-                    console.error("Error fetching server data:", e);
-                    this.showDashboard();
-                }
-            },
-
-            /**
-             * Sets up real-time Firestore listeners for the current server.
-             */
-            setupRealtimeListeners: function() {
-                // Cleanup existing listeners first
-                this.state.unsubscribeListeners.forEach(unsub => unsub());
-                this.state.unsubscribeListeners = [];
-
-                const serverRef = doc(db, `/artifacts/${appId}/public/data/servers/${this.state.currentServer.id}`);
-
-                // Listener for server details
-                this.state.unsubscribeListeners.push(onSnapshot(serverRef, (docSnap) => {
-                    if (docSnap.exists()) {
-                        this.state.currentServer = { id: docSnap.id, ...docSnap.data() };
-                        this.updateServerPanelUI();
-                    } else {
-                        this.showDashboard();
-                    }
-                }));
-
-                // Listener for players
-                this.state.unsubscribeListeners.push(onSnapshot(collection(serverRef, "players"), (querySnapshot) => {
-                    const players = [];
-                    const queue = [];
-                    querySnapshot.forEach((doc) => {
-                        const data = doc.data();
-                        data.isQueued ? queue.push(data) : players.push(data);
-                    });
-                    this.displayPlayers(players, queue);
-                }));
-
-                // Listener for kill logs
-                this.state.unsubscribeListeners.push(onSnapshot(collection(serverRef, "killlogs"), (querySnapshot) => {
-                    const logs = [];
-                    querySnapshot.forEach(doc => logs.push(doc.data()));
-                    this.displayKillLogs(logs);
-                }));
-
-                // Listener for vehicles
-                this.state.unsubscribeListeners.push(onSnapshot(collection(serverRef, "vehicles"), (querySnapshot) => {
-                    const vehicles = [];
-                    querySnapshot.forEach(doc => vehicles.push(doc.data()));
-                    this.displayVehicles(vehicles);
-                }));
-
-                // Listener for punishments
-                this.state.unsubscribeListeners.push(onSnapshot(collection(serverRef, "punishments"), (querySnapshot) => {
-                    const punishments = [];
-                    querySnapshot.forEach(doc => punishments.push({ id: doc.id, ...doc.data() }));
-                    this.displayPunishments(punishments);
-                }));
-
-                // Listener for server members
-                this.state.unsubscribeListeners.push(onSnapshot(collection(serverRef, "members"), (querySnapshot) => {
-                    const members = [];
-                    querySnapshot.forEach(doc => members.push({ id: doc.id, ...doc.data() }));
-                    this.displayServerMembers(members);
-                }));
-
-                // Listener for join requests (owner-only)
-                if (this.state.isOwner) {
-                    this.state.unsubscribeListeners.push(onSnapshot(collection(serverRef, "joinRequests"), (querySnapshot) => {
-                        const requests = [];
-                        querySnapshot.forEach(doc => requests.push({ id: doc.id, ...doc.data() }));
-                        this.displayJoinRequests(requests);
-                    }));
-                }
-            },
-
-            // --- UI RENDERING & UPDATES ---
-            /**
-             * Renders player data to the UI.
-             * @param {Array} players
-             * @param {Array} queue
-             */
-            displayPlayers: function(players, queue) {
-                this.elements.playerCount.textContent = players.length;
-                this.elements.queueCount.textContent = queue.length;
-
-                this.elements.playerList.innerHTML = players.map(p => `
-                    <li class="p-2 border-b border-slate-700 last:border-b-0 flex items-center justify-between">
-                        <div>
-                            <span class="font-semibold text-white">${p.username}</span>
-                            <span class="text-xs text-slate-500 block">(${p.robloxUserId})</span>
-                        </div>
-                    </li>
-                `).join('');
-
-                this.elements.playerQueue.innerHTML = queue.map(p => `
-                    <li class="p-2 border-b border-slate-700 last:border-b-0 flex items-center justify-between">
-                        <div>
-                            <span class="font-semibold text-white">${p.username}</span>
-                            <span class="text-xs text-slate-500 block">(${p.robloxUserId})</span>
-                        </div>
-                    </li>
-                `).join('');
-            },
-
-            /**
-             * Renders vehicle data to the UI.
-             * @param {Array} vehicles
-             */
-            displayVehicles: function(vehicles) {
-                const vehicleList = this.elements.vehicleList;
-                vehicleList.innerHTML = '';
-                if (vehicles.length === 0) {
-                    vehicleList.innerHTML = '<p class="text-center text-slate-400">No vehicle data available.</p>';
-                    return;
-                }
-                const listHtml = vehicles.map(v => `
-                    <div class="p-4 border-b border-slate-700 last:border-b-0">
-                        <p><span class="font-bold text-white">${v.name}</span> <span class="text-slate-500">(${v.owner})</span></p>
-                        <p class="text-sm text-slate-400">Model: ${v.model} | Health: ${v.health}%</p>
-                    </div>
-                `).join('');
-                vehicleList.innerHTML = listHtml;
-            },
-
-            /**
-             * Renders kill log data to the UI.
-             * @param {Array} logs
-             */
-            displayKillLogs: function(logs) {
-                const killLogList = this.elements.killLogList;
-                killLogList.innerHTML = '';
-                if (logs.length === 0) {
-                    killLogList.innerHTML = '<p class="text-center text-slate-400">No kill logs available.</p>';
-                    return;
-                }
-                const listHtml = logs.map(log => {
-                    const timestamp = log.timestamp.toDate().toLocaleString();
-                    return `<p><span class="text-slate-500">[${timestamp}]</span> <span class="font-semibold text-red-400">${log.killer}</span> killed <span class="font-semibold text-white">${log.victim}</span> with <span class="text-slate-400">${log.weapon}</span>.</p>`;
-                }).join('');
-                killLogList.innerHTML = listHtml;
-            },
-
-            /**
-             * Renders punishment data to the UI.
-             * @param {Array} punishments
-             */
-            displayPunishments: function(punishments) {
-                const punishmentsList = this.elements.punishmentsList;
-                punishmentsList.innerHTML = '';
-                if (punishments.length === 0) {
-                    punishmentsList.innerHTML = '<p class="text-center text-slate-400">No punishments found.</p>';
-                    return;
-                }
-
-                // Sorting by timestamp descending
-                punishments.sort((a, b) => b.timestamp - a.timestamp);
-
-                const listHtml = punishments.map(p => {
-                    const timestamp = p.timestamp.toDate().toLocaleString();
-                    const durationText = p.duration ? ` - Duration: ${p.duration} days` : '';
-                    return `
-                        <div class="p-4 border-b border-slate-700 last:border-b-0 flex justify-between items-center">
-                            <div>
-                                <p class="font-bold text-white">${p.username}</p>
-                                <p class="text-sm text-slate-400">Type: <span class="font-semibold">${p.type}</span></p>
-                                <p class="text-sm text-slate-400">Reason: ${p.reason}</p>
-                                <p class="text-xs text-slate-500">Issued by: ${p.issuedBy}</p>
-                                <p class="text-xs text-slate-500">Date: ${timestamp}${durationText}</p>
-                            </div>
-                            ${this.state.isOwner ? `
-                            <div class="flex gap-2">
-                                <button class="btn btn-secondary btn-sm edit-punishment-btn" data-doc-id="${p.id}">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-edit"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
-                                </button>
-                                <button class="btn btn-danger btn-sm delete-punishment-btn" data-doc-id="${p.id}">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0-1-1-2-2-2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
-                                </button>
-                            </div>` : ''}
-                        </div>
+                servers.forEach(server => {
+                    const card = document.createElement('div');
+                    card.className = 'card flex flex-col justify-between';
+                    card.innerHTML = `
+                         <div>
+                            <h3 class="text-xl font-semibold text-white mb-2">${server.name}</h3>
+                            <p class="text-sm text-slate-400 mb-2">Code: <span class="font-mono text-white">${server.id}</span></p>
+                            <p class="text-sm text-slate-500 mb-4">Owned by: ${server.ownerEmail}</p>
+                         </div>
+                         <button class="btn btn-primary btn-sm mt-4 enter-server-btn" data-id="${server.id}">Manage Server</button>
                     `;
-                }).join('');
-                punishmentsList.innerHTML = listHtml;
-            },
+                    serverList.appendChild(card);
+                });
 
-            // --- USER INTERACTION HANDLERS ---
-            /**
-             * Handles tab switching in the server panel.
-             * @param {Event} event
-             */
-            handleTabSwitch: function(event) {
-                 const tab = event.target.dataset.tab;
-                 if (!tab) return;
-                 document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-                 document.getElementById(`tab-${tab}`).classList.remove('hidden');
-                 document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
-                 event.target.classList.add('active');
-            },
+                // Add event listeners for the new buttons
+                document.querySelectorAll('.enter-server-btn').forEach(button => {
+                     bindEvent(button, 'click', () => enterServerPanel(button.dataset.id));
+                });
 
-            /**
-             * Handles command execution.
-             */
-            handleExecuteCommand: async function() {
-                if (!this.state.isOwner) {
-                    this.elements.commandResponse.textContent = "Error: Only the server owner can execute commands.";
-                    this.elements.commandResponse.className = "mt-4 p-3 rounded-md bg-red-900 text-sm";
-                    return;
+            } catch (e) {
+                 console.error("Error fetching user servers:", e);
+                 serverListError.textContent = "Failed to load servers. Please try refreshing the page.";
+            }
+        }
+
+        /**
+         * Fetches a single server's data and sets up real-time listeners.
+         * @param {string} serverId
+         */
+        async function enterServerPanel(serverId) {
+            const { loadingOverlay, dashboardSection, serverPanelSection } = ZappyApp.elements;
+            loadingOverlay.classList.remove('hidden');
+            dashboardSection.classList.add('hidden');
+            serverPanelSection.classList.remove('hidden');
+            bindPanelEvents();
+
+            const serverRef = doc(db, `/artifacts/${appId}/public/data/servers/${serverId}`);
+
+            try {
+                const docSnap = await getDoc(serverRef);
+                if (docSnap.exists()) {
+                    ZappyApp.state.currentServer = { id: serverId, ...docSnap.data() };
+                    ZappyApp.state.isOwner = ZappyApp.state.currentServer.ownerId === ZappyApp.state.currentUser.uid;
+                    updateServerPanelUI();
+                    setupRealtimeListeners();
+                    loadingOverlay.classList.add('hidden');
+                } else {
+                    console.error("Server not found!");
+                    loadingOverlay.classList.add('hidden');
+                    showDashboard();
                 }
-                const command = this.elements.commandInput.value;
-                if (!command) return;
+            } catch (e) {
+                console.error("Error fetching server data:", e);
+                loadingOverlay.classList.add('hidden');
+                showDashboard();
+            }
+        }
 
-                const serverRef = doc(db, `/artifacts/${appId}/public/data/servers/${this.state.currentServer.id}`);
-                const commandRef = collection(serverRef, "commandLogs");
+        /**
+         * Sets up real-time Firestore listeners for the current server.
+         */
+        function setupRealtimeListeners() {
+            ZappyApp.state.unsubscribeListeners.forEach(unsub => unsub());
+            ZappyApp.state.unsubscribeListeners = [];
 
-                try {
-                    await addDoc(commandRef, {
-                        command,
-                        executedBy: this.state.currentUser.email,
-                        timestamp: serverTimestamp()
-                    });
-                    this.elements.commandResponse.textContent = `Command sent: "${command}". Awaiting response...`;
-                    this.elements.commandResponse.className = "mt-4 p-3 rounded-md bg-blue-900 text-sm";
-                } catch (e) {
-                    this.elements.commandResponse.textContent = `Failed to send command: ${e.message}`;
-                    this.elements.commandResponse.className = "mt-4 p-3 rounded-md bg-red-900 text-sm";
+            const serverRef = doc(db, `/artifacts/${appId}/public/data/servers/${ZappyApp.state.currentServer.id}`);
+
+            ZappyApp.state.unsubscribeListeners.push(onSnapshot(serverRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    ZappyApp.state.currentServer = { id: docSnap.id, ...docSnap.data() };
+                    updateServerPanelUI();
+                } else {
+                    showDashboard();
                 }
-            },
-            
-            /**
-             * Functions to manually refresh data, as requested by the user's previous code snippet.
-             * These primarily serve as a way to trigger a `getDocs` if real-time listeners are not desired for a specific action.
-             */
-            refreshPlayers: async function() {
-                this.elements.playerList.innerHTML = '<p class="text-center text-slate-400">Refreshing...</p>';
-                this.elements.playerQueue.innerHTML = '';
-                const playersRef = collection(db, `/artifacts/${appId}/public/data/servers/${this.state.currentServer.id}/players`);
-                const querySnapshot = await getDocs(playersRef);
+            }));
+
+            ZappyApp.state.unsubscribeListeners.push(onSnapshot(collection(serverRef, "players"), (querySnapshot) => {
                 const players = [];
                 const queue = [];
-                querySnapshot.forEach(doc => {
+                querySnapshot.forEach((doc) => {
                     const data = doc.data();
                     data.isQueued ? queue.push(data) : players.push(data);
                 });
-                this.displayPlayers(players, queue);
-            },
+                displayPlayers(players, queue);
+            }));
 
-            refreshVehicles: async function() {
-                this.elements.vehicleList.innerHTML = '<p class="text-center text-slate-400">Refreshing...</p>';
-                const vehiclesRef = collection(db, `/artifacts/${appId}/public/data/servers/${this.state.currentServer.id}/vehicles`);
-                const querySnapshot = await getDocs(vehiclesRef);
-                const vehicles = [];
-                querySnapshot.forEach(doc => vehicles.push(doc.data()));
-                this.displayVehicles(vehicles);
-            },
-
-            refreshKillLogs: async function() {
-                this.elements.killLogList.innerHTML = '<p class="text-center text-slate-400">Refreshing...</p>';
-                const killLogsRef = collection(db, `/artifacts/${appId}/public/data/servers/${this.state.currentServer.id}/killlogs`);
-                const querySnapshot = await getDocs(killLogsRef);
+            ZappyApp.state.unsubscribeListeners.push(onSnapshot(collection(serverRef, "killlogs"), (querySnapshot) => {
                 const logs = [];
                 querySnapshot.forEach(doc => logs.push(doc.data()));
-                this.displayKillLogs(logs);
-            },
+                displayKillLogs(logs);
+            }));
+
+            ZappyApp.state.unsubscribeListeners.push(onSnapshot(collection(serverRef, "vehicles"), (querySnapshot) => {
+                const vehicles = [];
+                querySnapshot.forEach(doc => vehicles.push(doc.data()));
+                displayVehicles(vehicles);
+            }));
+
+            ZappyApp.state.unsubscribeListeners.push(onSnapshot(collection(serverRef, "punishments"), (querySnapshot) => {
+                const punishments = [];
+                querySnapshot.forEach(doc => punishments.push({ id: doc.id, ...doc.data() }));
+                displayPunishments(punishments);
+            }));
             
-            refreshCommandLogs: async function() {
-                // Not implemented in the original snippet, but included here for completeness
-                console.log("Refreshing Command Logs...");
-                // Here, you would implement the logic to fetch and display the command logs.
-                // For now, this is a placeholder.
-            },
+            // Listener for join requests (owner-only)
+            if (ZappyApp.state.isOwner) {
+                ZappyApp.state.unsubscribeListeners.push(onSnapshot(collection(serverRef, "joinRequests"), (querySnapshot) => {
+                    const requests = [];
+                    querySnapshot.forEach(doc => requests.push({ id: doc.id, ...doc.data() }));
+                    displayJoinRequests(requests);
+                }));
+            }
+        }
+
+        // =========================================================================
+        // UI Rendering Functions
+        // =========================================================================
+
+        /**
+         * Binds all event listeners for the authentication section.
+         */
+        function bindAuthEvents() {
+            removeListeners();
+            bindEvent(ZappyApp.elements.authForm, 'submit', handleAuthSubmit);
+            bindEvent(ZappyApp.elements.authToggleLink, 'click', toggleAuthMode);
+        }
+
+        /**
+         * Binds all event listeners for the dashboard section.
+         */
+        function bindDashboardEvents() {
+            removeListeners();
+            bindEvent(ZappyApp.elements.logoutBtn, 'click', handleLogout);
+            bindEvent(ZappyApp.elements.showCreateServerModalBtn, 'click', showCreateServerModal);
+            bindEvent(ZappyApp.elements.joinServerBtn, 'click', handleJoinServer);
+        }
+
+        /**
+         * Binds all event listeners for the server panel section.
+         */
+        function bindPanelEvents() {
+            removeListeners();
+            bindEvent(ZappyApp.elements.backToDashboardBtn, 'click', showDashboard);
+            bindEvent(ZappyApp.elements.panelTabButtons, 'click', handleTabSwitch);
+            bindEvent(ZappyApp.elements.shiftToggleButton, 'click', handleShiftToggle);
             
-            /**
-             * Handles starting or ending a shift wave.
-             * @param {string} action 'start' or 'end'
-             */
-            handleShiftWaveAction: async function(action) {
-                if (!this.state.isOwner) {
-                    this.elements.shiftControlsMessage.textContent = "Only the server owner can start or end a shift wave.";
-                    this.elements.shiftControlsMessage.className = "text-red-400 text-sm mt-2 text-center";
-                    return;
+            // Punishments
+            bindEvent(ZappyApp.elements.addPunishmentBtn, 'click', handleAddPunishment);
+            bindEvent(ZappyApp.elements.punishLookupBtn, 'click', handleLookupPunishments);
+            bindEvent(ZappyApp.elements.punishShowAllBtn, 'click', handleShowAllPunishments);
+
+            // Manual refresh buttons
+            bindEvent(ZappyApp.elements.refreshPlayersBtn, 'click', refreshPlayers);
+            bindEvent(ZappyApp.elements.refreshVehiclesBtn, 'click', refreshVehicles);
+            bindEvent(ZappyApp.elements.refreshKillLogsBtn, 'click', refreshKillLogs);
+            
+            // Shift Wave controls
+            bindEvent(ZappyApp.elements.startShiftWaveBtn, 'click', () => handleShiftWaveAction('start'));
+            bindEvent(ZappyApp.elements.endShiftWaveBtn, 'click', () => handleShiftWaveAction('end'));
+
+            // Commands
+            bindEvent(ZappyApp.elements.executeCommandButton, 'click', handleExecuteCommand);
+            
+            // Owner-only
+            if (ZappyApp.state.isOwner) {
+                bindEvent(ZappyApp.elements.editServerNameInput, 'click', handleSaveServerName);
+                bindEvent(ZappyApp.elements.editApiKeyInput, 'click', handleSaveApiKey);
+                bindEvent(ZappyApp.elements.deleteServerBtn, 'click', handleDeleteServer);
+            }
+
+            // Modals
+            bindEvent(ZappyApp.elements.cancelEditPunishmentBtn, 'click', () => ZappyApp.elements.editPunishmentModal.classList.add('hidden'));
+            bindEvent(ZappyApp.elements.editPunishmentForm, 'submit', handleEditPunishment);
+            
+            // Event delegation for dynamically created punishment buttons
+            bindEvent(ZappyApp.elements.punishmentsList, 'click', (event) => {
+                const editBtn = event.target.closest('.edit-punishment-btn');
+                const deleteBtn = event.target.closest('.delete-punishment-btn');
+                if (editBtn) {
+                    const docId = editBtn.dataset.docId;
+                    showEditPunishmentModal(docId);
+                } else if (deleteBtn) {
+                    const docId = deleteBtn.dataset.docId;
+                    handleDeletePunishment(docId);
                 }
-                const serverRef = doc(db, `/artifacts/${appId}/public/data/servers/${this.state.currentServer.id}`);
-                
-                try {
-                    await updateDoc(serverRef, {
-                        shiftWaveActive: action === 'start'
-                    });
-                    this.elements.shiftControlsMessage.textContent = `Shift wave ${action}ed successfully.`;
-                    this.elements.shiftControlsMessage.className = "text-green-400 text-sm mt-2 text-center";
-                } catch (e) {
-                    this.elements.shiftControlsMessage.textContent = `Failed to ${action} shift wave.`;
-                    this.elements.shiftControlsMessage.className = "text-red-400 text-sm mt-2 text-center";
-                }
-            },
+            });
+        }
+        
+        /**
+         * Renders player data to the UI.
+         * @param {Array} players
+         * @param {Array} queue
+         */
+        function displayPlayers(players, queue) {
+            ZappyApp.elements.playerCount.textContent = players.length;
+            ZappyApp.elements.queueCount.textContent = queue.length;
 
-            /**
-             * Handles adding a new punishment.
-             */
-            handleAddPunishment: async function() {
-                const username = this.elements.punishUsernameInput.value.trim();
-                const type = this.elements.punishTypeSelect.value;
-                const reason = this.elements.punishReasonInput.value.trim();
-                const duration = type === 'Temp Ban' ? parseInt(this.elements.punishDurationInput.value, 10) : null;
+            ZappyApp.elements.playerList.innerHTML = players.map(p => `
+                <li class="p-2 border-b border-slate-700 last:border-b-0 flex items-center justify-between">
+                    <div>
+                        <span class="font-semibold text-white">${p.username}</span>
+                        <span class="text-xs text-slate-500 block">(${p.robloxUserId})</span>
+                    </div>
+                </li>
+            `).join('');
 
-                if (!username || !type || !reason) {
-                    this.displayModal("Error", "Username, type, and reason are required.", "Close", () => {});
-                    return;
-                }
+            ZappyApp.elements.playerQueue.innerHTML = queue.map(p => `
+                <li class="p-2 border-b border-slate-700 last:border-b-0 flex items-center justify-between">
+                    <div>
+                        <span class="font-semibold text-white">${p.username}</span>
+                        <span class="text-xs text-slate-500 block">(${p.robloxUserId})</span>
+                    </div>
+                </li>
+            `).join('');
+        }
 
-                try {
-                    const serverRef = doc(db, `/artifacts/${appId}/public/data/servers/${this.state.currentServer.id}`);
-                    await addDoc(collection(serverRef, "punishments"), {
-                        username,
-                        type,
-                        reason,
-                        duration,
-                        issuedBy: this.state.currentUser.email,
-                        timestamp: serverTimestamp()
-                    });
-                    this.elements.punishUsernameInput.value = '';
-                    this.elements.punishTypeSelect.value = '';
-                    this.elements.punishReasonInput.value = '';
-                    this.elements.punishDurationInput.value = '';
-                    this.displayModal("Success", "Punishment added successfully!", "OK", () => {});
-                } catch (e) {
-                    console.error("Error adding punishment:", e);
-                    this.displayModal("Error", "Failed to add punishment. Please try again.", "Close", () => {});
-                }
-            },
+        /**
+         * Renders vehicle data to the UI.
+         * @param {Array} vehicles
+         */
+        function displayVehicles(vehicles) {
+            const { vehicleList } = ZappyApp.elements;
+            vehicleList.innerHTML = '';
+            if (vehicles.length === 0) {
+                vehicleList.innerHTML = '<p class="text-center text-slate-400">No vehicle data available.</p>';
+                return;
+            }
+            const listHtml = vehicles.map(v => `
+                <div class="p-4 border-b border-slate-700 last:border-b-0">
+                    <p><span class="font-bold text-white">${v.name}</span> <span class="text-slate-500">(${v.owner})</span></p>
+                    <p class="text-sm text-slate-400">Model: ${v.model} | Health: ${v.health}%</p>
+                </div>
+            `).join('');
+            vehicleList.innerHTML = listHtml;
+        }
 
-            /**
-             * Handles lookup of punishments by username.
-             */
-            handleLookupPunishments: async function() {
-                const username = this.elements.punishLookupInput.value.trim();
-                const punishmentsList = this.elements.punishmentsList;
+        /**
+         * Renders kill log data to the UI.
+         * @param {Array} logs
+         */
+        function displayKillLogs(logs) {
+            const { killLogList } = ZappyApp.elements;
+            killLogList.innerHTML = '';
+            if (logs.length === 0) {
+                killLogList.innerHTML = '<p class="text-center text-slate-400">No kill logs available.</p>';
+                return;
+            }
+            const listHtml = logs.map(log => {
+                const timestamp = log.timestamp.toDate().toLocaleString();
+                return `<p><span class="text-slate-500">[${timestamp}]</span> <span class="font-semibold text-red-400">${log.killer}</span> killed <span class="font-semibold text-white">${log.victim}</span> with <span class="text-slate-400">${log.weapon}</span>.</p>`;
+            }).join('');
+            killLogList.innerHTML = listHtml;
+        }
 
-                if (!username) {
-                    this.displayModal("Error", "Please enter a username to lookup.", "Close", () => {});
-                    return;
-                }
+        /**
+         * Renders punishment data to the UI.
+         * @param {Array} punishments
+         */
+        function displayPunishments(punishments) {
+            const { punishmentsList } = ZappyApp.elements;
+            punishmentsList.innerHTML = '';
+            if (punishments.length === 0) {
+                punishmentsList.innerHTML = '<p class="text-center text-slate-400">No punishments found.</p>';
+                return;
+            }
 
-                punishmentsList.innerHTML = '<p class="text-center text-slate-400">Searching...</p>';
+            punishments.sort((a, b) => b.timestamp - a.timestamp);
 
-                try {
-                    const punishmentsRef = collection(db, `/artifacts/${appId}/public/data/servers/${this.state.currentServer.id}/punishments`);
-                    const q = query(punishmentsRef, where("username", "==", username));
-                    const querySnapshot = await getDocs(q);
+            const listHtml = punishments.map(p => {
+                const timestamp = p.timestamp.toDate().toLocaleString();
+                const durationText = p.duration ? ` - Duration: ${p.duration} days` : '';
+                return `
+                    <div class="p-4 border-b border-slate-700 last:border-b-0 flex justify-between items-center">
+                        <div>
+                            <p class="font-bold text-white">${p.username}</p>
+                            <p class="text-sm text-slate-400">Type: <span class="font-semibold">${p.type}</span></p>
+                            <p class="text-sm text-slate-400">Reason: ${p.reason}</p>
+                            <p class="text-xs text-slate-500">Issued by: ${p.issuedBy}</p>
+                            <p class="text-xs text-slate-500">Date: ${timestamp}${durationText}</p>
+                        </div>
+                        ${ZappyApp.state.isOwner ? `
+                        <div class="flex gap-2">
+                            <button class="btn btn-secondary btn-sm edit-punishment-btn" data-doc-id="${p.id}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-edit"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                            </button>
+                            <button class="btn btn-danger btn-sm delete-punishment-btn" data-doc-id="${p.id}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0-1-1-2-2-2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                            </button>
+                        </div>` : ''}
+                    </div>
+                `;
+            }).join('');
+            punishmentsList.innerHTML = listHtml;
+        }
+        
+        // =========================================================================
+        // Application Initialization and Auth
+        // =========================================================================
+        
+        /**
+         * Initializes the application.
+         */
+        function init() {
+            cacheElements();
+            onAuthStateChanged(auth, handleAuthStateChange);
+        }
 
-                    const punishments = [];
-                    querySnapshot.forEach(doc => punishments.push({ id: doc.id, ...doc.data() }));
-
-                    this.displayPunishments(punishments);
-                } catch (e) {
-                    console.error("Error looking up punishments:", e);
-                    punishmentsList.innerHTML = '<p class="text-center text-red-400">Failed to lookup punishments.</p>';
-                }
-            },
-
-            /**
-             * Handles the display of all punishments.
-             */
-            handleShowAllPunishments: async function() {
-                 this.elements.punishLookupInput.value = ''; // Clear the lookup input
-                 this.elements.punishmentsList.innerHTML = '<p class="text-center text-slate-400">Loading all punishments...</p>';
-                 try {
-                     const punishmentsRef = collection(db, `/artifacts/${appId}/public/data/servers/${this.state.currentServer.id}/punishments`);
-                     const querySnapshot = await getDocs(punishmentsRef);
-
-                     const punishments = [];
-                     querySnapshot.forEach(doc => punishments.push({ id: doc.id, ...doc.data() }));
-
-                     this.displayPunishments(punishments);
-                 } catch (e) {
-                     console.error("Error fetching all punishments:", e);
-                     this.elements.punishmentsList.innerHTML = '<p class="text-center text-red-400">Failed to load punishments.</p>';
-                 }
-            },
-
-            /**
-             * Displays the edit punishment modal.
-             * @param {string} docId
-             */
-            showEditPunishmentModal: async function(docId) {
-                try {
-                    const punishmentRef = doc(db, `/artifacts/${appId}/public/data/servers/${this.state.currentServer.id}/punishments/${docId}`);
-                    const docSnap = await getDoc(punishmentRef);
-
-                    if (docSnap.exists()) {
-                        const data = docSnap.data();
-                        this.elements.editPunishmentDocId.value = docId;
-                        this.elements.editPunishUsername.value = data.username;
-                        this.elements.editPunishType.value = data.type;
-                        this.elements.editPunishReason.value = data.reason;
-                        this.elements.editPunishDuration.value = data.duration || '';
-                        this.elements.editPunishmentModal.classList.remove('hidden');
-                    } else {
-                        this.displayModal("Error", "Punishment not found.", "Close", () => {});
-                    }
-                } catch (e) {
-                    console.error("Error fetching punishment for edit:", e);
-                    this.displayModal("Error", "Failed to load punishment data.", "Close", () => {});
-                }
-            },
-
-            /**
-             * Handles saving changes to a punishment.
-             */
-            handleEditPunishment: async function(event) {
-                event.preventDefault();
-                const docId = this.elements.editPunishmentDocId.value;
-                const username = this.elements.editPunishUsername.value.trim();
-                const type = this.elements.editPunishType.value;
-                const reason = this.elements.editPunishReason.value.trim();
-                const duration = type === 'Temp Ban' ? parseInt(this.elements.editPunishDuration.value, 10) : null;
-
-                if (!username || !type || !reason || !docId) {
-                    this.displayModal("Error", "All fields are required.", "Close", () => {});
-                    return;
-                }
-
-                try {
-                    const punishmentRef = doc(db, `/artifacts/${appId}/public/data/servers/${this.state.currentServer.id}/punishments/${docId}`);
-                    await updateDoc(punishmentRef, {
-                        username,
-                        type,
-                        reason,
-                        duration
-                    });
-                    this.elements.editPunishmentModal.classList.add('hidden');
-                    this.displayModal("Success", "Punishment updated successfully!", "OK", () => {});
-                } catch (e) {
-                    console.error("Error updating punishment:", e);
-                    this.displayModal("Error", "Failed to update punishment. Please try again.", "Close", () => {});
-                }
-            },
-
-            /**
-             * Handles deleting a punishment.
-             * @param {string} docId
-             */
-            handleDeletePunishment: async function(docId) {
-                const confirmed = await this.showConfirmation("Delete Punishment", "Are you sure you want to delete this punishment? This cannot be undone.");
-                if (confirmed) {
-                    try {
-                        const punishmentRef = doc(db, `/artifacts/${appId}/public/data/servers/${this.state.currentServer.id}/punishments/${docId}`);
-                        await deleteDoc(punishmentRef);
-                        this.displayModal("Success", "Punishment deleted.", "OK", () => {});
-                    } catch (e) {
-                        console.error("Error deleting punishment:", e);
-                        this.displayModal("Error", "Failed to delete punishment. Please try again.", "Close", () => {});
-                    }
-                }
-            },
-
-            // --- APP INITIALIZATION ---
-            init: function() {
-                this.cacheElements();
-
-                // This is the correct way to handle auth. We set up the listener to react to any auth state changes.
-                // The listener will fire immediately with the current state (either a user or null).
-                onAuthStateChanged(auth, this.handleAuthStateChange.bind(this));
-            },
-        };
+        /**
+         * Handles Firebase Auth state changes.
+         * @param {firebase.User} user
+         */
+        function handleAuthStateChange(user) {
+            ZappyApp.state.currentUser = user;
+            if (user) {
+                const { authSection, dashboardSection, userEmailSpan, loadingOverlay } = ZappyApp.elements;
+                authSection.classList.add('hidden');
+                dashboardSection.classList.remove('hidden');
+                userEmailSpan.textContent = user.email || "Anonymous";
+                loadingOverlay.classList.add('hidden');
+                bindDashboardEvents();
+                fetchUserServers();
+            } else {
+                const { authSection, dashboardSection, serverPanelSection, loadingOverlay } = ZappyApp.elements;
+                authSection.classList.remove('hidden');
+                dashboardSection.classList.add('hidden');
+                serverPanelSection.classList.add('hidden');
+                loadingOverlay.classList.add('hidden');
+                ZappyApp.state.unsubscribeListeners.forEach(unsub => unsub());
+                ZappyApp.state.unsubscribeListeners = [];
+                clearInterval(ZappyApp.state.shiftInterval);
+                bindAuthEvents();
+            }
+        }
 
         // Initialize the app when the DOM is fully loaded
-        window.onload = () => {
-            ZappyApp.init();
-        };
+        window.onload = init;
     </script>
 </body>
 </html>
