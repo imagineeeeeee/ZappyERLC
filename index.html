@@ -1413,39 +1413,60 @@
                     const listEl = ZappyApp.elements.serverMembersList;
                     if (listEl) listEl.innerHTML = ''; // Clear existing list
                     if (ZappyApp.elements.serverMembersMessage) ZappyApp.elements.serverMembersMessage.textContent = ''; // Clear previous messages
-
+                
                     if (members.length === 0) {
                         if (listEl) listEl.innerHTML = '<p class="text-slate-500">No members in this server.</p>';
                         return;
                     }
-
+                
                     for (const memberId of members) {
-                        // Avoid fetching user data for the current authenticated user (performance)
-                        let userEmail;
+                        // Get user data for display name
+                        let displayName = memberId; // fallback
+                        let userEmail = 'N/A';
+                        
                         if (memberId === ZappyApp.state.currentUser.uid) {
                             userEmail = ZappyApp.state.currentUser.email || memberId;
+                            // Try to get username for current user
+                            try {
+                                const userDoc = await getDoc(doc(db, `/artifacts/${appId}/users`, memberId));
+                                if (userDoc.exists() && userDoc.data().username) {
+                                    displayName = userDoc.data().username;
+                                }
+                            } catch (e) {
+                                displayName = userEmail;
+                            }
                         } else {
-                            const userDoc = await getDoc(doc(db, `/artifacts/${appId}/users`, memberId)); // Corrected path
-                            userEmail = userDoc.exists() ? (userDoc.data().email || memberId) : memberId;
+                            const userDoc = await getDoc(doc(db, `/artifacts/${appId}/users`, memberId));
+                            if (userDoc.exists()) {
+                                const userData = userDoc.data();
+                                displayName = userData.username || userData.email || memberId;
+                                userEmail = userData.email || 'N/A';
+                            }
                         }
-
-
+                
                         let kickButtonHtml = '';
                         // Only allow kicking if the current user is the owner AND not kicking themselves
                         if (ZappyApp.state.currentServer.ownerId === ZappyApp.state.currentUser.uid && memberId !== ZappyApp.state.currentUser.uid) {
                             kickButtonHtml = `<button class="btn btn-danger btn-sm kick-member-btn" data-member-id="${memberId}">Kick</button>`;
                         }
-
+                
+                        const isOwner = memberId === ZappyApp.state.currentServer.ownerId;
+                        const isCurrentUser = memberId === ZappyApp.state.currentUser.uid;
+                
                         if (listEl) listEl.insertAdjacentHTML('beforeend', `
                             <div class="flex justify-between items-center card p-3">
-                                <span>${userEmail} (${memberId}) ${memberId === ZappyApp.state.currentServer.ownerId ? '👑 Owner' : ''} ${memberId === ZappyApp.state.currentUser.uid ? '(You)' : ''}</span>
+                                <div class="flex flex-col">
+                                    <span class="text-white font-semibold">${displayName} ${isOwner ? '👑 Owner' : ''} ${isCurrentUser ? '(You)' : ''}</span>
+                                    <span class="text-gray-400 text-sm">${userEmail}</span>
+                                    <span class="text-gray-500 text-xs">ID: ${memberId.substring(0, 8)}...</span>
+                                </div>
                                 <div>
                                     ${kickButtonHtml}
                                 </div>
                             </div>
                         `);
                     }
-
+                
                     // Add event listeners for kick buttons
                     if (listEl) {
                         listEl.querySelectorAll('.kick-member-btn').forEach(button => {
@@ -2412,6 +2433,7 @@
     </script>
 </body>
 </html>
+
 
 
 
