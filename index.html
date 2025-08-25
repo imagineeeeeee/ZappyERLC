@@ -507,7 +507,7 @@
                 this.elements.authSection.classList.add('hidden');
                 this.elements.dashboardSection.classList.remove('hidden');
                 this.elements.userDisplayNameSpan.textContent = this.state.currentUser.displayName || this.state.currentUser.email;
-                await this.fetchServers();
+                await this.fetchUserServers();
             },
 
             /**
@@ -996,7 +996,7 @@
                 this.elements.dashboardSection.classList.remove('hidden');
                 this.state.currentServer = null;
                 this.cleanupListeners();
-                this.fetchServers(); // Re-fetch servers in case of changes
+                this.fetchUserServers(); // Re-fetch servers in case of changes
             },
 
             /**
@@ -1061,7 +1061,7 @@
                     console.log("Server created successfully!");
                     this.elements.createServerModal.classList.add('hidden');
                     this.elements.authForm.reset();
-                    this.fetchServers();
+                    this.fetchUserServers();
 
                 } catch (error) {
                     console.error("Error creating server:", error);
@@ -1241,7 +1241,7 @@
                     this.showMessage(document.getElementById('owner-settings-success'), 'Server name updated successfully.', 'text-green-400');
                     this.elements.panelServerName.textContent = newName; // Update panel header
                     this.state.currentServer.name = newName; // Update state
-                    this.fetchServers(); // Re-fetch dashboard list
+                    this.fetchUserServers(); // Re-fetch dashboard list
                 } catch (error) {
                     console.error("Error updating server name:", error);
                     this.showMessage(document.getElementById('owner-settings-error'), 'Failed to update server name.', 'text-red-400');
@@ -1665,5 +1665,6 @@
     </script>
 </body>
 </html>
+
 
 
