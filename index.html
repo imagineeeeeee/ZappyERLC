@@ -10,8 +10,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Lucide Icons - for web page icons -->
-    <script src="https://unpkg.com/lucide-react@latest/dist/umd/lucide-react.js"></script>
     <style>
         /* Custom styles to complement Tailwind */
         body {
@@ -476,7 +474,6 @@
 
         // Import statements - updated to 11.9.1
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-analytics.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp, onSnapshot, updateDoc, deleteDoc, writeBatch, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
@@ -484,7 +481,6 @@
         const app = initializeApp(finalFirebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const analytics = getAnalytics(app); // Initialized but not used in the app logic
 
         /**
          * ZappyApp
@@ -500,80 +496,188 @@
                 shiftTimerRunning: false,
                 unsubscribeListeners: [], // To store unsubscribe functions for cleanup
                 isOwner: false, // Tracks if the current user is the server owner
+                eventListeners: {}, // Stores references to event listeners for removal
             },
 
             // --- UI ELEMENT CACHING ---
-            elements: {
-                loadingOverlay: document.getElementById('loading-overlay'),
-                authSection: document.getElementById('auth-section'),
-                dashboardSection: document.getElementById('dashboard-section'),
-                serverPanelSection: document.getElementById('server-panel-section'),
-                createServerModal: document.getElementById('create-server-modal'),
-                confirmModal: document.getElementById('confirm-modal'),
-                editPunishmentModal: document.getElementById('edit-punishment-modal'), // New modal for editing punishments
+            elements: {},
 
-                // Dashboard Elements
-                serverList: document.getElementById('server-list'),
-                userEmailSpan: document.getElementById('user-email'),
-                joinServerError: document.getElementById('join-server-error'),
-                joinServerSuccess: document.getElementById('join-server-success'),
-                serverListError: document.getElementById('server-list-error'),
-                showCreateServerModalBtn: document.getElementById('show-create-server-modal-btn'),
-                joinServerBtn: document.getElementById('join-server-btn'),
-                logoutBtn: document.getElementById('logout-btn'),
+            /**
+             * Caches all the necessary DOM elements.
+             */
+            cacheElements: function() {
+                this.elements = {
+                    loadingOverlay: document.getElementById('loading-overlay'),
+                    authSection: document.getElementById('auth-section'),
+                    dashboardSection: document.getElementById('dashboard-section'),
+                    serverPanelSection: document.getElementById('server-panel-section'),
+                    createServerModal: document.getElementById('create-server-modal'),
+                    confirmModal: document.getElementById('confirm-modal'),
+                    editPunishmentModal: document.getElementById('edit-punishment-modal'),
+                    
+                    // Dashboard Elements
+                    serverList: document.getElementById('server-list'),
+                    userEmailSpan: document.getElementById('user-email'),
+                    joinServerError: document.getElementById('join-server-error'),
+                    joinServerSuccess: document.getElementById('join-server-success'),
+                    serverListError: document.getElementById('server-list-error'),
+                    showCreateServerModalBtn: document.getElementById('show-create-server-modal-btn'),
+                    joinServerBtn: document.getElementById('join-server-btn'),
+                    logoutBtn: document.getElementById('logout-btn'),
 
-                // Panel Elements
-                backToDashboardBtn: document.getElementById('back-to-dashboard-btn'),
-                panelServerName: document.getElementById('panel-server-name'),
-                panelServerCode: document.getElementById('panel-server-code'),
-                shiftTimer: document.getElementById('shift-timer'),
-                shiftToggleButton: document.getElementById('shift-toggle-btn'),
-                panelTabButtons: document.getElementById('panel-tab-buttons'),
-                panelTabContent: document.getElementById('panel-tab-content'),
-                logOutput: document.getElementById('log-output'),
-                serverStatsOutput: document.getElementById('server-stats-output'),
-                playerCount: document.getElementById('player-count'),
-                queueCount: document.getElementById('queue-count'),
-                playerList: document.getElementById('player-list'),
-                playerQueue: document.getElementById('player-queue'),
-                joinRequestsDisplay: document.getElementById('join-requests-display'),
-                commandInput: document.getElementById('command-input'),
-                commandResponse: document.getElementById('command-response'),
-                shiftLeaderboard: document.getElementById('shift-leaderboard'),
-                ownerJoinRequestsList: document.getElementById('owner-join-requests-list'),
-                editServerNameInput: document.getElementById('edit-server-name'),
-                editApiKeyInput: document.getElementById('edit-api-key'),
-                deleteServerBtn: document.getElementById('delete-server-btn'),
-                commandInputContainer: document.getElementById('command-input-container'), // New container for owner-only commands
-                refreshPlayersBtn: document.getElementById('refresh-players-btn'),
-                refreshVehiclesBtn: document.getElementById('refresh-vehicles-btn'),
-                refreshKillLogsBtn: document.getElementById('refresh-killlogs-btn'),
-                refreshCommandLogsBtn: document.getElementById('refresh-commandlogs-btn'),
-                startShiftWaveBtn: document.getElementById('start-shift-wave-btn'),
-                endShiftWaveBtn: document.getElementById('end-shift-wave-btn'),
-                shiftControlsMessage: document.getElementById('shift-controls-message'),
-                vehicleList: document.getElementById('vehicle-list'),
-                killLogList: document.getElementById('kill-log-list'),
+                    // Panel Elements
+                    backToDashboardBtn: document.getElementById('back-to-dashboard-btn'),
+                    panelServerName: document.getElementById('panel-server-name'),
+                    panelServerCode: document.getElementById('panel-server-code'),
+                    shiftTimer: document.getElementById('shift-timer'),
+                    shiftToggleButton: document.getElementById('shift-toggle-btn'),
+                    panelTabButtons: document.getElementById('panel-tab-buttons'),
+                    panelTabContent: document.getElementById('panel-tab-content'),
+                    logOutput: document.getElementById('log-output'),
+                    serverStatsOutput: document.getElementById('server-stats-output'),
+                    playerCount: document.getElementById('player-count'),
+                    queueCount: document.getElementById('queue-count'),
+                    playerList: document.getElementById('player-list'),
+                    playerQueue: document.getElementById('player-queue'),
+                    joinRequestsDisplay: document.getElementById('join-requests-display'),
+                    commandInput: document.getElementById('command-input'),
+                    commandResponse: document.getElementById('command-response'),
+                    shiftLeaderboard: document.getElementById('shift-leaderboard'),
+                    ownerJoinRequestsList: document.getElementById('owner-join-requests-list'),
+                    editServerNameInput: document.getElementById('edit-server-name'),
+                    editApiKeyInput: document.getElementById('edit-api-key'),
+                    deleteServerBtn: document.getElementById('delete-server-btn'),
+                    executeCommandButton: document.getElementById('execute-command-button'),
+                    refreshPlayersBtn: document.getElementById('refresh-players-btn'),
+                    refreshVehiclesBtn: document.getElementById('refresh-vehicles-btn'),
+                    refreshKillLogsBtn: document.getElementById('refresh-killlogs-btn'),
+                    refreshCommandLogsBtn: document.getElementById('refresh-commandlogs-btn'),
+                    startShiftWaveBtn: document.getElementById('start-shift-wave-btn'),
+                    endShiftWaveBtn: document.getElementById('end-shift-wave-btn'),
+                    shiftControlsMessage: document.getElementById('shift-controls-message'),
+                    vehicleList: document.getElementById('vehicle-list'),
+                    killLogList: document.getElementById('kill-log-list'),
+                    
+                    // Punishment Tab Elements
+                    punishUsernameInput: document.getElementById('punish-username-input'),
+                    punishTypeSelect: document.getElementById('punish-type-select'),
+                    punishReasonInput: document.getElementById('punish-reason-input'),
+                    punishDurationInput: document.getElementById('punish-duration-input'),
+                    addPunishmentBtn: document.getElementById('add-punishment-btn'),
+                    punishLookupInput: document.getElementById('punish-lookup-input'),
+                    punishLookupBtn: document.getElementById('punish-lookup-btn'),
+                    punishShowAllBtn: document.getElementById('punish-show-all-btn'),
+                    punishmentsList: document.getElementById('punishments-list'),
+
+                    // Edit Punishment Modal Elements
+                    editPunishmentDocId: document.getElementById('edit-punishment-doc-id'),
+                    editPunishUsername: document.getElementById('edit-punish-username'),
+                    editPunishType: document.getElementById('edit-punish-type'),
+                    editPunishReason: document.getElementById('edit-punish-reason'),
+                    editPunishDuration: document.getElementById('edit-punish-duration'),
+                    editPunishmentForm: document.getElementById('edit-punishment-form'),
+                    cancelEditPunishmentBtn: document.getElementById('cancel-edit-punishment-btn'),
+
+                    // Auth Form elements
+                    authForm: document.getElementById('auth-form'),
+                    authToggleLink: document.getElementById('auth-toggle-link'),
+                };
+            },
+
+            /**
+             * Removes all stored event listeners.
+             */
+            removeListeners: function() {
+                for (const eventId in this.state.eventListeners) {
+                    const listener = this.state.eventListeners[eventId];
+                    if (listener.element && listener.handler) {
+                        listener.element.removeEventListener(listener.event, listener.handler);
+                    }
+                }
+                this.state.eventListeners = {};
+            },
+
+            /**
+             * Binds a single event listener and stores it for later removal.
+             * @param {HTMLElement} element
+             * @param {string} event
+             * @param {Function} handler
+             * @param {string} [id]
+             */
+            bindEvent: function(element, event, handler, id = `event-${Date.now()}-${Math.random()}`) {
+                if (element) {
+                    element.addEventListener(event, handler.bind(this));
+                    this.state.eventListeners[id] = { element, event, handler: handler.bind(this) };
+                }
+            },
+
+            /**
+             * Binds all event listeners for the authentication section.
+             */
+            bindAuthEvents: function() {
+                this.removeListeners(); // Clear previous listeners
+                this.bindEvent(this.elements.authForm, 'submit', this.handleAuthSubmit);
+                this.bindEvent(this.elements.authToggleLink, 'click', this.toggleAuthMode);
+            },
+
+            /**
+             * Binds all event listeners for the dashboard section.
+             */
+            bindDashboardEvents: function() {
+                this.removeListeners(); // Clear previous listeners
+                this.bindEvent(this.elements.logoutBtn, 'click', this.handleLogout);
+                this.bindEvent(this.elements.showCreateServerModalBtn, 'click', this.showCreateServerModal);
+                this.bindEvent(this.elements.joinServerBtn, 'click', this.handleJoinServer);
+            },
+
+            /**
+             * Binds all event listeners for the server panel section.
+             */
+            bindPanelEvents: function() {
+                this.removeListeners(); // Clear previous listeners
+                this.bindEvent(this.elements.backToDashboardBtn, 'click', this.showDashboard);
+                this.bindEvent(this.elements.panelTabButtons, 'click', this.handleTabSwitch);
+                this.bindEvent(this.elements.shiftToggleButton, 'click', this.handleShiftToggle);
                 
-                // Punishment Tab Elements
-                punishUsernameInput: document.getElementById('punish-username-input'),
-                punishTypeSelect: document.getElementById('punish-type-select'),
-                punishReasonInput: document.getElementById('punish-reason-input'),
-                punishDurationInput: document.getElementById('punish-duration-input'),
-                addPunishmentBtn: document.getElementById('add-punishment-btn'),
-                punishLookupInput: document.getElementById('punish-lookup-input'),
-                punishLookupBtn: document.getElementById('punish-lookup-btn'),
-                punishShowAllBtn: document.getElementById('punish-show-all-btn'),
-                punishmentsList: document.getElementById('punishments-list'),
+                // Punishments
+                this.bindEvent(this.elements.addPunishmentBtn, 'click', this.handleAddPunishment);
+                this.bindEvent(this.elements.punishLookupBtn, 'click', this.handleLookupPunishments);
+                this.bindEvent(this.elements.punishShowAllBtn, 'click', this.handleShowAllPunishments);
 
-                // Edit Punishment Modal Elements
-                editPunishmentDocId: document.getElementById('edit-punishment-doc-id'),
-                editPunishUsername: document.getElementById('edit-punish-username'),
-                editPunishType: document.getElementById('edit-punish-type'),
-                editPunishReason: document.getElementById('edit-punish-reason'),
-                editPunishDuration: document.getElementById('edit-punish-duration'),
-                editPunishmentForm: document.getElementById('edit-punishment-form'),
-                cancelEditPunishmentBtn: document.getElementById('cancel-edit-punishment-btn'),
+                // Manual refresh buttons
+                this.bindEvent(this.elements.refreshPlayersBtn, 'click', this.refreshPlayers);
+                this.bindEvent(this.elements.refreshVehiclesBtn, 'click', this.refreshVehicles);
+                this.bindEvent(this.elements.refreshKillLogsBtn, 'click', this.refreshKillLogs);
+                this.bindEvent(this.elements.refreshCommandLogsBtn, 'click', this.refreshCommandLogs);
+                
+                // Shift Wave controls
+                this.bindEvent(this.elements.startShiftWaveBtn, 'click', this.handleShiftWaveAction.bind(this, 'start'));
+                this.bindEvent(this.elements.endShiftWaveBtn, 'click', this.handleShiftWaveAction.bind(this, 'end'));
+
+                // Commands
+                this.bindEvent(this.elements.executeCommandButton, 'click', this.handleExecuteCommand);
+                
+                // Owner-only
+                this.bindEvent(document.getElementById('save-server-name-btn'), 'click', this.handleSaveServerName);
+                this.bindEvent(document.getElementById('save-api-key-btn'), 'click', this.handleSaveApiKey);
+                this.bindEvent(this.elements.deleteServerBtn, 'click', this.handleDeleteServer);
+
+                // Modals
+                this.bindEvent(this.elements.cancelEditPunishmentBtn, 'click', () => this.elements.editPunishmentModal.classList.add('hidden'));
+                this.bindEvent(this.elements.editPunishmentForm, 'submit', this.handleEditPunishment);
+                
+                // Event delegation for dynamically created punishment buttons
+                this.bindEvent(this.elements.punishmentsList, 'click', (event) => {
+                    const editBtn = event.target.closest('.edit-punishment-btn');
+                    const deleteBtn = event.target.closest('.delete-punishment-btn');
+                    if (editBtn) {
+                        const docId = editBtn.dataset.docId;
+                        this.showEditPunishmentModal(docId);
+                    } else if (deleteBtn) {
+                        const docId = deleteBtn.dataset.docId;
+                        this.handleDeletePunishment(docId);
+                    }
+                });
             },
 
             // --- AUTHENTICATION METHODS ---
@@ -598,6 +702,7 @@
                     this.elements.dashboardSection.classList.remove('hidden');
                     this.elements.userEmailSpan.textContent = user.email;
                     this.elements.loadingOverlay.classList.add('hidden');
+                    this.bindDashboardEvents(); // Bind dashboard-specific events
                     await this.fetchUserServers();
                 } else {
                     this.elements.authSection.classList.remove('hidden');
@@ -607,6 +712,7 @@
                     this.state.unsubscribeListeners.forEach(unsub => unsub());
                     this.state.unsubscribeListeners = [];
                     clearInterval(this.state.shiftInterval);
+                    this.bindAuthEvents(); // Bind auth-specific events
                 }
             },
             
@@ -626,6 +732,7 @@
                 this.elements.loadingOverlay.classList.remove('hidden');
                 this.elements.dashboardSection.classList.add('hidden');
                 this.elements.serverPanelSection.classList.remove('hidden');
+                this.bindPanelEvents(); // Bind panel-specific events
 
                 const serverRef = doc(db, `/artifacts/${appId}/public/data/servers/${serverId}`);
 
@@ -1095,88 +1202,11 @@
                 }
             },
 
-            // --- UI BINDING & INITIALIZATION ---
-            /**
-             * Binds all event listeners.
-             */
-            bindEvents: function() {
-                // Auth & General
-                const authForm = document.getElementById('auth-form');
-                if (authForm) authForm.addEventListener('submit', (e) => this.handleAuthSubmit(e));
-                const authToggleLink = document.getElementById('auth-toggle-link');
-                if (authToggleLink) authToggleLink.addEventListener('click', (e) => this.toggleAuthMode(e));
-                if (this.elements.logoutBtn) this.elements.logoutBtn.addEventListener('click', this.handleLogout.bind(this));
-                if (this.elements.showCreateServerModalBtn) this.elements.showCreateServerModalBtn.addEventListener('click', this.showCreateServerModal.bind(this));
-                if (this.elements.joinServerBtn) this.elements.joinServerBtn.addEventListener('click', this.handleJoinServer.bind(this));
-
-                // Modals
-                const createServerForm = document.getElementById('create-server-form');
-                if (createServerForm) createServerForm.addEventListener('submit', (e) => this.handleCreateServer(e));
-                const cancelCreateServerBtn = document.getElementById('cancel-create-server-btn');
-                if (cancelCreateServerBtn) cancelCreateServerBtn.addEventListener('click', () => this.elements.createServerModal.classList.add('hidden'));
-
-                // Panel
-                if (this.elements.backToDashboardBtn) this.elements.backToDashboardBtn.addEventListener('click', this.showDashboard.bind(this));
-                if (this.elements.panelTabButtons) this.elements.panelTabButtons.addEventListener('click', this.handleTabSwitch.bind(this));
-                if (this.elements.shiftToggleButton) this.elements.shiftToggleButton.addEventListener('click', this.handleShiftToggle.bind(this));
-                if (this.elements.editServerNameInput) document.getElementById('save-server-name-btn').addEventListener('click', this.handleSaveServerName.bind(this));
-                if (this.elements.editApiKeyInput) document.getElementById('save-api-key-btn').addEventListener('click', this.handleSaveApiKey.bind(this));
-                if (this.elements.deleteServerBtn) this.elements.deleteServerBtn.addEventListener('click', this.handleDeleteServer.bind(this));
-                if (this.elements.executeCommandButton) document.getElementById('execute-command-button').addEventListener('click', this.handleExecuteCommand.bind(this));
-
-                // Manual refresh buttons
-                if (this.elements.refreshPlayersBtn) this.elements.refreshPlayersBtn.addEventListener('click', this.refreshPlayers.bind(this));
-                if (this.elements.refreshVehiclesBtn) this.elements.refreshVehiclesBtn.addEventListener('click', this.refreshVehicles.bind(this));
-                if (this.elements.refreshKillLogsBtn) this.elements.refreshKillLogsBtn.addEventListener('click', this.refreshKillLogs.bind(this));
-                // Command logs refresh button isn't in the HTML, but including the handler for completeness
-                if (document.getElementById('refresh-commandlogs-btn')) document.getElementById('refresh-commandlogs-btn').addEventListener('click', this.refreshCommandLogs.bind(this));
-
-                // Shift wave controls
-                if (this.elements.startShiftWaveBtn) this.elements.startShiftWaveBtn.addEventListener('click', this.handleShiftWaveAction.bind(this, 'start'));
-                if (this.elements.endShiftWaveBtn) this.elements.endShiftWaveBtn.addEventListener('click', this.handleShiftWaveAction.bind(this, 'end'));
-
-                // Punishment system events
-                if (this.elements.addPunishmentBtn) this.elements.addPunishmentBtn.addEventListener('click', this.handleAddPunishment.bind(this));
-                if (this.elements.punishLookupBtn) this.elements.punishLookupBtn.addEventListener('click', this.handleLookupPunishments.bind(this));
-                if (this.elements.punishShowAllBtn) this.elements.punishShowAllBtn.addEventListener('click', this.handleShowAllPunishments.bind(this));
-                if (this.elements.punishmentsList) {
-                    this.elements.punishmentsList.addEventListener('click', (event) => {
-                        const editBtn = event.target.closest('.edit-punishment-btn');
-                        const deleteBtn = event.target.closest('.delete-punishment-btn');
-                        if (editBtn) {
-                            const docId = editBtn.dataset.docId;
-                            this.showEditPunishmentModal(docId);
-                        } else if (deleteBtn) {
-                            const docId = deleteBtn.dataset.docId;
-                            this.handleDeletePunishment(docId);
-                        }
-                    });
-                }
-                if (this.elements.editPunishmentForm) {
-                    this.elements.editPunishmentForm.addEventListener('submit', this.handleEditPunishment.bind(this));
-                }
-                if (this.elements.cancelEditPunishmentBtn) {
-                    this.elements.cancelEditPunishmentBtn.addEventListener('click', () => this.elements.editPunishmentModal.classList.add('hidden'));
-                }
-            },
-
             // --- APP INITIALIZATION ---
             init: function() {
-                this.bindEvents();
-                // Set up auth state change listener
+                this.cacheElements();
                 onAuthStateChanged(auth, this.handleAuthStateChange.bind(this));
-                
-                // Initial setup of tab listeners
-                this.setupTabListeners();
             },
-            
-            setupTabListeners: function() {
-                // Already handled in bindEvents, but keeping this for completeness as requested
-                const tabButtons = document.querySelectorAll('.tab-button');
-                tabButtons.forEach(button => {
-                    button.addEventListener('click', this.handleTabSwitch.bind(this));
-                });
-            }
         };
 
         // Initialize the app when the DOM is fully loaded
