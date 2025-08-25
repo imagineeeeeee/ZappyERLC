@@ -910,27 +910,7 @@
              * Handles a click on a server card to navigate to the server panel.
              * @param {Event} e - The click event.
              */
-            handleSelectServer(e) {
-                    if (e.target.classList.contains('select-server-btn')) {
-                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
-                        const serverId = e.target.dataset.serverId;
-                        try {
-                            const serverDoc = getDoc(doc(db, `/artifacts/${appId}/public/data/servers`, serverId));
-                            if (serverDoc.exists()) {
-                                ZappyApp.state.currentServer = { id: serverDoc.id, ...serverDoc.data() };
-                                ZappyApp.panel.init();
-                            } else {
-                                ZappyApp.ui.displayMessage('server-list-error', 'Server not found.', true);
-                            }
-                        } catch (error) {
-                            console.error("Error selecting server:", error);
-                            ZappyApp.ui.displayMessage('server-list-error', 'Failed to open server due to a permission error or network issue.', true);
-                        } finally {
-                            if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
-                        }
-                    }
-                },
-
+            
             /**
              * Dynamically sets up the tabs for the server panel based on user role.
              * @param {boolean} isOwner - True if the current user is the server owner.
@@ -1050,6 +1030,28 @@
                     errorDisplay.textContent = 'Failed to create server. Please try again.';
                 }
             },
+
+            async handleSelectServer(e) {
+                if (e.target.classList.contains('select-server-btn')) {
+                    if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.remove('hidden');
+                    const serverId = e.target.dataset.serverId;
+                    try {
+                        const serverDoc = await getDoc(doc(db, `/artifacts/${appId}/public/data/servers`, serverId));
+                        if (serverDoc.exists()) {
+                            ZappyApp.state.currentServer = { id: serverDoc.id, ...serverDoc.data() };
+                            ZappyApp.panel.init();
+                        } else {
+                            ZappyApp.ui.displayMessage('server-list-error', 'Server not found.', true);
+                        }
+                    } catch (error) {
+                        console.error("Error selecting server:", error);
+                        ZappyApp.ui.displayMessage('server-list-error', 'Failed to open server due to a permission error or network issue.', true);
+                    } finally {
+                        if (ZappyApp.elements.loadingOverlay) ZappyApp.elements.loadingOverlay.classList.add('hidden');
+                    }
+                }
+            },
+
 
             /**
              * Handles a user joining a server via a join code.
@@ -1647,6 +1649,7 @@
     </script>
 </body>
 </html>
+
 
 
 
