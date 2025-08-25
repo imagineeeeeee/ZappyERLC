@@ -863,7 +863,7 @@
                     this.elements.createServerModal.classList.add('hidden');
                 });
                 document.getElementById('create-server-form').addEventListener('submit', this.handleCreateServer.bind(this));
-                document.getElementById('server-list').addEventListener('click', this.handleServerCardClick.bind(this));
+                document.getElementById('server-list').addEventListener('click', this.handleSelectServer.bind(this));
                 document.getElementById('back-to-dashboard-btn').addEventListener('click', this.handleBackToDashboard.bind(this));
                 document.getElementById('shift-toggle-btn').addEventListener('click', this.handleShiftToggle.bind(this));
                 document.getElementById('execute-command-button').addEventListener('click', this.handleExecuteCommand.bind(this));
@@ -1647,6 +1647,7 @@
     </script>
 </body>
 </html>
+
 
 
 
