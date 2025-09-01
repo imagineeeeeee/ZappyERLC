@@ -2680,12 +2680,88 @@ window.addEventListener('load', () => {
 
 
 
-<script>
-// ===== Autocomplete (Create & Search Punishments) =====
-(function(){
-  console.log("[Autocomplete] booting…");
 
-  // ---------- Proxy ----------
+
+
+
+
+
+
+
+
+
+
+
+<script>
+// ===== Punishments Management =====
+(function(){
+  console.log("[Punishments] live table setup…");
+
+  let unsubscribe = null;
+  window._allPunishments = [];
+
+  async function startListening(){
+    if(!window.db || !window.ZappyApp?.state?.currentServer){
+      console.warn("[Punishments] Firestore not ready yet");
+      return;
+    }
+    try {
+      const s = window.ZappyApp.state.currentServer;
+      const path = `/artifacts/${window.appId}/public/data/servers/${s.id}/punishments`;
+      const { collection, onSnapshot } = await import("https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js");
+
+      if(unsubscribe) unsubscribe(); // cleanup old listener
+      unsubscribe = onSnapshot(collection(window.db, path), (snap) => {
+        const punishments = [];
+        snap.forEach(doc => punishments.push({ id: doc.id, ...doc.data() }));
+        console.log("[Punishments] live update:", punishments);
+        window._allPunishments = punishments;
+        renderPunishmentsTable(punishments);
+      });
+    }catch(e){
+      console.error("[Punishments] live listen error:", e);
+    }
+  }
+
+  function renderPunishmentsTable(punishments){
+    if(typeof window.renderPunishments === "function"){
+      window.renderPunishments(punishments);
+    }
+  }
+
+  function setupSearchFilter(){
+    const input = document.getElementById("punish-search-username");
+    if(!input){ console.warn("[Punishments] search input not found"); return; }
+
+    input.addEventListener("input", () => {
+      const term = input.value.trim().toLowerCase();
+      const all = window._allPunishments || [];
+      const filtered = term
+        ? all.filter(p => (p.username||"").toLowerCase().includes(term))
+        : all;
+      renderPunishmentsTable(filtered);
+    });
+  }
+
+  function boot(){
+    startListening();
+    setupSearchFilter();
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
+  }
+})();
+</script>
+
+
+<script>
+// ===== Create Punishments Autocomplete (Roblox API) =====
+(function(){
+  console.log("[Autocomplete] Create Punishments setup…");
+
   async function proxiedFetchJson(url){
     try{
       const wrapped = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
@@ -2697,7 +2773,6 @@ window.addEventListener('load', () => {
     }
   }
 
-  // ---------- Safe DOM helpers ----------
   function ensureResultsBox(inputId, boxId){
     const input = document.getElementById(inputId);
     if(!input){ console.warn(`[Autocomplete] input #${inputId} not found`); return null; }
@@ -2715,7 +2790,14 @@ window.addEventListener('load', () => {
   function openBox(box){ if(box) box.style.display="block"; }
   function closeBox(box){ if(box) box.style.display="none"; }
 
-  // ---------- Roblox helpers ----------
+  function debounce(fn, delay){
+    let timer = null;
+    return function(...args){
+      if(timer) clearTimeout(timer);
+      timer = setTimeout(()=>fn.apply(this, args), delay);
+    };
+  }
+
   async function robloxSearchUsers(keyword){
     const url = `https://users.roblox.com/v1/users/search?keyword=${encodeURIComponent(keyword||"a")}&limit=10`;
     console.log("[Autocomplete] Roblox search URL:", url);
@@ -2734,50 +2816,6 @@ window.addEventListener('load', () => {
     return map;
   }
 
-  async function robloxUserIdByKeywordExact(name){
-    const arr = await robloxSearchUsers(name);
-    const exact = arr.find(u => (u.name||"").toLowerCase() === String(name).toLowerCase());
-    return exact ? exact.id : null;
-  }
-
-  async function robloxAvatarByName(name){
-    const id = await robloxUserIdByKeywordExact(name);
-    if(!id) return "https://tr.rbxcdn.com/8f23fdae40ae7f2e90d2/48/48/AvatarHeadshot/Png";
-    const m = await robloxAvatarUrlsByIds([id]);
-    return m[String(id)] || "https://tr.rbxcdn.com/8f23fdae40ae7f2e90d2/48/48/AvatarHeadshot/Png";
-  }
-
-  // ---------- Firestore helpers ----------
-  async function fetchPunishmentUsernames(prefix){
-    try{
-      if(!window.db){ console.warn("[Autocomplete] Firestore db not ready"); return []; }
-      const s = window.ZappyApp?.state?.currentServer;
-      if(!s){ console.warn("[Autocomplete] currentServer not selected"); return []; }
-      const path = `/artifacts/${window.appId}/public/data/servers/${s.id}/punishments`;
-      const { collection, getDocs } = await import("https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js");
-      const snap = await getDocs(collection(window.db, path));
-      const names = [];
-      snap.forEach(doc => {
-        const u = (doc.data() && doc.data().username) ? String(doc.data().username) : null;
-        if(u) names.push(u);
-      });
-      const seen = new Set();
-      const filtered = [];
-      const pfx = String(prefix||"");
-      for(const n of names){
-        if(seen.has(n)) continue;
-        if(!pfx || n.startsWith(pfx)) filtered.push(n);
-        seen.add(n);
-      }
-      console.log("[Autocomplete] Firestore punishments usernames (filtered):", filtered);
-      return filtered.slice(0,10);
-    }catch(e){
-      console.error("[Autocomplete] fetchPunishmentUsernames error:", e);
-      return [];
-    }
-  }
-
-  // ---------- Render helpers ----------
   function renderCreateItems(box, users, onPick){
     box.innerHTML = "";
     if(!users.length){
@@ -2804,72 +2842,23 @@ window.addEventListener('load', () => {
     });
   }
 
-  function renderSearchItems(box, names, onPick){
-    box.innerHTML = "";
-    if(!names.length){
-      const empty = document.createElement("div");
-      empty.className = "autocomplete-item";
-      empty.innerHTML = `<span class="text-slate-400">No results</span>`;
-      box.appendChild(empty);
-      return;
-    }
-    names.slice(0,10).forEach(async (name) => {
-      const item = document.createElement("div");
-      item.className = "autocomplete-item";
-      const img = document.createElement("img");
-      img.width = 32; img.height = 32;
-      img.src = await robloxAvatarByName(name);
-      const span = document.createElement("span");
-      span.textContent = name;
-      item.appendChild(img); item.appendChild(span);
-      item.addEventListener("mousedown", (ev)=>{ ev.preventDefault(); onPick(name); });
-      box.appendChild(item);
-    });
-  }
-
-  // ---------- Setup Create (Roblox API) ----------
   function setupCreate(){
     const pair = ensureResultsBox("punish-username","punish-username-results");
     if(!pair) return;
     const {input, box} = pair;
-    const doUpdate = async () => {
+    const doUpdate = debounce(async () => {
       openBox(box);
       const kw = input.value.trim() || "a";
       const users = await robloxSearchUsers(kw);
       renderCreateItems(box, users, (picked)=>{ input.value = picked; closeBox(box); });
-    };
+    }, 1000);
     input.addEventListener("focus", doUpdate);
     input.addEventListener("input", doUpdate);
     input.addEventListener("blur", () => setTimeout(()=>closeBox(box), 120));
-    console.log("[Autocomplete] Create wired.");
+    console.log("[Autocomplete] Create Punishments wired.");
   }
 
-  // ---------- Setup Search (Firestore) ----------
-  function setupSearch(){
-    const pair = ensureResultsBox("punish-search-username","punish-search-results");
-    if(!pair) return;
-    const {input, box} = pair;
-    const doUpdate = async () => {
-      openBox(box);
-      const kw = input.value.trim();
-      const names = await fetchPunishmentUsernames(kw);
-      renderSearchItems(box, names, (picked)=>{ input.value = picked; closeBox(box); });
-    };
-    input.addEventListener("focus", doUpdate);
-    input.addEventListener("input", doUpdate);
-    input.addEventListener("blur", () => setTimeout(()=>closeBox(box), 120));
-    console.log("[Autocomplete] Search wired.");
-  }
-
-  // ---------- Bootstrap ----------
-  function boot(){
-    try{
-      setupCreate();
-      setupSearch();
-    }catch(e){
-      console.error("[Autocomplete] boot error:", e);
-    }
-  }
+  function boot(){ setupCreate(); }
   if(document.readyState === "loading"){
     document.addEventListener("DOMContentLoaded", boot);
   } else {
