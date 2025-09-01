@@ -120,29 +120,6 @@ if (punishInput && suggestionBox) {
 }
 
 
-// === Robust Roblox Username Autocomplete (with Avatars + Dropdown) ===
-(function() {
-  const DROPDOWN_ID = 'username-suggestions';
-  let inputEl = null;
-  let boxEl = null;
-  let debouncer = null;
-  let suggestions = [];
-  let activeIndex = -1;
-
-  function ensureBox() {
-    boxEl = document.getElementById(DROPDOWN_ID);
-    if (!boxEl) {
-      boxEl = document.createElement('div');
-      boxEl.id = DROPDOWN_ID;
-      boxEl.className = 'hidden';
-      document.body.appendChild(boxEl);
-    }
-    return boxEl;
-  }
-
-  function positionBox() {
-    if (!inputEl || !boxEl) return;
-    const rect = inputEl.getBoundingClientRect();
     boxEl.style.left = `${window.scrollX + rect.left}px`;
     boxEl.style.top = `${window.scrollY + rect.bottom + 4}px`;
     boxEl.style.width = `${rect.width}px`;
@@ -313,6 +290,325 @@ if (punishInput && suggestionBox) {
   mo.observe(document.documentElement, { childList: true, subtree: true });
 
 })();
+
+
+// === Roblox Username Autocomplete with Proxy (AllOrigins) ===
+(function() {
+  const DROPDOWN_ID = 'username-suggestions';
+  let inputEl = null;
+  let boxEl = null;
+  let debouncer = null;
+  let suggestions = [];
+  let activeIndex = -1;
+
+  function ensureBox() {
+    boxEl = document.getElementById(DROPDOWN_ID);
+    if (!boxEl) {
+      boxEl = document.createElement('div');
+      boxEl.id = DROPDOWN_ID;
+      boxEl.className = 'hidden';
+      document.body.appendChild(boxEl);
+    }
+    return boxEl;
+  }
+
+  function positionBox() {
+    if (!inputEl || !boxEl) return;
+    const rect = inputEl.getBoundingClientRect();
+    boxEl.style.left = `${window.scrollX + rect.left}px`;
+    boxEl.style.top = `${window.scrollY + rect.bottom + 4}px`;
+    boxEl.style.width = `${rect.width}px`;
+  }
+
+  async function fetchSuggestions(query) {
+    try {
+      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(
+        `https://users.roblox.com/v1/users/search?keyword=${query}&limit=8`
+      )}`;
+      const res = await fetch(proxyUrl);
+      const wrapped = await res.json();
+      const data = JSON.parse(wrapped.contents);
+      const list = Array.isArray(data?.data) ? data.data : [];
+
+      const ids = list.map(u => u.id).join(',');
+      let avatarMap = {};
+      if (ids.length) {
+        const avatarProxy = `https://api.allorigins.win/get?url=${encodeURIComponent(
+          `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${ids}&size=48x48&format=Png&isCircular=true`
+        )}`;
+        const avatarRes = await fetch(avatarProxy);
+        const avatarWrapped = await avatarRes.json();
+        const avatarData = JSON.parse(avatarWrapped.contents);
+        (avatarData?.data || []).forEach(it => {
+          avatarMap[it.targetId] = it.imageUrl;
+        });
+      }
+      return list.map(u => ({ id: u.id, name: u.name, avatar: avatarMap[u.id] || '' }));
+    } catch (e) {
+      console.error('Proxy Roblox API error:', e);
+      return [];
+    }
+  }
+
+  function render() {
+    if (!boxEl) return;
+    boxEl.innerHTML = '';
+    if (!suggestions.length) {
+      boxEl.classList.add('hidden');
+      return;
+    }
+    const frag = document.createDocumentFragment();
+    suggestions.forEach((u, idx) => {
+      const item = document.createElement('div');
+      item.className = 'suggestion-item' + (idx === activeIndex ? ' active' : '');
+      item.dataset.username = u.name;
+      item.dataset.index = String(idx);
+
+      const img = document.createElement('img');
+      img.className = 'suggestion-avatar';
+      img.alt = '';
+      img.src = u.avatar || '';
+
+      const span = document.createElement('span');
+      span.textContent = u.name;
+
+      item.appendChild(img);
+      item.appendChild(span);
+      frag.appendChild(item);
+    });
+    boxEl.appendChild(frag);
+    boxEl.classList.remove('hidden');
+    positionBox();
+  }
+
+  function select(index) {
+    if (!inputEl || index < 0 || index >= suggestions.length) return;
+    inputEl.value = suggestions[index].name;
+    hideBox();
+  }
+
+  function hideBox() {
+    if (boxEl) {
+      boxEl.classList.add('hidden');
+      boxEl.innerHTML = '';
+    }
+    activeIndex = -1;
+  }
+
+  function onInput(e) {
+    const q = inputEl.value.trim();
+    if (q.length < 2) {
+      suggestions = [];
+      render();
+      return;
+    }
+    clearTimeout(debouncer);
+    debouncer = setTimeout(async () => {
+      suggestions = await fetchSuggestions(q);
+      activeIndex = suggestions.length ? 0 : -1; // auto-focus first
+      render();
+    }, 300);
+  }
+
+  function onKeyDown(e) {
+    if (e.key === 'ArrowDown') {
+      if (!suggestions.length) return;
+      e.preventDefault();
+      activeIndex = (activeIndex + 1) % suggestions.length;
+      render();
+      return;
+    }
+    if (e.key === 'ArrowUp') {
+      if (!suggestions.length) return;
+      e.preventDefault();
+      activeIndex = (activeIndex - 1 + suggestions.length) % suggestions.length;
+      render();
+      return;
+    }
+    if (e.key === 'Enter') {
+      if (suggestions.length && activeIndex >= 0) {
+        e.preventDefault();
+        select(activeIndex);
+      }
+      return;
+    }
+    if (e.key === 'Tab') {
+      if (suggestions.length) {
+        e.preventDefault();
+        select(Math.max(activeIndex, 0));
+      }
+      return;
+    }
+    if (e.key === 'Escape') {
+      hideBox();
+      return;
+    }
+  }
+
+  function onClick(e) {
+    const item = e.target.closest('.suggestion-item');
+    if (item && boxEl && boxEl.contains(item)) {
+      const idx = Number(item.dataset.index || -1);
+      if (idx >= 0) select(idx);
+    } else {
+      if (e.target !== inputEl) hideBox();
+    }
+  }
+
+  function attach(el) {
+    if (!el || el === inputEl) return;
+    if (inputEl) {
+      inputEl.removeEventListener('input', onInput);
+      inputEl.removeEventListener('keydown', onKeyDown);
+    }
+    inputEl = el;
+    ensureBox();
+    positionBox();
+    inputEl.addEventListener('input', onInput);
+    inputEl.addEventListener('keydown', onKeyDown);
+    window.addEventListener('resize', positionBox);
+    window.addEventListener('scroll', positionBox, true);
+    document.addEventListener('click', onClick);
+    inputEl.addEventListener('focus', positionBox);
+  }
+
+  function tryAttach() {
+    const el = document.getElementById('punish-username');
+    if (el) attach(el);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', tryAttach);
+  } else {
+    tryAttach();
+  }
+
+  const mo = new MutationObserver(() => {
+    if (!inputEl) tryAttach();
+  });
+  mo.observe(document.documentElement, { childList: true, subtree: true });
+})();
+
+
+// === Roblox Username Autocomplete with Proxy + Hardcoded Dropdown + Error Handling (limit=10) ===
+const punishInput = document.getElementById('punish-username');
+const suggestionBox = document.getElementById('username-suggestions');
+let debounceTimer;
+let suggestions = [];
+let activeIndex = -1;
+
+async function fetchSuggestions(query) {
+  try {
+    // Proxy Roblox API search (limit=10)
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(
+      `https://users.roblox.com/v1/users/search?keyword=${query}&limit=10`
+    )}`;
+    const res = await fetch(proxyUrl);
+    const wrapped = await res.json();
+    const data = JSON.parse(wrapped.contents);
+    const list = Array.isArray(data?.data) ? data.data : [];
+
+    // Get avatars (for up to 10 users)
+    const ids = list.map(u => u.id).join(',');
+    let avatarMap = {};
+    if (ids.length) {
+      const avatarProxy = `https://api.allorigins.win/get?url=${encodeURIComponent(
+        `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${ids}&size=48x48&format=Png&isCircular=true`
+      )}`;
+      const avatarRes = await fetch(avatarProxy);
+      const avatarWrapped = await avatarRes.json();
+      const avatarData = JSON.parse(avatarWrapped.contents);
+      (avatarData?.data || []).forEach(it => {
+        avatarMap[it.targetId] = it.imageUrl;
+      });
+    }
+
+    return list.map(u => ({ id: u.id, name: u.name, avatar: avatarMap[u.id] || '' }));
+  } catch (err) {
+    console.error("Roblox API error:", err);
+    throw err;
+  }
+}
+
+function renderBox(contentHtml) {
+  suggestionBox.innerHTML = contentHtml;
+  suggestionBox.classList.remove('hidden');
+}
+
+function updateBox() {
+  if (!suggestions.length) {
+    renderBox(`<div class="suggestion-item">No results</div>`);
+    return;
+  }
+  suggestionBox.innerHTML = '';
+  suggestions.forEach((u, idx) => {
+    const active = idx === activeIndex ? ' active' : '';
+    suggestionBox.insertAdjacentHTML('beforeend', `
+      <div class="suggestion-item${active}" data-idx="${idx}">
+        <img src="${u.avatar}" class="suggestion-avatar" alt="">
+        <span>${u.name}</span>
+      </div>
+    `);
+  });
+  suggestionBox.classList.remove('hidden');
+}
+
+punishInput.addEventListener('input', () => {
+  const query = punishInput.value.trim();
+  if (query.length < 2) {
+    suggestionBox.classList.add('hidden');
+    return;
+  }
+
+  renderBox(`<div class="suggestion-item">Loading...</div>`);
+
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(async () => {
+    try {
+      suggestions = await fetchSuggestions(query);
+      activeIndex = suggestions.length ? 0 : -1;
+      updateBox();
+    } catch (err) {
+      renderBox(`<div class="suggestion-item">Error fetching results</div>`);
+    }
+  }, 300);
+});
+
+// Keyboard navigation
+punishInput.addEventListener('keydown', (e) => {
+  if (e.key === "ArrowDown") {
+    if (!suggestions.length) return;
+    e.preventDefault();
+    activeIndex = (activeIndex + 1) % suggestions.length;
+    updateBox();
+  }
+  if (e.key === "ArrowUp") {
+    if (!suggestions.length) return;
+    e.preventDefault();
+    activeIndex = (activeIndex - 1 + suggestions.length) % suggestions.length;
+    updateBox();
+  }
+  if (e.key === "Enter" || e.key === "Tab") {
+    if (suggestions.length && activeIndex >= 0) {
+      e.preventDefault();
+      punishInput.value = suggestions[activeIndex].name;
+      suggestionBox.classList.add('hidden');
+    }
+  }
+  if (e.key === "Escape") {
+    suggestionBox.classList.add('hidden');
+  }
+});
+
+// Click to select
+suggestionBox.addEventListener('click', (e) => {
+  const item = e.target.closest('.suggestion-item');
+  if (item && item.dataset.idx) {
+    const idx = parseInt(item.dataset.idx, 10);
+    punishInput.value = suggestions[idx].name;
+    suggestionBox.classList.add('hidden');
+  }
+});
 
 </script>
     <!-- Google Fonts: Inter -->
