@@ -2764,7 +2764,7 @@ window.addEventListener('load', () => {
 
   async function proxiedFetchJson(url){
     try{
-      const wrapped = await fetch(url);
+      const wrapped = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
       const json = await wrapped.json();
       return JSON.parse(json.contents);
     }catch(e){
